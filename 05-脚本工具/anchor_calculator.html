@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anchor · 仓位计算器</title>
+<meta name="description" content="四层金字塔仓位计算器 — 输入总资产，自动分配压舱石/核心增长/卫星进攻/现金预备">
+<style>
+:root{--bg:#06080d;--surface:#0b0e16;--border:#181c2a;--text:#c8ccd4;--text2:#6b7094;--accent:#5b8def;--green:#00d4a0;--amber:#f0b030;--red:#ff4d6a}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:32px 16px 60px}
+.container{max-width:680px;width:100%}
+h1{font-size:22px;font-weight:700;color:#fff;margin-bottom:4px}
+h1 span{color:var(--accent)}
+.sub{color:var(--text2);font-size:12px;margin-bottom:28px;line-height:1.5}
+
+.input-row{display:flex;gap:8px;margin-bottom:14px}
+.input-row .input-group{flex:1}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:10px;color:var(--text2);letter-spacing:1.2px;margin-bottom:4px;text-transform:uppercase}
+.input-group input,.input-group select{width:100%;padding:11px 14px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:#fff;font-size:15px;font-family:monospace}
+.input-group input:focus{outline:none;border-color:var(--accent)}
+.input-group select{appearance:none;cursor:pointer;font-family:system-ui,sans-serif}
+
+.risk-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:20px}
+.risk-tab{padding:10px 6px;background:var(--surface);border:1px solid var(--border);border-radius:6px;text-align:center;cursor:pointer;font-size:10px;color:var(--text2);transition:.2s;line-height:1.4}
+.risk-tab:hover{border-color:var(--text2)}
+.risk-tab.active{background:rgba(91,141,239,0.12);border-color:var(--accent);color:#fff;font-weight:600}
+
+.result{margin-top:8px}
+.pyramid{display:flex;flex-direction:column;align-items:center;gap:2px;margin:20px 0}
+.layer{text-align:center;padding:10px;border-radius:4px;font-weight:600;transition:.2s}
+.layer .lname{font-size:10px;opacity:0.7;letter-spacing:1px}
+.layer .lpct{font-size:18px;font-weight:700;margin:1px 0}
+.layer .lamt{font-size:11px}
+.layer.bedrock{background:rgba(91,141,239,0.12);color:var(--accent);width:100%}
+.layer.core{background:rgba(0,212,160,0.10);color:var(--green);width:72%}
+.layer.sat{background:rgba(240,176,48,0.10);color:var(--amber);width:48%}
+.layer.cash{background:rgba(107,112,148,0.08);color:var(--text2);width:32%}
+
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.detail-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:12px 16px}
+.detail-card h4{font-size:9px;color:var(--text2);letter-spacing:1.5px;margin-bottom:6px;text-transform:uppercase}
+.detail-card .val{font-family:monospace;font-size:18px;font-weight:700;color:#fff}
+.detail-card .note{font-size:10px;color:var(--text3);margin-top:2px}
+.detail-card .sub-item{display:flex;justify-content:space-between;padding:2px 0;font-size:11px}
+.detail-card .sub-item span:last-child{font-family:monospace;color:var(--text2)}
+
+.warn{padding:12px 16px;background:rgba(240,176,48,0.05);border:1px solid rgba(240,176,48,0.12);border-radius:6px;margin-top:16px;font-size:11px;color:var(--amber);line-height:1.6}
+.warn b{color:#fff}
+
+.footer{margin-top:28px;text-align:center;font-size:10px;color:var(--text3)}
+.footer a{color:var(--accent);text-decoration:none}
+
+@media(max-width:600px){
+  .detail-grid{grid-template-columns:1fr}
+  .risk-tabs{grid-template-columns:repeat(2,1fr)}
+  h1{font-size:18px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>⚓ <span>Anchor</span> Calculator</h1>
+<div class="sub">输入你的总资产，自动生成四层金字塔仓位分配。<br>压舱石永远不卖 · 卫星层严格止损 · 现金预备应对极端行情。</div>
+
+<div class="input-row">
+  <div class="input-group">
+    <label>总资产（元）</label>
+    <input type="number" id="total" placeholder="如 50000" value="50000">
+  </div>
+  <div class="input-group">
+    <label>止损线</label>
+    <select id="sl">
+      <option value="6">-6%</option>
+      <option value="8" selected>-8%</option>
+      <option value="10">-10%</option>
+    </select>
+  </div>
+</div>
+
+<label style="font-size:10px;color:var(--text2);letter-spacing:1.2px;margin-bottom:4px;display:block;text-transform:uppercase">风险偏好</label>
+<div class="risk-tabs" id="tabs">
+  <div class="risk-tab" data-r="conservative">🛡️ 保守<br>回撤≤5%</div>
+  <div class="risk-tab active" data-r="balanced">⚖️ 平衡<br>回撤≤15%</div>
+  <div class="risk-tab" data-r="growth">📈 成长<br>回撤≤20%</div>
+  <div class="risk-tab" data-r="aggressive">🚀 进取<br>回撤≤25%</div>
+</div>
+
+<div id="out"></div>
+
+<div class="footer">
+  Anchor Investment System · <a href="#">GitHub</a> · 仅供学习参考，不构成投资建议
+</div>
+
+</div>
+
+<script>
+var C={conservative:{b:70,c:15,s:0,h:15},balanced:{b:45,c:25,s:15,h:15},growth:{b:35,c:30,s:20,h:15},aggressive:{b:25,c:35,s:25,h:15}};
+var F={b:[['债券基金A',0.4],['债券基金B',0.3],['红利ETF',0.2],['黄金ETF',0.1]],c:[['纳斯达克100',0.6],['稳健混合基金',0.4]],s:[['创新药ETF(示例)',0.5],['证券ETF(示例)',0.5]]};
+
+document.getElementById('total').addEventListener('input',R);
+document.getElementById('sl').addEventListener('change',R);
+document.querySelectorAll('.risk-tab').forEach(function(t){t.addEventListener('click',function(){document.querySelectorAll('.risk-tab').forEach(function(x){x.classList.remove('active');});this.classList.add('active');R();});});
+
+function R(){
+  var T=parseFloat(document.getElementById('total').value)||0;
+  var r=document.querySelector('.risk-tab.active').dataset.r;
+  var sl=parseFloat(document.getElementById('sl').value);
+  var cfg=C[r];
+  var L=[{n:'压舱石层',c:'bedrock',p:cfg.b,fs:F.b},{n:'核心增长层',c:'core',p:cfg.c,fs:F.c},{n:'卫星进攻层',c:'sat',p:cfg.s,fs:F.s},{n:'现金预备层',c:'cash',p:cfg.h,fs:[]}];
+
+  var h='<div class="pyramid">';
+  L.forEach(function(l){var a=T*l.p/100;h+='<div class="layer '+l.c+'"><div class="lname">'+l.n+'</div><div class="lpct">'+l.p+'%</div><div class="lamt">¥'+a.toLocaleString('zh-CN',{maximumFractionDigits:0})+'</div></div>';});
+  h+='</div><div class="detail-grid">';
+  L.forEach(function(l){var a=T*l.p/100,sh='';l.fs.forEach(function(f){var fa=a*f[1];sh+='<div class="sub-item"><span>'+f[0]+'</span><span>¥'+fa.toLocaleString('zh-CN',{maximumFractionDigits:0})+'</span></div>';});
+  if(sh){h+='<div class="detail-card"><h4>'+l.n+' · 建议配置</h4>'+sh+'</div>';}
+  else{h+='<div class="detail-card"><h4>'+l.n+'</h4><div class="val">¥'+a.toLocaleString('zh-CN',{maximumFractionDigits:0})+'</div><div class="note">货币基金 · 仅暴跌时补仓压舱石</div></div>';}});
+  h+='</div>';
+
+  var ml=T*(cfg.s/100)*(sl/100);
+  h+='<div class="warn">⚡ <b>风控</b>：卫星单次最大亏损 <b>¥'+ml.toLocaleString('zh-CN',{maximumFractionDigits:0})+'</b>（止损-'+sl+'%）<br>🔒 <b>纪律</b>：压舱石+核心 <b>'+(cfg.b+cfg.c)+'%</b> 永远不卖 · 卫星≤4只 · 月操作≤4笔<br>📐 <b>规则</b>：浮亏不加仓 · 卖出冻结72h · 每笔带预案</div>';
+
+  document.getElementById('out').innerHTML=h;
+}
+R();
+</script>
+</body>
+</html>

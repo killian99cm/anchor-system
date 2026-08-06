@@ -53,6 +53,7 @@
 | [🧠 核心理念](#-核心理念) | [📜 规则体系](#-规则体系) | [⚡ 快速开始](#-快速开始) | [📂 目录结构](#-目录结构) | [📊 数据更新](#-数据更新节奏) |
 |:---:|:---:|:---:|:---:|:---:|
 | [🏗️ 系统架构](#️-系统架构) | [📈 版本演进](#-版本演进) | [🤖 AI 系统](#-ai-分析系统) | [🌐 在线演示](#-在线演示) | [📝 更新日志](#-更新日志) |
+| [❓ FAQ](FAQ.md) | [🔧 故障排查](TROUBLESHOOTING.md) | [English](README-EN.md) | [🤝 贡献](CONTRIBUTING.md) | [📄 License](LICENSE) |
 
 </div>
 
@@ -161,19 +162,21 @@ GitHub Pages 自动部署，纯 HTML 深色终端风，零外部依赖：
 ### 🔧 零门槛使用
 
 ```bash
-# 1. Clone
 git clone https://github.com/killian99cm/anchor-system.git
 cd anchor-system
 
-# 2. 填入持仓（用编辑器改）
+# 方式 A: 交互式配置（推荐新手！）
+python setup.py
+# → 按提示输入持仓 → 自动生成数据 → 自动生成看板 ✨
+
+# 方式 B: 手动配置
 cp 06-看板数据/portfolio_data_example.json portfolio_data.json
-
-# 3. 生成看板
+# 编辑 portfolio_data.json 填入持仓
 python 05-脚本工具/rebuild.py
-
-# 4. 双击打开
-# → portfolio_analysis.html
+# 双击 portfolio_analysis.html 查看
 ```
+
+> 💡 **遇到问题？** → [FAQ](FAQ.md) | [故障排查](TROUBLESHOOTING.md) | [English README](README-EN.md)
 
 **适用人群**：个人投资者、基金定投用户、想建立交易纪律的新手
 

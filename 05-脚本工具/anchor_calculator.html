@@ -6,7 +6,7 @@
 <title>Anchor · 仓位计算器</title>
 <meta name="description" content="四层金字塔仓位计算器 — 输入总资产，自动分配压舱石/核心增长/卫星进攻/现金预备">
 <style>
-:root{--bg:#06080d;--surface:#0b0e16;--border:#181c2a;--text:#c8ccd4;--text2:#6b7094;--accent:#5b8def;--green:#00d4a0;--amber:#f0b030;--red:#ff4d6a}
+:root{--bg:#06080d;--surface:#0b0e16;--border:#181c2a;--text:#c8ccd4;--text2:#6b7094;--text3:#4a4e6a;--accent:#5b8def;--green:#00d4a0;--amber:#f0b030;--red:#ff4d6a}
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:32px 16px 60px}
 .container{max-width:680px;width:100%}
@@ -91,14 +91,14 @@ h1 span{color:var(--accent)}
 <div id="out"></div>
 
 <div class="footer">
-  Anchor Investment System · <a href="#">GitHub</a> · 仅供学习参考，不构成投资建议
+  Anchor Investment System · <a href="../08-可视化网站/anchor-pro.html">体系总览</a> · <a href="../06-看板数据/portfolio_analysis.html">实时看板</a> · 仅供学习参考，不构成投资建议
 </div>
 
 </div>
 
 <script>
 var C={conservative:{b:70,c:15,s:0,h:15},balanced:{b:45,c:25,s:15,h:15},growth:{b:35,c:30,s:20,h:15},aggressive:{b:25,c:35,s:25,h:15}};
-var F={b:[['债券基金A',0.4],['债券基金B',0.3],['红利ETF',0.2],['黄金ETF',0.1]],c:[['纳斯达克100',0.6],['稳健混合基金',0.4]],s:[['创新药ETF(示例)',0.5],['证券ETF(示例)',0.5]]};
+var F={b:[['债券基金A',0.4],['债券基金B',0.3],['红利ETF',0.2],['黄金ETF',0.1]],c:[['纳斯达克100',0.6],['稳健混合基金',0.4]],s:[['行业ETF A(示例)',0.5],['行业ETF B(示例)',0.5]]};
 
 document.getElementById('total').addEventListener('input',R);
 document.getElementById('sl').addEventListener('change',R);

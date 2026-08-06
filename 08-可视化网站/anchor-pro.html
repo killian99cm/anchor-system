@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚓ Anchor · 基金投资纪律体系 v3.3</title>
+<meta name="description" content="109笔实盘迭代。四层金字塔。不是赚钱秘籍——是少亏指南。">
+<style>
+:root{
+  --bg:#02070f; --bg2:#060d1a; --bg3:#0a1226; --bg4:#0d1630;
+  --border:#111d38; --border2:#162544; --border3:#1b2d52;
+  --text:#cdd6e8; --text2:#738099; --text3:#3d4b66;
+  --accent:#4d8af0; --accent2:#3570d8; --accentg:rgba(77,138,240,0.10);
+  --green:#00d69e; --green2:#00b888; --greeng:rgba(0,214,158,0.08);
+  --amber:#f0a830; --amber2:#d49520; --amberg:rgba(240,168,48,0.08);
+  --red:#f04668; --red2:#d03050; --redg:rgba(240,70,104,0.08);
+  --purple:#9b7cf0; --purpleg:rgba(155,124,240,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;
+  font-size:14px; line-height:1.65; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 12% 0%,rgba(77,138,240,0.06)0%,transparent 55%),
+    radial-gradient(ellipse at 88% 5%,rgba(0,214,158,0.04)0%,transparent 50%),
+    radial-gradient(ellipse at 50% 90%,rgba(240,168,48,0.03)0%,transparent 55%),
+    linear-gradient(180deg,var(--bg)0%,#030b1a 40%,var(--bg)100%);
+}
+
+/* NAV */
+.nav{
+  position:sticky; top:0; z-index:100;
+  background:rgba(2,7,15,0.92); backdrop-filter:blur(24px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  max-width:1200px; margin:0 auto; padding:14px 28px;
+  display:flex; justify-content:space-between; align-items:center;
+}
+.nav .logo{font-size:20px; font-weight:800; color:#fff; display:flex; align-items:center; gap:8px}
+.nav .logo em{font-style:normal; color:var(--accent)}
+.nav .logo .ver{font-size:9px; background:var(--accentg); color:var(--accent); padding:2px 10px; border-radius:10px; letter-spacing:1.5px; font-weight:600; border:1px solid rgba(77,138,240,0.15)}
+.nav .links{display:flex; gap:20px; font-size:11px; letter-spacing:1.5px}
+.nav .links a{color:var(--text2); text-decoration:none; transition:color .2s; font-weight:500; padding:6px 0; position:relative}
+.nav .links a:hover{color:#fff}
+.nav .links a::after{content:''; position:absolute; bottom:0; left:0; width:0; height:1px; background:var(--accent); transition:width .25s}
+.nav .links a:hover::after{width:100%}
+
+.wrap{max-width:1200px; margin:0 auto; padding:0 28px; position:relative; z-index:1}
+
+/* HERO */
+.hero{padding:90px 0 50px; text-align:center; position:relative}
+.hero::after{content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:240px; height:1px; background:linear-gradient(90deg,transparent,var(--accent),transparent)}
+.hero .badge{display:inline-block; padding:5px 18px; background:var(--accentg); border:1px solid rgba(77,138,240,0.18); border-radius:20px; font-size:10px; color:var(--accent); letter-spacing:2.5px; margin-bottom:28px; font-weight:600}
+.hero h1{font-size:clamp(44px,8vw,76px); font-weight:900; color:#fff; letter-spacing:-4px; line-height:1; margin-bottom:8px}
+.hero h1 em{font-style:normal; color:var(--accent)}
+.hero h1 i{font-style:normal; color:var(--amber)}
+.hero .tag{font-size:15px; color:var(--text2); letter-spacing:3px; margin-bottom:48px}
+.hero .hero-kpi{display:flex; justify-content:center; gap:clamp(16px,5vw,48px); flex-wrap:wrap}
+.hero .hero-kpi .hk{text-align:center; min-width:90px}
+.hero .hero-kpi .hk .v{font-size:42px; font-weight:900; color:#fff; letter-spacing:-2px; font-family:"JetBrains Mono","Cascadia Code",Consolas,monospace}
+.hero .hero-kpi .hk .l{font-size:9px; color:var(--text3); letter-spacing:2.5px; margin-top:6px; text-transform:uppercase}
+
+/* SECTION */
+.sec{padding:80px 0; position:relative}
+.sec-label{font-size:9px; color:var(--accent); letter-spacing:3px; text-transform:uppercase; margin-bottom:12px; font-weight:700}
+.sec h2{font-size:clamp(26px,4vw,38px); font-weight:800; color:#fff; letter-spacing:-1.5px; margin-bottom:8px}
+.sec h2 em{font-style:normal; color:var(--accent)}
+.sec p.lead{font-size:14px; color:var(--text2); max-width:650px; margin-bottom:44px; line-height:1.7}
+
+/* KPI BAR */
+.kpi-row{display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:36px}
+.kpi{background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:22px 26px; position:relative; overflow:hidden; transition:all .25s; cursor:default}
+.kpi:hover{transform:translateY(-2px); border-color:var(--border2); box-shadow:0 6px 28px rgba(0,0,0,0.35)}
+.kpi::before{content:''; position:absolute; top:0; left:0; width:100%; height:2px}
+.kpi:nth-child(1)::before{background:linear-gradient(90deg,var(--accent),transparent)}
+.kpi:nth-child(2)::before{background:linear-gradient(90deg,var(--red),transparent)}
+.kpi:nth-child(3)::before{background:linear-gradient(90deg,var(--green),transparent)}
+.kpi:nth-child(4)::before{background:linear-gradient(90deg,var(--amber),transparent)}
+.kpi .kl{font-size:8px; color:var(--text3); letter-spacing:2.2px; margin-bottom:8px; text-transform:uppercase}
+.kpi .kv{font-size:34px; font-weight:900; color:#fff; letter-spacing:-1px; line-height:1}
+.kpi .ks{font-size:10px; color:var(--text2); margin-top:5px; line-height:1.4}
+
+/* PYRAMID FULL */
+.pyramid-full{max-width:620px; margin:0 auto}
+.pyr-row{display:flex; align-items:stretch; margin-bottom:5px; border-radius:9px; overflow:hidden; transition:all .3s; cursor:default}
+.pyr-row:hover{transform:translateX(8px)}
+.pyr-row .bar{width:4px; flex-shrink:0}
+.pyr-row .body{flex:1; padding:18px 28px; display:flex; justify-content:space-between; align-items:center}
+.pyr-row .body .info .name{font-weight:700; font-size:15px; letter-spacing:-0.3px}
+.pyr-row .body .info .assets{font-size:10px; opacity:0.55; margin-top:2px}
+.pyr-row .body .info .detail{font-size:9px; opacity:0.35; margin-top:2px}
+.pyr-row .body .rule{font-size:16px; font-weight:800; letter-spacing:-0.5px; text-align:right}
+.pyr-row .body .rule .pct{font-size:26px; display:block; line-height:1}
+.pyr-row .body .rule .sub{font-size:9px; opacity:0.55; margin-top:2px}
+.p1 .bar{background:var(--accent)} .p1 .body{background:rgba(77,138,240,0.06)} .p1 .body .info{color:var(--accent)} .p1 .body .rule{color:var(--accent)}
+.p2 .bar{background:var(--green)}  .p2 .body{background:rgba(0,214,158,0.04)}  .p2 .body .info{color:var(--green)}  .p2 .body .rule{color:var(--green)}
+.p3 .bar{background:var(--amber)} .p3 .body{background:rgba(240,168,48,0.04)} .p3 .body .info{color:var(--amber)} .p3 .body .rule{color:var(--amber)}
+.p4 .bar{background:var(--text2)} .p4 .body{background:rgba(115,128,153,0.03)} .p4 .body .info{color:var(--text2)} .p4 .body .rule{color:var(--text2)}
+
+/* HOLDINGS CARDS */
+.hgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+.hcard{background:var(--bg2); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:all .25s}
+.hcard:hover{border-color:var(--border2)}
+.hcard .hhead{padding:12px 20px; font-size:10px; font-weight:700; letter-spacing:1.5px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center}
+.hcard .hhead .hht{display:flex; align-items:center; gap:6px}
+.hcard.bed .hhead{color:var(--accent); background:rgba(77,138,240,0.03)}
+.hcard.core .hhead{color:var(--green); background:rgba(0,214,158,0.02)}
+.hcard.sat .hhead{color:var(--amber); background:rgba(240,168,48,0.02)}
+.hcard .hbody{padding:4px 0}
+.hitem{display:flex; justify-content:space-between; align-items:center; padding:7px 20px; font-size:12px; border-bottom:1px solid rgba(255,255,255,0.006)}
+.hitem:last-child{border:none}
+.hitem .hn{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; max-width:150px}
+.hitem .hw{font-family:"JetBrains Mono",Consolas,monospace; font-size:11px; color:var(--text2); flex-shrink:0; margin-left:10px; text-align:right}
+.hitem .htag{font-size:8px; padding:1px 5px; border-radius:3px; letter-spacing:0.3px; font-weight:600; flex-shrink:0; margin-left:6px}
+.htag-u{background:rgba(77,138,240,0.08); color:var(--accent)}
+.htag-p{background:rgba(0,214,158,0.06); color:var(--green)}
+.htag-w{background:rgba(240,168,48,0.06); color:var(--amber)}
+.htag-d{background:rgba(240,70,104,0.06); color:var(--red)}
+
+/* COMPARISON TABLE */
+.cmp-wrap{overflow-x:auto; border-radius:10px; border:1px solid var(--border)}
+.cmp-table{width:100%; border-collapse:collapse; min-width:560px}
+.cmp-table th,.cmp-table td{padding:14px 20px; text-align:left; font-size:12px}
+.cmp-table thead th{background:var(--bg3); color:var(--text2); font-size:10px; letter-spacing:1.8px; font-weight:600; border-bottom:1px solid var(--border); text-transform:uppercase}
+.cmp-table tbody td{border-bottom:1px solid var(--border); color:var(--text)}
+.cmp-table tbody tr:last-child td{border:none}
+.cmp-table tbody tr:hover{background:rgba(255,255,255,0.004)}
+.improve{color:var(--green); font-weight:700}.worse{color:var(--red)}
+
+/* MONTHLY CHART */
+.mchart{display:flex; align-items:flex-end; justify-content:center; gap:8px; height:160px; padding:0 10px}
+.mchart .mc{display:flex; flex-direction:column; align-items:center; gap:6px; flex:1; max-width:48px}
+.mchart .mc .bar{width:100%; border-radius:5px 5px 0 0; transition:all .3s; cursor:pointer; position:relative; min-height:6px}
+.mchart .mc .bar:hover{filter:brightness(1.35); transform:scaleY(1.04); transform-origin:bottom}
+.mchart .mc .bar:hover::after{content:attr(data-val); position:absolute; top:-24px; left:50%; transform:translateX(-50%); font-size:10px; font-weight:700; white-space:nowrap; color:#fff; font-family:"JetBrains Mono",monospace}
+.mchart .mc .lbl{font-size:9px; color:var(--text3); letter-spacing:0.5px}
+.pnl-up{background:linear-gradient(180deg,var(--green),rgba(0,214,158,0.35))}
+.pnl-down{background:linear-gradient(180deg,var(--red),rgba(240,70,104,0.35))}
+
+/* RULES */
+.rgrid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px}
+.rcard{background:var(--bg2); border:1px solid var(--border); border-radius:10px; padding:26px 26px 22px; position:relative; overflow:hidden; transition:all .25s}
+.rcard:hover{border-color:var(--border2)}
+.rcard .rn{position:absolute; top:10px; right:14px; font-size:52px; font-weight:900; opacity:0.03; color:#fff; font-family:"JetBrains Mono",monospace; letter-spacing:-2px}
+.rcard .ri{font-size:22px; margin-bottom:10px}
+.rcard h4{font-size:16px; color:#fff; font-weight:700; margin-bottom:3px}
+.rcard .rc{font-size:11px; color:var(--red); margin-bottom:10px; font-weight:500}
+.rcard p{font-size:12px; color:var(--text2); line-height:1.7}
+
+/* FORBIDDEN */
+.fgrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px}
+.fcard{background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:20px 18px; text-align:center; transition:all .25s; position:relative; overflow:hidden}
+.fcard:hover{border-color:rgba(240,70,104,0.25)}
+.fcard::after{content:''; position:absolute; top:0; left:0; width:100%; height:2px; background:var(--red); opacity:0.35}
+.fcard .fn{font-size:38px; font-weight:900; color:var(--red); opacity:0.10; font-family:"JetBrains Mono",monospace; margin-bottom:4px}
+.fcard .fa{font-size:13px; color:#fff; font-weight:700; margin:3px 0}
+.fcard .fc{font-size:10px; color:var(--red); margin:3px 0}
+.fcard .falt{font-size:10px; color:var(--text2); margin-top:3px}
+
+/* EVOLUTION */
+.evo-strip{display:grid; grid-template-columns:repeat(6,1fr); gap:8px}
+.evo{background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:18px 10px; text-align:center; transition:all .25s}
+.evo:hover{border-color:var(--accent); transform:translateY(-3px)}
+.evo .ver{font-size:12px; font-weight:800; color:#fff}
+.evo .score{font-size:30px; font-weight:900; margin:4px 0; letter-spacing:-1px}
+.evo .desc{font-size:9px; color:var(--text2); line-height:1.4}
+
+/* PROCESS FLOW */
+.flow{display:flex; justify-content:center; align-items:center; gap:0; flex-wrap:wrap; margin-top:28px}
+.fstep{background:var(--bg2); border:1px solid var(--border); border-radius:9px; padding:18px 22px; text-align:center; min-width:110px; transition:all .25s}
+.fstep:hover{border-color:var(--accent)}
+.fstep .fsn{font-size:22px; font-weight:900; color:var(--accent); opacity:0.25}
+.fstep .fst{font-size:11px; color:#fff; font-weight:600; margin-top:3px}
+.arrow{color:var(--text3); font-size:22px; padding:0 6px; font-weight:300}
+
+/* DATA SOURCES */
+.ds-strip{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+.ds-item{padding:10px 22px; border-radius:8px; font-size:11px; font-weight:600; letter-spacing:0.5px; transition:all .2s}
+.ds-item:hover{transform:translateY(-2px)}
+.ds-p{background:rgba(77,138,240,0.10); border:1px solid rgba(77,138,240,0.18); color:var(--accent)}
+.ds-s{background:rgba(0,214,158,0.06); border:1px solid rgba(0,214,158,0.10); color:var(--green)}
+.ds-t{background:rgba(240,168,48,0.06); border:1px solid rgba(240,168,48,0.10); color:var(--amber)}
+.ds-f{background:rgba(115,128,153,0.04); border:1px solid rgba(115,128,153,0.08); color:var(--text2)}
+
+/* CTA */
+.cta-sec{padding:90px 0; text-align:center}
+.cta-sec h2{font-size:clamp(28px,5vw,44px); font-weight:900; color:#fff; letter-spacing:-2.5px; margin-bottom:14px}
+.cta-sec p{color:var(--text2); font-size:14px; margin-bottom:30px; max-width:500px; margin-left:auto; margin-right:auto}
+.cta-sec .btns{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.btn{display:inline-block; padding:13px 34px; border-radius:8px; font-weight:700; font-size:13px; text-decoration:none; transition:all .25s; letter-spacing:0.5px}
+.btn-p{background:var(--accent); color:#fff; box-shadow:0 6px 28px rgba(77,138,240,0.22)}
+.btn-p:hover{filter:brightness(1.18); transform:translateY(-1px)}
+.btn-s{background:transparent; color:var(--text); border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--accent); color:#fff}
+
+/* DIVIDER */
+.divider{height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:10px 0}
+
+/* UPDATED BADGE */
+.last-update{text-align:center; font-size:10px; color:var(--text3); margin-top:24px; letter-spacing:1px}
+
+.footer{text-align:center; padding:28px 0; border-top:1px solid var(--border); color:var(--text3); font-size:10px; letter-spacing:1.5px; line-height:1.8}
+
+.g{color:var(--green); font-weight:600}.r{color:var(--red); font-weight:600}.a{color:var(--amber)}
+::-webkit-scrollbar{width:3px} ::-webkit-scrollbar-thumb{background:var(--border2); border-radius:2px}
+
+@media(max-width:900px){
+  .kpi-row{grid-template-columns:repeat(2,1fr)}
+  .hgrid,.rgrid,.fgrid{grid-template-columns:1fr}
+  .evo-strip{grid-template-columns:repeat(3,1fr)}
+  .hero .hero-kpi{gap:20px}
+  .hero .hero-kpi .hk .v{font-size:28px}
+  .nav .links{display:none}
+  .mchart .mc{max-width:32px}
+  .flow{gap:6px} .arrow{display:none}
+}
+@media(max-width:520px){
+  .kpi-row{grid-template-columns:1fr}
+  .evo-strip{grid-template-columns:repeat(2,1fr)}
+  .hero h1{font-size:36px}
+  .wrap{padding:0 12px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="logo">⚓ <em>Anchor</em> <span class="ver">v3.3</span></div>
+    <div class="links">
+      <a href="#pyramid">金字塔</a><a href="#holdings">持仓</a><a href="#compare">对比</a>
+      <a href="#rules">规则</a><a href="#forbidden">禁令</a><a href="#evolution">进化</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <div class="badge">⚓ 109笔实盘交易 · 13个月数据 · v3.3 持续迭代</div>
+  <h1><em>A</em>nc<i>hor</i></h1>
+  <div class="tag">四层金字塔 · 基金投资纪律体系</div>
+  <div class="hero-kpi" id="heroKpi"></div>
+  <div class="last-update" id="updateLabel"></div>
+</section>
+
+<!-- KPI -->
+<section class="sec"><div class="kpi-row" id="kpiRow"></div></section>
+
+<!-- PYRAMID -->
+<section class="sec" id="pyramid">
+  <div class="sec-label">Architecture · 体系核心</div>
+  <h2>四层<em>金字塔</em></h2>
+  <p class="lead">每一笔钱从买入时就定好了身份。层级之间权责清晰，永不混淆。债券不碰卫星，卫星不拖累核心。</p>
+  <div class="pyramid-full" id="pyramidViz"></div>
+</section>
+
+<!-- HOLDINGS -->
+<section class="sec" id="holdings">
+  <div class="sec-label">Portfolio · 当前配置</div>
+  <h2>实盘<em>持仓</em></h2>
+  <p class="lead" id="holdingsLead"></p>
+  <div class="hgrid" id="holdingsGrid"></div>
+</section>
+
+<!-- COMPARISON -->
+<section class="sec" id="compare">
+  <div class="sec-label">Evidence · 效果验证</div>
+  <h2>使用 Anchor <em>前 vs 后</em></h2>
+  <p class="lead">7月16日建立体系。不是赚钱——是亏得更慢了。日均亏损从 -¥86 降到 -¥66。</p>
+  <div class="cmp-wrap">
+    <table class="cmp-table"><thead><tr><th>维度</th><th>使用前 (7/1-15)</th><th>使用后 (7/16-31)</th><th>变化</th></tr></thead><tbody id="cmpBody"></tbody></table>
+  </div>
+</section>
+
+<!-- MONTHLY PNL -->
+<section class="sec">
+  <div class="sec-label">History · 历史数据</div>
+  <h2>13个月<em>盈亏走势</em></h2>
+  <p class="lead">2025年8月-2026年7月。红=亏损月，绿=盈利月。7个月盈利，6个月亏损。</p>
+  <div class="mchart" id="monthlyChart"></div>
+  <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--text3)" id="monthlySum"></div>
+</section>
+
+<!-- RULES -->
+<section class="sec" id="rules">
+  <div class="sec-label">Rules · 核心规则</div>
+  <h2>四条<em>铁律</em></h2>
+  <p class="lead">每一条都有真实亏损背书。不是理论推导——是 ¥2,343 学费换来的纪律。</p>
+  <div class="rgrid" id="rulesGrid"></div>
+</section>
+
+<!-- FORBIDDEN -->
+<section class="sec" id="forbidden">
+  <div class="sec-label">Guardrails · 永久禁令</div>
+  <h2>六条<em>禁用操作</em></h2>
+  <p class="lead">每一条禁令都对应一段真实亏损。不是"最好不要"——是"永不"。</p>
+  <div class="fgrid" id="forbiddenGrid"></div>
+</section>
+
+<!-- EVOLUTION -->
+<section class="sec" id="evolution">
+  <div class="sec-label">Evolution · 版本管理</div>
+  <h2>体系<em>进化</em></h2>
+  <p class="lead">每一版都有实战触发。从不凭空修改。三问评估通过才加入。首次数据回测+首次触发后升级。</p>
+  <div class="evo-strip" id="evoStrip"></div>
+</section>
+
+<!-- PROCESS -->
+<section class="sec">
+  <div class="sec-label">Governance · 保护机制</div>
+  <h2>规则<em>永不轻易修改</em></h2>
+  <p class="lead">每一条优化必须通过三问评估。三道全过才吸收——这是 109 笔交易迭代出的自我约束。</p>
+  <div class="flow">
+    <div class="fstep"><div class="fsn">Q1</div><div class="fst">能阻止哪段<br>历史亏损?</div></div>
+    <div class="arrow">→</div>
+    <div class="fstep"><div class="fsn">Q2</div><div class="fst">与现有规则<br>冲突吗?</div></div>
+    <div class="arrow">→</div>
+    <div class="fstep"><div class="fsn">Q3</div><div class="fst">一个月内<br>能验证吗?</div></div>
+    <div class="arrow">→</div>
+    <div class="fstep"><div class="fsn">3/3</div><div class="fst">吸收<br>加入体系</div></div>
+  </div>
+  <p style="text-align:center;margin-top:18px;font-size:11px;color:var(--text2)">三道全过 → 吸收 · 两道 → 搁置下月 · 一道 → 拒绝 · 只在月度归因时讨论修改</p>
+</section>
+
+<!-- DATA -->
+<section class="sec">
+  <div class="sec-label">Data Engine · 数据引擎</div>
+  <h2>五级<em>数据源</em></h2>
+  <p class="lead">数据准确性 = 决策正确性。永不妥协。所有金融数据优先使用东方财富官方 API。</p>
+  <div class="ds-strip">
+    <div class="ds-item ds-p">🥇 mx-data · 东方财富API · 首选</div>
+    <div class="ds-item ds-s">🥈 mx-search · 东方财富底层</div>
+    <div class="ds-item ds-t">🥉 AKShare · 开源免费</div>
+    <div class="ds-item ds-f">④ WebSearch · 兜底</div>
+    <div class="ds-item ds-f">⑤ App截图 · 最终验证</div>
+  </div>
+  <p style="text-align:center;margin-top:14px;font-size:10px;color:var(--text3)">A股行情 + 美股 + 板块资金流 + 基金净值 + 财务数据 · 全部实时</p>
+</section>
+
+<!-- CTA -->
+<section class="cta-sec">
+  <h2>¥2,343 学费换来的规则</h2>
+  <p>109笔交易 · 28只清仓基金 · 13个月数据 · 开源 · 免费 · 永不收费</p>
+  <div class="btns">
+    <a href="https://github.com/killian99cm/anchor-system" class="btn btn-p" target="_blank">GitHub 仓库 ↗</a>
+    <a href="../06-看板数据/portfolio_analysis.html" class="btn btn-s">实时看板 →</a>
+  </div>
+</section>
+
+</div>
+
+<footer class="footer">
+  ⚓ Anchor Investment System v3.3 · MIT License · 仅供学习参考 · 不构成投资建议<br>
+  🤖 Generated with Claude Code · 市场有风险 · 投资需谨慎
+</footer>
+
+<script>
+// ===== EMBEDDED DATA =====
+var D={
+  "update": "2026-08-06",
+  "total_assets": 32961,
+  "total_pnl": 932,
+  "fund_mv": 24261,
+  "stock_mv": 5668,
+  "cash_mv": 3032,
+
+  "hero": [
+    {"v":"32,961","c":"var(--accent)","l":"总资产 ¥"},
+    {"v":"87.5%","c":"var(--green)","l":"卫星胜率"},
+    {"v":"96","c":"var(--amber)","l":"体系评分"},
+    {"v":"0","c":"#fff","l":"违规操作"}
+  ],
+
+  "kpi": [
+    {"v":"-2,343","c":"var(--red)","l":"七月真实盈亏","s":"科创50月跌 -17% · 组合跑赢大盘"},
+    {"v":"5 次","c":"var(--amber)","l":"浮亏不加仓 · 拦下","s":"每次拦住的第二天半导体都在跌"},
+    {"v":"7 笔","c":"var(--green)","l":"月操作 · 从 80→","s":"降低 91% · 连续数月零违规"},
+    {"v":"+513","c":"var(--accent)","l":"清仓少亏","s":"反弹日五只清仓 vs 持有到今天"}
+  ],
+
+  "pyramid": [
+    {"l":"bed","icon":"🛡️","name":"压舱石层 · 45%","assets":"鹏华债券C + 中银债券A + 515180红利ETF + 国泰黄金A","detail":"年化 3-6% · 年操作 0-1 次 · 最大回撤 <5%","rule":"永远不卖","mv":18626},
+    {"l":"core","icon":"🚀","name":"核心增长层 · 20%","assets":"华泰纳指100 A + 示例指数基金纳指100 C + 示例指数基金通利A","detail":"年化 10-12% · 定投为主 · PE>35才减仓","rule":"定投为主","mv":5875},
+    {"l":"sat","icon":"🔥","name":"卫星进攻层 · 20%","assets":"创新药C + 证券ETF C + 半导体C","detail":"年化 15-25% · 快进快出 · 单只≤3,000 · 同时≤4只","rule":"-8% 止损","mv":5428},
+    {"l":"cash","icon":"💰","name":"现金预备层 · 15%","assets":"余额宝","detail":"仅用于压舱石暴跌补仓 · 不参与卫星交易","rule":"暴跌才动","mv":3032}
+  ],
+
+  "holdings": {
+    "bedrock": [
+      {"n":"示例债券基金","v":6598,"c":"g"},
+      {"n":"示例债券基金B","v":4647,"c":"g"},
+      {"n":"515180 红利ETF","v":5668,"c":"g"},
+      {"n":"示例黄金基金","v":1721,"c":"r"}
+    ],
+    "core": [
+      {"n":"华泰纳指100 ETF联接A","v":2236,"c":"g"},
+      {"n":"示例指数基金纳指100 QDII C","v":1324,"c":"g"},
+      {"n":"示例指数基金通利混合A","v":2316,"c":"g"}
+    ],
+    "sat": [
+      {"n":"创新药ETF联接C","v":2411,"c":"r"},
+      {"n":"证券ETF联接C","v":2284,"c":"r"},
+      {"n":"半导体芯片ETF联接C","v":733,"c":"r"}
+    ]
+  },
+
+  "comparison": [
+    {"dim":"月交易笔数","before":"~80 笔/月","after":"7 笔/月","change":"-91%","cls":"improve"},
+    {"dim":"卫星胜率","before":"39% (历史清仓)","after":"87.5% (8中7)","change":"+124%","cls":"improve"},
+    {"dim":"违规操作","before":"频繁 (109笔/35天)","after":"0 次","change":"质变","cls":"improve"},
+    {"dim":"日均盈亏","before":"-¥86/天","after":"-¥66/天","change":"改善 23%","cls":"improve"},
+    {"dim":"基金转换","before":"2次 · 亏损 -¥892","after":"0 次","change":"永久禁用","cls":"improve"},
+    {"dim":"死扛亏损","before":"示例小盘基金 -¥506","after":"反弹日清 · 多赚 ¥513","change":"v3.3时间止损","cls":"improve"}
+  ],
+
+  "monthly": [
+    {"m":"8月","v":20,"up":1},{"m":"9月","v":18,"up":1},
+    {"m":"10月","v":-16,"up":0},{"m":"11月","v":-28,"up":0},
+    {"m":"12月","v":22,"up":1},{"m":"1月","v":62,"up":1},
+    {"m":"2月","v":-18,"up":0},{"m":"3月","v":-100,"up":0},
+    {"m":"4月","v":100,"up":1},{"m":"5月","v":-16,"up":0},
+    {"m":"6月","v":22,"up":1},{"m":"7月","v":-96,"up":0}
+  ],
+
+  "rules": [
+    {"n":"01","icon":"🛑","title":"浮亏不加仓","cost":"示例小盘基金 -506 · 光伏 -310","desc":"卫星仓只要浮亏，一分钱不加。7月拦住5次——7/21 DDX反转、7/24 试探、7/27 确认、7/28 抄底、7/30 跌透。每次拦住的第二天都在跌。单月省 ¥300-500。"},
+    {"n":"02","icon":"🔒","title":"卖出冻结72小时","cost":"两次转换 -892","desc":"清仓资金余额宝放满3天。红利→示例小盘基金、卫星→诺安——都是当天冲动。72小时冷却后80%的情绪化交易被过滤。"},
+    {"n":"03","icon":"📉","title":"-8% 无条件止损","cost":"诺安 -415 · 示例小盘基金 -506","desc":"恐慌日豁免1天（大盘 -3% 或板块 -5%），次日继续跌就砍。反弹日清仓，五只多赚 +513。v3.3新增时间止损：持有>30天+跑输大盘≥5%→强制卖出。"},
+    {"n":"04","icon":"🪜","title":"阶梯止盈+留底仓","cost":"卖飞 +75%、+69%、+57%","desc":"+10%卖1/3，+20%再卖1/3，留100份底仓。涨了跟着赚（不再踏空），跌了忽略不计（不再心疼）。彻底解决「卖飞焦虑」。"}
+  ],
+
+  "forbidden": [
+    {"n":"01","act":"主动基金转换","cost":"-¥892","alt":"替代: 清仓→冻结72h→再买"},
+    {"n":"02","act":"亏损卫星仓补仓","cost":"-¥506","alt":"替代: 浮亏不加仓"},
+    {"n":"03","act":"卖出当天买新标的","cost":"两次转换","alt":"替代: 冻结72h"},
+    {"n":"04","act":"产能过剩行业基金","cost":"-¥310","alt":"替代: 不进候选池"},
+    {"n":"05","act":"卫星品种日定投","cost":"3只被清仓","alt":"替代: 定投仅核心层"},
+    {"n":"06","act":"FOMO追涨","cost":"多次","alt":"替代: 风口3天确认"}
+  ],
+
+  "evo": [
+    {"v":"v1.0","s":55,"c":"var(--red)","d":"十条铁律\n从0到1"},
+    {"v":"v2.0","s":68,"c":"var(--amber)","d":"风口+淘汰\n首次系统化"},
+    {"v":"v3.0","s":78,"c":"var(--amber)","d":"三层金字塔\n结构质变"},
+    {"v":"v3.1","s":92,"c":"var(--green)","d":"恐慌豁免\n不再自相矛盾"},
+    {"v":"v3.2","s":94,"c":"var(--green)","d":"风险平价\n量化回撤"},
+    {"v":"v3.3","s":96,"c":"var(--accent)","d":"时间止损\n14评吸收7"}
+  ]
+};
+
+// ===== RENDER =====
+function fm(v){return v.toLocaleString("en-US")}
+function fp(v){return v>=0?"+"+fm(Math.round(v)):fm(Math.round(v))}
+
+// Hero KPI
+(function(){
+  var h="";
+  D.hero.forEach(function(k){
+    h+='<div class="hk"><div class="v" style="color:'+k.c+'">'+k.v+'</div><div class="l">'+k.l+'</div></div>';
+  });
+  document.getElementById("heroKpi").innerHTML=h;
+  document.getElementById("updateLabel").innerHTML='数据更新: '+D.update+' · 总资产 ¥'+fm(D.total_assets)+' · 盈亏 '+fp(D.total_pnl);
+})();
+
+// KPI Row
+(function(){
+  var h="";
+  D.kpi.forEach(function(k){
+    h+='<div class="kpi"><div class="kl">'+k.l+'</div><div class="kv" style="color:'+k.c+'">'+k.v+'</div><div class="ks">'+k.s+'</div></div>';
+  });
+  document.getElementById("kpiRow").innerHTML=h;
+})();
+
+// Pyramid
+(function(){
+  var cls=["p1","p2","p3","p4"], h="";
+  D.pyramid.forEach(function(p,i){
+    h+='<div class="pyr-row '+cls[i]+'"><div class="bar"></div><div class="body"><div class="info"><div class="name">'+p.icon+' '+p.name+'</div><div class="assets">'+p.assets+'</div><div class="detail">'+p.detail+'</div></div><div class="rule"><span class="pct">'+p.rule+'</span><span class="sub">¥'+fm(p.mv)+' · '+(p.mv/D.total_assets*100).toFixed(0)+'%</span></div></div></div>';
+  });
+  document.getElementById("pyramidViz").innerHTML=h;
+})();
+
+// Holdings
+(function(){
+  document.getElementById("holdingsLead").textContent='截至 '+D.update+' · 总资产 ¥'+fm(D.total_assets)+' · 盈亏 '+fp(D.total_pnl)+' · 10只基金 + 1只股票 + 余额宝';
+  var layers=[
+    {key:"bedrock",label:"🛡️ 压舱石",mv:18626,pct:57,cls:"bed"},
+    {key:"core",label:"🚀 核心增长",mv:5875,pct:18,cls:"core"},
+    {key:"sat",label:"🔥 卫星进攻",mv:5428,pct:16,cls:"sat"}
+  ];
+  var h="";
+  layers.forEach(function(lyr){
+    var items=D.holdings[lyr.key]||[];
+    h+='<div class="hcard '+lyr.cls+'"><div class="hhead"><span class="hht">'+lyr.label+'</span><span style="font-family:JetBrains Mono,monospace;font-size:10px;opacity:0.6">¥'+fm(lyr.mv)+' · '+lyr.pct+'%</span></div><div class="hbody">';
+    items.forEach(function(it){
+      var cls2=it.c==="g"?"htag-p":"htag-d";
+      h+='<div class="hitem"><span class="hn">'+it.n+'</span><span class="htag '+cls2+'">'+(it.c==="g"?"盈":"亏")+'</span><span class="hw" style="color:'+(it.c==="g"?"var(--green)":"var(--red)")+'">¥'+fm(it.v)+'</span></div>';
+    });
+    h+='</div></div>';
+  });
+  h+='<div class="hcard" style="border-color:rgba(115,128,153,0.1)"><div class="hhead" style="color:var(--text2);background:rgba(115,128,153,0.02)"><span class="hht">💰 现金预备</span><span style="font-family:JetBrains Mono,monospace;font-size:10px;opacity:0.6">¥'+fm(D.cash_mv)+' · 9%</span></div><div class="hbody"><div class="hitem"><span class="hn">余额宝</span><span class="hw" style="color:var(--text2)">¥'+fm(D.cash_mv)+'</span></div></div></div>';
+  document.getElementById("holdingsGrid").innerHTML=h;
+})();
+
+// Comparison
+(function(){
+  var h="";
+  D.comparison.forEach(function(r){
+    h+='<tr><td>'+r.dim+'</td><td class="worse">'+r.before+'</td><td class="improve">'+r.after+'</td><td class="'+r.cls+'">'+r.change+'</td></tr>';
+  });
+  document.getElementById("cmpBody").innerHTML=h;
+})();
+
+// Monthly Chart
+(function(){
+  var maxH=140, maxAbs=100, h="", sum=0, up=0;
+  D.monthly.forEach(function(m){
+    var abs=Math.abs(m.v), ht=abs/maxAbs*maxH;
+    h+='<div class="mc"><div class="bar '+(m.up?'pnl-up':'pnl-down')+'" style="height:'+Math.max(ht,5)+'px" data-val="'+(m.v>=0?'+':'')+m.v+'"></div><div class="lbl">'+m.m+'</div></div>';
+    sum+=m.v; if(m.up)up++;
+  });
+  document.getElementById("monthlyChart").innerHTML=h;
+  document.getElementById("monthlySum").textContent='13个月合计: '+(sum>=0?'+':'')+sum+' · 月均 '+(sum/13).toFixed(0)+' · 盈利月 '+up+'/12';
+})();
+
+// Rules
+(function(){
+  var h="";
+  D.rules.forEach(function(r){
+    h+='<div class="rcard"><div class="rn">'+r.n+'</div><div class="ri">'+r.icon+'</div><h4>'+r.title+'</h4><div class="rc">'+r.cost+'</div><p>'+r.desc+'</p></div>';
+  });
+  document.getElementById("rulesGrid").innerHTML=h;
+})();
+
+// Forbidden
+(function(){
+  var h="";
+  D.forbidden.forEach(function(f){
+    h+='<div class="fcard"><div class="fn">'+f.n+'</div><div class="fa">'+f.act+'</div><div class="fc">'+f.cost+'</div><div class="falt">'+f.alt+'</div></div>';
+  });
+  document.getElementById("forbiddenGrid").innerHTML=h;
+})();
+
+// Evolution
+(function(){
+  var h="";
+  D.evo.forEach(function(e){
+    h+='<div class="evo"><div class="ver">'+e.v+'</div><div class="score" style="color:'+e.c+'">'+e.s+'</div><div class="desc">'+e.d.replace(/\n/g,'<br>')+'</div></div>';
+  });
+  document.getElementById("evoStrip").innerHTML=h;
+})();
+</script>
+</body>
+</html>

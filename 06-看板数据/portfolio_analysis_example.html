@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⚓ Anchor v3.3 · 投资看板（示例）</title>
+<style>
+:root{
+  --bg:#02070f; --bg2:#060d1a; --bg3:#0a1226;
+  --border:#111d38; --border2:#162544;
+  --text:#cdd6e8; --text2:#738099; --text3:#3d4b66;
+  --accent:#4d8af0; --green:#00d69e; --amber:#f0a830; --red:#f04668;
+  --accentg:rgba(77,138,240,0.10);
+  --greeng:rgba(0,214,158,0.08);
+  --amberg:rgba(240,168,48,0.08);
+  --redg:rgba(240,70,104,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:"Inter","Segoe UI",system-ui,sans-serif;
+  font-size:13px; line-height:1.5; min-height:100vh;
+}
+body::before{
+  content:''; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse at 15% 0%,rgba(77,138,240,0.05)0%,transparent 55%),
+    radial-gradient(ellipse at 85% 100%,rgba(0,214,158,0.03)0%,transparent 55%);
+}
+.app{max-width:1400px;margin:0 auto;padding:20px 28px 50px;position:relative;z-index:1}
+.header{
+  display:flex;align-items:center;gap:14px;margin-bottom:18px;
+  padding:14px 20px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+}
+.header .logo{font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px}
+.header .logo em{font-style:normal;color:var(--accent)}
+.header .ver{font-size:9px;background:var(--accentg);color:var(--accent);padding:2px 9px;border-radius:8px;letter-spacing:1px;font-weight:600;border:1px solid rgba(77,138,240,0.18)}
+.header .spacer{flex:1}
+.header .demo-badge{font-size:10px;background:var(--amberg);color:var(--amber);padding:5px 14px;border-radius:6px;font-weight:600;border:1px solid rgba(240,168,48,0.15)}
+
+.kpi-row{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:15px 18px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px}
+.kpi:nth-child(1)::after{background:linear-gradient(90deg,var(--accent),transparent)}
+.kpi:nth-child(2)::after{background:linear-gradient(90deg,var(--green),transparent)}
+.kpi .kl{font-size:8px;color:var(--text3);letter-spacing:2.2px;margin-bottom:5px}
+.kpi .kv{font-family:"JetBrains Mono",Consolas,monospace;font-size:22px;font-weight:800;color:#fff}
+.kpi .ks{font-size:10px;color:var(--text2);margin-top:5px}
+
+.pyr-row{display:grid;grid-template-columns:230px 1fr;gap:10px;margin-bottom:16px}
+.pyr-viz{background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:18px 14px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.pyr-viz h3{font-size:9px;color:var(--text3);letter-spacing:2.5px;margin-bottom:12px}
+.pyr-layer{width:100%;text-align:center;padding:9px 6px;border-radius:5px;font-size:9px;font-weight:600}
+.pyr-layer .pv{font-size:16px;font-weight:800}
+.pyr-layer .pl{font-size:7px;opacity:0.55;letter-spacing:1px;margin-top:2px}
+.pyr-layer.bed{background:rgba(77,138,240,0.09);color:var(--accent);width:100%;border:1px solid rgba(77,138,240,0.12)}
+.pyr-layer.core{background:rgba(0,214,158,0.06);color:var(--green);width:72%;border:1px solid rgba(0,214,158,0.10)}
+.pyr-layer.sat{background:rgba(240,168,48,0.06);color:var(--amber);width:48%;border:1px solid rgba(240,168,48,0.10)}
+.pyr-layer.csh{background:rgba(115,128,153,0.04);color:var(--text2);width:32%;border:1px solid rgba(115,128,153,0.08)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.card-h{padding:9px 16px;border-bottom:1px solid var(--border);font-size:8px;font-weight:600;letter-spacing:1.8px;color:var(--text3);background:var(--bg3)}
+.card-b{padding:10px 16px}
+
+.meta{font-size:9.5px;color:var(--text3);text-align:center;margin-top:20px;line-height:1.8}
+.meta a{color:var(--accent);text-decoration:none}
+.g{color:var(--green)}.r{color:var(--red)}.a{color:var(--amber)}
+
+@media(max-width:900px){
+  .pyr-row{grid-template-columns:1fr}
+  .pyr-viz{flex-direction:row;gap:2px;padding:10px}
+  .kpi-row{grid-template-columns:repeat(3,1fr)}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="header">
+  <div class="logo">⚓ <em>Anchor</em></div>
+  <span class="ver">v3.3</span>
+  <span class="spacer"></span>
+  <span class="demo-badge">📋 示例数据</span>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi"><div class="kl">四层金字塔</div><div class="kv" style="color:var(--accent)">45/20/20/15</div><div class="ks">压舱石·核心·卫星·现金</div></div>
+  <div class="kpi"><div class="kl">核心规则</div><div class="kv" style="color:var(--green)">4 条铁律</div><div class="ks">浮亏不加仓·-8%止损·72h冻结·阶梯止盈</div></div>
+  <div class="kpi"><div class="kl">永久禁令</div><div class="kv" style="color:var(--amber)">6 条</div><div class="ks">不转换·不补仓·不当天换·不碰过剩·不定投卫星·不FOMO</div></div>
+  <div class="kpi"><div class="kl">数据源优先级</div><div class="kv" style="color:var(--accent)">5 级</div><div class="ks">mx-data → mx-search → AKShare → WebSearch → App</div></div>
+  <div class="kpi"><div class="kl">版本评分</div><div class="kv" style="color:var(--green)">96</div><div class="ks">v3.3 · 109笔实盘迭代 · 13个月验证</div></div>
+</div>
+
+<div class="pyr-row">
+  <div class="pyr-viz">
+    <h3>四层金字塔</h3>
+    <div class="pyr-layer bed"><div class="pv">🛡️ 45%</div><div class="pl">压舱石·永远不卖</div></div>
+    <div class="pyr-layer core"><div class="pv">🚀 20%</div><div class="pl">核心增长·定投为主</div></div>
+    <div class="pyr-layer sat"><div class="pv">🔥 20%</div><div class="pl">卫星进攻·-8%止损</div></div>
+    <div class="pyr-layer csh"><div class="pv">💰 15%</div><div class="pl">现金预备·暴跌补仓</div></div>
+  </div>
+  <div class="card">
+    <div class="card-h">Rule Check · 规则检查</div>
+    <div class="card-b" style="font-size:11px;line-height:2">
+      <div class="g">✅ -8%止损 · 无触发</div>
+      <div class="g">✅ 止盈线 · 无触发</div>
+      <div class="g">✅ 时间止损 · 未到30天</div>
+      <div class="g">✅ 月操作限额 · 0/4笔</div>
+      <div class="g">✅ 组合回撤 · 安全区间</div>
+      <div class="a">🟡 DDX过滤器 · 等待转正</div>
+      <div class="a">🟡 纳指溢价率 · 等待回落</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <div class="card-h">系统组成</div>
+    <div class="card-b" style="font-size:11px;line-height:1.8">
+      <div>📐 <b>规则手册</b> · 投资规则 v3.3 + 持仓检查清单 + 股票交易规则</div>
+      <div>📊 <b>看板数据</b> · 实时 HTML 看板 + JSON 快照</div>
+      <div>📝 <b>每日复盘</b> · 深度复盘 + 周报 + 月度归因</div>
+      <div>🔧 <b>脚本工具</b> · rebuild.py + sync_all.py + 仓位计算器</div>
+      <div>🌐 <b>可视化网站</b> · Anchor Pro 体系介绍页</div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-h">快速开始</div>
+    <div class="card-b" style="font-size:11px;line-height:2">
+      <div>1. Fork 本仓库</div>
+      <div>2. 用你的持仓替换 <code style="background:var(--bg3);padding:2px 6px;border-radius:3px">portfolio_data_example.json</code></div>
+      <div>3. 重命名为 <code style="background:var(--bg3);padding:2px 6px;border-radius:3px">portfolio_data.json</code></div>
+      <div>4. 运行 <code style="background:var(--bg3);padding:2px 6px;border-radius:3px">python 05-脚本工具/rebuild.py</code></div>
+      <div>5. 双击打开 <code style="background:var(--bg3);padding:2px 6px;border-radius:3px">portfolio_analysis.html</code></div>
+    </div>
+  </div>
+</div>
+
+<div class="meta">
+  ⚓ Anchor v3.3 · <a href="https://github.com/killian99cm/anchor-system">GitHub</a> ·
+  <a href="08-可视化网站/anchor-pro.html">体系总览</a> ·
+  <a href="05-脚本工具/anchor_calculator.html">仓位计算器</a><br>
+  109笔实盘迭代 · 13个月数据验证 · MIT License · 不构成投资建议<br>
+  📋 此看板为脱敏示例，真实数据仅存本地
+</div>
+</div>
+</body>
+</html>

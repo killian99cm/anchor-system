@@ -1,0 +1,78 @@
+{
+  "_example": true,
+  "_note": "这是脱敏示例数据。真实数据仅存本地，不上传GitHub。替换为你的实际数据后运行 rebuild.py。",
+  "update_time": "2026-08-06 15:30",
+  "total_assets": 0,
+  "fund_account": 0,
+  "stock_account": 0,
+  "yuebao": 0,
+  "total_hold_pnl_est": 0,
+  "market": {
+    "sh": { "close": 3900, "change": "+0.57%" },
+    "kc": { "close": 1701, "change": "+0.45%" },
+    "date": "2026-08-06",
+    "day": "周四",
+    "note": "示例数据。替换为你的真实持仓后运行 rebuild.py 生成个人看板。"
+  },
+  "holdings_summary": [
+    {
+      "name": "示例债券基金A",
+      "mv": 0,
+      "pnl": 0,
+      "cumul": 0,
+      "day_pnl": 0,
+      "group": "全局固收",
+      "note": "这是示例。替换为你的实际基金名称和市值。"
+    },
+    {
+      "name": "示例纳指100基金",
+      "mv": 0,
+      "pnl": 0,
+      "cumul": 0,
+      "day_pnl": 0,
+      "group": "全局QDII",
+      "note": "示例。实际数据仅在本地。"
+    },
+    {
+      "name": "示例行业ETF",
+      "mv": 0,
+      "pnl": 0,
+      "cumul": 0,
+      "day_pnl": 0,
+      "group": "进攻组合",
+      "note": "示例。卫星层品种。"
+    },
+    {
+      "name": "余额宝",
+      "mv": 0,
+      "pnl": 0,
+      "cumul": 0,
+      "day_pnl": 0,
+      "group": "现金预备",
+      "note": "现金预备层"
+    }
+  ],
+  "stock_holdings": [],
+  "dca_running": [],
+  "watchlist": [
+    { "rank": 1, "sector": "示例板块", "etf_code": "000000", "trigger": "回调X%", "amount": 0, "status": "🟡 关注" }
+  ],
+  "pending_actions": [
+    { "action": "示例待办", "name": "具体条件→操作", "priority": "示例", "updated": "示例日期" }
+  ],
+  "daily_summaries": [
+    {
+      "date": "2026-08-06",
+      "day": "周四",
+      "shanghai": { "close": 3900, "change": "+0.57%" },
+      "kechuang50": { "close": 1701, "change": "+0.45%" },
+      "market_note": "这是示例。替换为你的每日市场总结。",
+      "portfolio_day_pnl_est": "0",
+      "operations": [{ "op": "持仓不动", "reason": "示例" }]
+    }
+  ],
+  "chart_data": [
+    { "d": "08-01", "sh": 0, "star": 0, "pnl": 0 },
+    { "d": "08-06", "sh": 0, "star": 0, "pnl": 0 }
+  ]
+}

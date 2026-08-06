@@ -1,0 +1,45 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Pages
+        run: |
+          mkdir -p _site
+          # Copy example dashboard as index
+          cp "06-看板数据/portfolio_analysis_example.html" _site/index.html
+          cp "06-看板数据/portfolio_data_example.json" _site/
+          # Copy anchor-pro page
+          cp "08-可视化网站/anchor-pro.html" _site/anchor-pro.html
+          # Copy calculator
+          cp "05-脚本工具/anchor_calculator.html" _site/anchor_calculator.html
+          # Create redirects from old paths
+          mkdir -p _site/06-看板数据
+          cp "06-看板数据/portfolio_analysis_example.html" "_site/06-看板数据/portfolio_analysis.html"
+
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4

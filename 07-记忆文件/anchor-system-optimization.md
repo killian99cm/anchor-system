@@ -1,16 +1,45 @@
 ---
 name: anchor-system-optimization
-description: Anchor v3.3 系统优化全记录：架构、审计12项、智能分类、自动化脚本、git
+description: Anchor v3.3 系统优化全记录：架构、审计12项、智能分类、自动化脚本、端到端测试、git
 metadata: 
   node_type: memory
   type: project
-  modified: 2026-08-07T11:23:45.245Z
+  modified: 2026-08-07T11:40:25.515Z
   originSessionId: 9a3d7c25-5603-4c48-b550-8304fca3ed81
 ---
 
-## Anchor v3.3 系统优化（2026-08-07 · 三阶段）
+## Anchor v3.3 系统优化（2026-08-07 · 四阶段）
 
-### 阶段一：架构重构
+### 阶段四：补齐三大短板（端到端验证 + 动态化 + 回撤预警）
+
+**短板1 smoke_test.py** — 端到端产物验证（23项检查）：
+- rebuild后验证 HTML/快照/Excel 存在性、大小
+- 数据一致性（embed vs JSON total_assets）
+- 桌面 ↔ Anchor 副本一致性
+- 自动运行核心测试套件
+- 运行：`python smoke_test.py`
+
+**短板2 gen_anchor_pro.py** — anchor-pro.html 动态化：
+- 从 portfolio_data.json 生成实时数据块（总资产/四层/持仓）
+- 叙事部分（胜率/教训/规则/演变）完整保留
+- 占位符 `__NARRATIVE__` 机制注入，避免双重闭合 bug
+- 验证：D 对象 JS 执行 OK（15 keys），接入 sync_all
+
+**短板3 drawdown_alert.py** — 回撤预警：
+- 对比当前资产 vs `_meta.peak_assets`
+- 触发 -5%/-10%/-15% 线预警
+- `--check` 退出码：0安全/1黄线/2红线/3数据缺失
+- UTF-8 输出兼容 Windows GBK 终端（sys.stdout.reconfigure）
+- 接入 sync_all
+
+**完整一键流程（sync_all.py）**：
+```
+更新数据 → rebuild → Excel → anchor-pro动态化 → 回撤预警 → 每日快照
+```
+
+**综合评分**：88 → 94（测试覆盖8→9.5、可维护性9→9.5、自动化8→9）
+
+### 阶段三：智能分类 + 自动化脚本
 
 ```
 Before: rebuild.py (700行单体)  →  所有逻辑混在一起

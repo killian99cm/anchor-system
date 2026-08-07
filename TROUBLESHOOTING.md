@@ -33,11 +33,11 @@ pip install requests # 如果需要手动获取数据（rebuild.py 不依赖此�
 python setup.py
 
 # 方式2: 复制示例
-cp 06-看板数据/portfolio_data_example.json portfolio_data.json
+cp 06-dashboard/portfolio_data_example.json portfolio_data.json
 
 # 方式3: 在 Anchor 根目录运行
 cd C:\Users\lenovo\Desktop\Anchor
-python 05-脚本工具/rebuild.py
+python 05-scripts/rebuild.py
 ```
 
 ### `KeyError: 'xxx'`

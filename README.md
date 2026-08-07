@@ -97,7 +97,7 @@
 3. **72h 冷静期** — 任何买入想法强制冻结 72 小时再执行
 4. **阶梯止盈** — +15% 卖 1/3 · +30% 卖 1/2 · +50% 清仓
 
-> ⚠️ **口径说明**：此为股票/ETF 侧通用表述。基金侧（卫星层）以 `01-规则手册/投资规则手册_v3.3_正式版.md` 为准：**+10% 卖 1/3 · +20% 再卖 1/3 · 留 100 份底仓**。两者不冲突，按持仓类型对号入座。
+> ⚠️ **口径说明**：此为股票/ETF 侧通用表述。基金侧（卫星层）以 `01-rules/投资规则手册_v3.3_正式版.md` 为准：**+10% 卖 1/3 · +20% 再卖 1/3 · 留 100 份底仓**。两者不冲突，按持仓类型对号入座。
 
 **六条永久禁令**：
 
@@ -115,7 +115,7 @@
 | 🟡 时间止损 | 买入满 30 天 | 浮亏未改善则清仓 |
 | 🟡 月操作限额 | ≤ 4 笔/月 | 超限冻结至下月 |
 
-> 💡 每次操作前跑一遍[持仓全面检查清单](01-规则手册/持仓全面检查清单.md)，红灯不过不操作
+> 💡 每次操作前跑一遍[持仓全面检查清单](01-rules/持仓全面检查清单.md)，红灯不过不操作
 
 ### 📊 双路数据看板
 
@@ -129,7 +129,7 @@ portfolio_data.json (唯一可编辑数据源)
         │
    ┌────┴────┐
    ▼         ▼
- Desktop/   Anchor/06-看板数据/
+ Desktop/   Anchor/06-dashboard/
  看板HTML    看板HTML (仓库只读副本)
  快照JSON    快照JSON
  Excel       portfolio_data.json
@@ -172,9 +172,9 @@ python setup.py
 # → 按提示输入持仓 → 自动生成数据 → 自动生成看板 ✨
 
 # 方式 B: 手动配置
-cp 06-看板数据/portfolio_data_example.json portfolio_data.json
+cp 06-dashboard/portfolio_data_example.json portfolio_data.json
 # 编辑 portfolio_data.json 填入持仓
-python 05-脚本工具/rebuild.py
+python 05-scripts/rebuild.py
 # 双击 portfolio_analysis.html 查看
 ```
 
@@ -190,15 +190,15 @@ python 05-脚本工具/rebuild.py
 
 ```
 Anchor/
-├── 00-系统管理/         数据更新协议 + 会话检查点
-├── 01-规则手册/         投资规则 v3.3 + 持仓检查清单 + 股票交易规则
-├── 02-策略优化/         历史优化方案、可行性分析
-├── 03-分析报告/         板块分析、市场评估、效果对比
-├── 04-每日复盘/         深度复盘 + 周报 + 月度归因
-├── 05-脚本工具/         rebuild.py · sync_all.py · 仓位计算器
-├── 06-看板数据/         HTML看板 + JSON快照（数据不上传）
-├── 07-记忆文件/         Claude Memory 持久化备份
-├── 08-可视化网站/       Anchor Pro 体系介绍页
+├── 00-system/         数据更新协议 + 会话检查点
+├── 01-rules/         投资规则 v3.3 + 持仓检查清单 + 股票交易规则
+├── 02-strategy/         历史优化方案、可行性分析
+├── 03-analysis/         板块分析、市场评估、效果对比
+├── 04-reviews/         深度复盘 + 周报 + 月度归因
+├── 05-scripts/         rebuild.py · sync_all.py · 仓位计算器
+├── 06-dashboard/         HTML看板 + JSON快照（数据不上传）
+├── 07-memory/         Claude Memory 持久化备份
+├── 08-website/       Anchor Pro 体系介绍页
 └── .github/workflows/   CI 日度检查 + Pages 部署
 ```
 
@@ -270,7 +270,7 @@ Anchor/
 **🎉 系统全面升级**
 
 1. **数据通道打通**
-   - rebuild.py 双路输出：Desktop + Anchor/06-看板数据/ 同时写入
+   - rebuild.py 双路输出：Desktop + Anchor/06-dashboard/ 同时写入
    - portfolio_data.json 自动同步：Desktop(主) → Anchor(只读副本)
    - sync_all.py 完全重写，修复所有路径引用
 
@@ -295,7 +295,7 @@ Anchor/
    - 持仓全面检查清单 / 股票交易规则 更新至 8/6
 
 **🔧 升级说明**（已有本地部署用户）：
-- 必须更新：`rebuild.py`、`sync_all.py`、`06-看板数据/` 下所有文件
+- 必须更新：`rebuild.py`、`sync_all.py`、`06-dashboard/` 下所有文件
 - 可选更新：README.md、.gitignore
 
 <details>
@@ -312,7 +312,7 @@ Anchor/
 
 - AI 投资管理系统架构
 - Claude Memory 持久化体系
-- 07-记忆文件/ 目录建立
+- 07-memory/ 目录建立
 
 ### 2026/05 - v3.0
 

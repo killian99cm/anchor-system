@@ -8,7 +8,7 @@ Anchor 周报自动生成器 (P2-1)
     python gen_weekly_report.py                 # 本周（自动识别最近5个交易日）
     python gen_weekly_report.py --week 08-03    # 指定周起始日期
 输出:
-    04-每日复盘/weekly_report_2026_W{周数}.md
+    04-reviews/weekly_report_2026_W{周数}.md
 """
 import json
 import os
@@ -17,7 +17,7 @@ from datetime import datetime, date, timedelta
 
 DESKTOP = r"C:\Users\lenovo\Desktop"
 DATA_PATH = os.path.join(DESKTOP, "portfolio_data.json")
-KB_DIR = os.path.join(DESKTOP, "Anchor", "04-每日复盘")
+KB_DIR = os.path.join(DESKTOP, "Anchor", "04-reviews")
 
 # 周几中文
 WEEK_CN = ["一", "二", "三", "四", "五", "六", "日"]

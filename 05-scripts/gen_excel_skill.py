@@ -337,7 +337,7 @@ try:
     wb.save(OUT)
     print("OK: " + OUT.name)
     # Anchor copy
-    ANCHOR_OUT = Path(r"C:\Users\lenovo\Desktop\Anchor\06-看板数据\portfolio_holdings.xlsx")
+    ANCHOR_OUT = Path(r"C:\Users\lenovo\Desktop\Anchor\06-dashboard\portfolio_holdings.xlsx")
     try:
         wb.save(ANCHOR_OUT)
         print("OK: " + ANCHOR_OUT.name)

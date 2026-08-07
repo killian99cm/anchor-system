@@ -13,15 +13,15 @@ __pycache__/
 Thumbs.db
 
 # Data cache
-05-脚本工具/mx_cache/*.xlsx
-05-脚本工具/mx_cache/*.json
+05-scripts/mx_cache/*.xlsx
+05-scripts/mx_cache/*.json
 
 # Generated output (from source data)
-06-看板数据/portfolio_analysis.html
-06-看板数据/portfolio_snapshot.json
-06-看板数据/portfolio_data.json
-06-看板数据/portfolio_holdings.xlsx
+06-dashboard/portfolio_analysis.html
+06-dashboard/portfolio_snapshot.json
+06-dashboard/portfolio_data.json
+06-dashboard/portfolio_holdings.xlsx
 
 # mx_cache text files
-05-脚本工具/mx_cache/*.txt
-05-脚本工具/mx_cache/*_description.txt
+05-scripts/mx_cache/*.txt
+05-scripts/mx_cache/*_description.txt

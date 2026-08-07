@@ -144,10 +144,14 @@ Anchor 是一套面向个人投资者的基金投资纪律框架。不是选基�
 |------|------|------|------|
 | `rebuild.py` | `05-脚本工具/` | ⭐ 主生成器：JSON→HTML+快照 | `python rebuild.py` |
 | `sync_all.py` | `05-脚本工具/` | 一键同步所有输出 | `python sync_all.py` |
+| `data_processor.py` | `05-脚本工具/` | 数据层：分类/规则/风险计算 | 被 rebuild 调用 |
+| `gen_excel_skill.py` | `05-脚本工具/` | 生成 10-Sheet Excel | `python gen_excel_skill.py` |
+| `gen_weekly_report.py` | `05-脚本工具/` | 自动生成周报骨架 | `python gen_weekly_report.py` |
+| `gen_monthly_attribution.py` | `05-脚本工具/` | 自动生成月度归因骨架 | `python gen_monthly_attribution.py` |
+| `test_calculations.py` | `05-脚本工具/` | 29 项核心计算测试 | `python test_calculations.py` |
 | `anchor_calculator.html` | `05-脚本工具/` | 仓位计算器 | 浏览器打开 |
-| `anchor_daily_report.py` | `05-脚本工具/` | 每日自动报告 | GitHub Actions 15:30 |
-| `gen_excel_v2.py` | `05-脚本工具/` | 生成Excel | `python gen_excel_v2.py` |
-| `fetch_market.py` | `05-脚本工具/` | 实时行情 | `python fetch_market.py` |
+
+> 旧脚本（anchor_analyzer/fetch_market/pull_market_data/anchor_daily_report）已归档至 `05-脚本工具/归档/`，被 mx-data skill 取代。
 
 ### 输出文件
 

@@ -68,24 +68,64 @@ def monthly_ops_summary(data, year=2026, month=8):
     return len(month_txns), violation_count
 
 
+# group 字段 → 层级（来自 portfolio_data.json，新基金自动归类）
+GROUP_TO_LAYER = {
+    "全局固收": "bedrock",
+    "核心增长": "core",
+    "全局QDII": "core",
+    "进攻组合": "sat",
+    "现金预备": "cash",
+}
+# 兜底：未知 group 时按关键词判断
+KEYWORD_TO_LAYER = [
+    ("债券", "bedrock"), ("黄金", "bedrock"), ("红利", "bedrock"), ("红利ETF", "bedrock"),
+    ("QDII", "core"), ("混合", "core"), ("纳指", "core"),
+    ("半导体", "sat"), ("创新药", "sat"), ("证券", "sat"), ("芯片", "sat"),
+]
+
+
+def resolve_layer(name, group):
+    """Determine layer from: group field → ANCHOR_MAP override → keyword fallback.
+    Returns (layer, tag, tc) or None if unresolvable."""
+    # 1. ANCHOR_MAP 精确覆盖（最高优先，允许修正 group 偏差）
+    if name in ANCHOR_MAP:
+        return ANCHOR_MAP[name]
+    # 2. group 字段（数据驱动，新基金自动归类）
+    if group and group in GROUP_TO_LAYER:
+        layer = GROUP_TO_LAYER[group]
+        tag = "自动" if layer in ("sat",) else ""
+        tc = {"bedrock": "tag-b", "core": "tag-g", "sat": "tag-a", "cash": "tag-g"}[layer]
+        return (layer, tag, tc)
+    # 3. 关键词兜底
+    for kw, layer in KEYWORD_TO_LAYER:
+        if kw in name:
+            return (layer, "", {"bedrock": "tag-b", "core": "tag-g", "sat": "tag-a", "cash": "tag-g"}[layer])
+    return None
+
+
 def process_holdings(raw_holdings, stocks):
-    """Process holdings into four-layer structure."""
+    """Process holdings into four-layer structure.
+    P1-1: 智能分类 — 优先 group 字段(JSON)，ANCHOR_MAP 精确覆盖，关键词兜底。"""
     bedrock, core, sat, cash = [], [], [], []
+    dropped = []
 
     for h in raw_holdings:
         name = h.get('name', '')
         mv = h.get('mv', 0) or 0
         if mv <= 0:
             continue
-        layer_info = ANCHOR_MAP.get(name)
+        group = h.get('group', '')
+        layer_info = resolve_layer(name, group)
         if not layer_info:
+            dropped.append(name)
             continue
         layer, tag, tc = layer_info
         pnl = safe_float(h.get('pnl', 0))
         dp = safe_float(h.get('day_pnl', 0))
         item = {
             "n": name, "mv": round(mv, 2), "pnl": round(pnl, 2),
-            "dp": round(dp, 2), "tag": tag, "tc": tc
+            "dp": round(dp, 2), "tag": tag, "tc": tc,
+            "src": "map" if name in ANCHOR_MAP else ("group" if group else "kw")
         }
         if layer == 'bedrock':
             bedrock.append(item)
@@ -106,10 +146,10 @@ def process_holdings(raw_holdings, stocks):
         bedrock.append({
             "n": s.get('name', '515180'), "mv": round(mv, 2),
             "pnl": round(pnl, 2), "dp": round(dp, 2),
-            "tag": "永远不卖", "tc": "tag-b", "st": 1
+            "tag": "永远不卖", "tc": "tag-b", "st": 1, "src": "stock"
         })
 
-    return bedrock, core, sat, cash
+    return bedrock, core, sat, cash, dropped
 
 
 def compute_totals(bedrock, core, sat, cash):
@@ -294,6 +334,32 @@ def prepare_chart_data(data):
     return chart_out
 
 
+def generate_today_conclusion(rules, pa):
+    """Generate 今日结论 (P1-2). Returns dict for HTML top strip.
+    Data-driven from rules (rr/ra/rg) + pending_actions priorities."""
+    rr = [r for r in rules if r.get('lv') == 'rr']
+    ra = [r for r in rules if r.get('lv') == 'ra']
+    rg = [r for r in rules if r.get('lv') == 'rg']
+    pa_core = [p for p in pa if '🔴' in str(p.get('p', ''))]
+    pa_all = pa
+
+    if rr:
+        return {
+            "cls": "rr", "ic": "🔴", "tag": "需要行动",
+            "tx": rr, "warn": ra, "pa_core": len(pa_core), "pa_total": len(pa_all)
+        }
+    if ra:
+        return {
+            "cls": "ra", "ic": "🟡", "tag": "关注即可",
+            "tx": ra, "warn": [], "pa_core": len(pa_core), "pa_total": len(pa_all)
+        }
+    return {
+        "cls": "rg", "ic": "✅", "tag": "无需操作",
+        "tx": rg or [{"lv": "rg", "t": "全部绿灯 · 今日没有必须做的事，持有等待"}],
+        "warn": [], "pa_core": len(pa_core), "pa_total": len(pa_all)
+    }
+
+
 def validate_data(data):
     """Validate portfolio_data.json. Returns list of warnings."""
     warnings = []
@@ -314,10 +380,12 @@ def process_all(data):
     # Validate
     warnings = validate_data(data)
 
-    # Holdings
+    # Holdings (P1-1 智能分类)
     raw = data.get('holdings_summary', [])
     stocks = data.get('stock_holdings', [])
-    bedrock, core, sat, cash = process_holdings(raw, stocks)
+    bedrock, core, sat, cash, dropped = process_holdings(raw, stocks)
+    for d in dropped:
+        warnings.append(f"持仓无法归类，已跳过: {d}")
 
     # Totals
     totals = compute_totals(bedrock, core, sat, cash)
@@ -377,6 +445,7 @@ def process_all(data):
         "wl": data.get('watchlist', []),
         "pa": data.get('pending_actions', []),
         "risks": risks,
+        "today": generate_today_conclusion(rules, data.get('pending_actions', [])),
         "ds": ds_out,
         "chart": chart_out,
         "_warnings": warnings,

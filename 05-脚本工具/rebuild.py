@@ -136,6 +136,22 @@ body::before{{
 .kpi .kv{{font-family:"JetBrains Mono","Cascadia Code",Consolas,monospace;font-size:22px;font-weight:800;color:#fff;line-height:1.1}}
 .kpi .kv .ku{{font-size:11px;font-weight:400;opacity:0.4;margin-left:1px}}
 .kpi .ks{{font-size:10px;color:var(--text2);margin-top:5px;line-height:1.4}}
+.today-v{{
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;
+  padding:12px 16px;background:var(--bg2);border:1px solid var(--border);
+  border-left:3px solid var(--green);border-radius:8px;
+  font-size:12.5px;line-height:1.6;
+}}
+.today-v .tv-ic{{font-size:16px}}
+.today-v .tv-tx{{flex:1}}
+.today-v .tv-tx b{{color:#fff}}
+.today-v.rr{{border-left-color:var(--red);background:var(--redg)}}
+.today-v.ra{{border-left-color:var(--amber);background:var(--amberg)}}
+.today-v.rg{{border-left-color:var(--green);background:var(--greeng)}}
+.today-v .tv-tag{{font-size:9px;padding:2px 8px;border-radius:6px;letter-spacing:1px;font-weight:700;white-space:nowrap}}
+.today-v.rr .tv-tag{{background:var(--red);color:#fff}}
+.today-v.ra .tv-tag{{background:var(--amber);color:#000}}
+.today-v.rg .tv-tag{{background:var(--green);color:#000}}
 
 .pyr-row{{display:grid;grid-template-columns:230px 1fr;gap:10px;margin-bottom:16px}}
 .pyr-viz{{
@@ -256,6 +272,7 @@ body::before{{
   <div class="clock" id="clock">--</div>
 </div>
 <div class="kpi-row" id="kpi"></div>
+<div class="today-v" id="todayv"></div>
 <div class="pyr-row">
   <div class="pyr-viz" id="pyramid"></div>
   <div class="hp">
@@ -334,6 +351,21 @@ function rate(pnl,mv){{if(!mv||mv===pnl)return 0;return pnl/(mv-pnl)*100}}
   var vo=D.violations||0, vt=(vo===0?'零违规 · 满分':vo+'次违规！');
   h+='<div class="kpi"><div class="kl">August Ops</div><div class="kv '+(D.aug_ops>0?'': '')+'" style="color:'+(vo===0?'var(--green)':'var(--red)')+'">'+D.aug_ops+'<span class="ku">/'+D.aug_ops_max+'</span></div><div class="ks">'+vt+'</div></div>';
   document.getElementById("kpi").innerHTML=h;
+}})();
+
+(function(){{
+  var rules=D.rules||[],pa=D.pa||[];
+  var t=D.today||{{cls:"rg",ic:"✅",tag:"无需操作",tx:[],warn:[],pa_core:0,pa_total:0}};
+  var el=document.getElementById("todayv");
+  if(!el)return;
+  var tx=(t.tx||[]).map(function(r){{return "<b>"+(r.t||"")+"</b>";}}).join("<br>");
+  if((t.warn||[]).length>0)tx+="<br>🟡 同时关注："+(t.warn||[]).map(function(r){{return r.t;}}).join(" · ");
+  var paTx="";
+  if(t.pa_total>0){{
+    paTx='<div style="margin-top:6px;color:var(--text2);font-size:11px">📋 待办 '+(t.pa_core||0)+'🔴 / '+t.pa_total+'项：'+(D.pa||[]).slice(0,3).map(function(p){{return p.p||"";}}).join(" · ")+'</div>';
+  }}
+  el.className="today-v "+t.cls;
+  el.innerHTML='<span class="tv-ic">'+(t.ic||"✅")+'</span><div class="tv-tx">'+tx+paTx+'</div><span class="tv-tag">'+(t.tag||"")+'</span>';
 }})();
 
 (function(){{

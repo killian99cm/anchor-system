@@ -4,361 +4,362 @@
   <img src="https://img.shields.io/badge/⚓_Anchor-v3.3-4d8af0?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0id2hpdGUiIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0wIDNjNC40MSAwIDggMy41OSA4IDhzLTMuNTkgOC04IDgtOC0zLjU5LTgtOCAzLjU5LTggOC04em0wIDJjLTMuMzEgMC02IDIuNjktNiA2czIuNjkgNiA2IDYgNi0yLjY5IDYtNi0yLjY5LTYtNi02em0wIDFjMi43NiAwIDUgMi4yNCA1IDVzLTIuMjQgNS01IDUtNS0yLjI0LTUtNSAyLjI0LTUgNS01em0wIDJjLTEuNjYgMC0zIDEuMzQtMyAzczEuMzQgMyAzIDMgMy0xLjM0IDMtMy0xLjM0LTMtMy0zem0wIDJjLjU1IDAgMSAuNDUgMSAxcy0uNDUgMS0xIDEtMS0uNDUtMS0xIC40NS0xIDEtMXoiLz48L3N2Zz4=" alt="Anchor v3.3" height="36">
 </a>
 
-🚀 规则驱动的个人投资管理系统 —— **用规则管住手，用数据代替直觉**
+🚀 Rules-driven personal investment management system — **Discipline over impulse, data over intuition**
 
 [![GitHub Stars](https://img.shields.io/github/stars/killian99cm/anchor-system?style=flat-square&logo=github&color=yellow)](https://github.com/killian99cm/anchor-system/stargazers)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
 [![Version](https://img.shields.io/badge/version-v3.3-blue.svg)](https://github.com/killian99cm/anchor-system)
-[![Trades](https://img.shields.io/badge/实盘-109笔-00d69e?style=flat-square)](https://github.com/killian99cm/anchor-system)
-[![Period](https://img.shields.io/badge/验证-13个月-f0a830?style=flat-square)](https://github.com/killian99cm/anchor-system)
+[![Trades](https://img.shields.io/badge/live_trades-109-00d69e?style=flat-square)](https://github.com/killian99cm/anchor-system)
+[![Period](https://img.shields.io/badge/validated-13_months-f0a830?style=flat-square)](https://github.com/killian99cm/anchor-system)
 
-[![数据源-mxdata](https://img.shields.io/badge/数据源-mx_data_API-4d8af0?style=flat-square)](https://data.eastmoney.com/)
-[![看板-零依赖](https://img.shields.io/badge/看板-纯HTML/零依赖-00d69e?style=flat-square)](https://killian99cm.github.io/anchor-system)
-[![分析-自动](https://img.shields.io/badge/分析-自动-f04668?style=flat-square)](https://github.com/killian99cm/anchor-system)
-[![自动化-GitHub Actions](https://img.shields.io/badge/自动化-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)](https://github.com/killian99cm/anchor-system/actions)
-[![部署-GitHub Pages](https://img.shields.io/badge/演示-GitHub_Pages-4285F4?style=flat-square&logo=github)](https://killian99cm.github.io/anchor-system)
+[![Data-mxdata](https://img.shields.io/badge/data-mx_data_API-4d8af0?style=flat-square)](https://data.eastmoney.com/)
+[![Dashboard-zero-dep](https://img.shields.io/badge/dashboard-HTML_zero_deps-00d69e?style=flat-square)](https://killian99cm.github.io/anchor-system)
+[![Analysis-auto](https://img.shields.io/badge/analysis-automated-f04668?style=flat-square)](https://github.com/killian99cm/anchor-system)
+[![CI-GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)](https://github.com/killian99cm/anchor-system/actions)
+[![Demo-GitHub Pages](https://img.shields.io/badge/demo-GitHub_Pages-4285F4?style=flat-square&logo=github)](https://killian99cm.github.io/anchor-system)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
 
 </div>
 
 <div align="center">
 
-**中文** | **[English](README-EN.md)**
+**[English](README.md)** | **[中文](README.zh-CN.md)**
 
 </div>
 
-> 💡 **这是什么**：一套把投资纪律变成可执行代码的个人系统。不是选股策略、不是 AI 自动交易、不推荐具体产品。
+> 💡 **What this is**: A personal system that turns investment discipline into executable code. Not a stock-picking strategy, not AI auto-trading, and does not recommend specific products.
 
 <details>
-<summary>🗺️ 点击展开：<strong>项目全景速览</strong></summary>
+<summary>🗺️ Click to expand: <strong>Project at a Glance</strong></summary>
 <br>
 
-| 维度 | 内容 |
+| Dimension | Content |
 |:--|:--|
-| 🎯 **目标** | 用规则消除情绪化交易，用量化清单替代直觉决策 |
-| 🏗️ **架构** | 四层金字塔（压舱石45% / 核心增长20% / 卫星进攻20% / 现金预备15%） |
-| 📜 **规则** | 4条铁律 + 6条永久禁令 + 月度操作限额 + 阶梯止盈 |
-| 📊 **数据** | mx-data API → rebuild.py → 双路输出看板（桌面 + 仓库副本） |
-| 🧠 **分析** | 每日复盘、仓位点检、周报生成、月度归因 |
-| 🔄 **节奏** | 实时行情 / 每日更新 / 每周点检 / 每月归因 |
+| 🎯 **Goal** | Eliminate emotional trading with rules; replace gut-feel decisions with quantitative checklists |
+| 🏗️ **Architecture** | Four-layer pyramid (Bedrock 45% / Core Growth 20% / Satellite 20% / Cash Reserve 15%) |
+| 📜 **Rules** | 4 iron laws + 6 permanent bans + monthly trade cap + tiered take-profit |
+| 📊 **Data** | mx-data API → rebuild.py → dual-output dashboard (Desktop + repo copy) |
+| 🧠 **Analysis** | Daily review, position check, weekly report, monthly attribution |
+| 🔄 **Cadence** | Real-time quotes / daily updates / weekly checks / monthly attribution |
 
 </details>
 
 <br>
 
-## 📑 快速导航
+## 📑 Quick Navigation
 
 <div align="center">
 
-| [🧠 核心理念](#-核心理念) | [📜 规则体系](#-规则体系) | [⚡ 快速开始](#-快速开始) | [📂 目录结构](#-目录结构) | [📊 数据更新](#-数据更新节奏) |
+| [🧠 Philosophy](#-core-philosophy) | [📜 Rules](#-rule-engine) | [⚡ Quick Start](#-quick-start) | [📂 Structure](#-directory-structure) | [📊 Data Flow](#-data-update-cadence) |
 |:---:|:---:|:---:|:---:|:---:|
-| [🏗️ 系统架构](#️-系统架构) | [📈 版本演进](#-版本演进) | [🧠 分析系统](#-ai-分析系统) | [🌐 在线演示](#-在线演示) | [📝 更新日志](#-更新日志) |
-| [❓ FAQ](FAQ.md) | [🔧 故障排查](TROUBLESHOOTING.md) | [English](README-EN.md) | [🤝 贡献](CONTRIBUTING.md) | [📄 License](LICENSE) |
+| [🏗️ Architecture](#️-system-architecture) | [📈 Evolution](#-version-history) | [🧠 Analysis](#-analysis-system) | [🌐 Demo](#-live-demo) | [📝 Changelog](#-changelog) |
+| [❓ FAQ](FAQ.md) | [🔧 TROUBLESHOOTING](TROUBLESHOOTING.md) | [中文](README.zh-CN.md) | [🤝 Contributing](CONTRIBUTING.md) | [📄 License](LICENSE) |
 
 </div>
 
 <br>
 
-## ✨ 核心功能
+## ✨ Core Features
 
-### 🏗️ 四层金字塔体系
+### 🏗️ Four-Layer Pyramid
 
 ```
        ┌──────────────────────────────────┐
- 20%   │  🔥 卫星进攻     -8% 硬止损       │  波段交易
-       │  行业ETF + 个股   不补仓不转换     │  高赔率下注
+ 20%   │  🔥 Satellite      -8% hard stop  │   Swing trading
+       │  Sector ETFs       No averaging    │   High-conviction bets
        ├──────────────────────────────────┤
- 20%   │  🚀 核心增长     定投 + 大跌补仓   │  长期成长
-       │  宽基指数 + QDII  低估时逐步建仓   │  穿越周期
+ 20%   │  🚀 Core Growth     DCA + dip buy  │   Long-term growth
+       │  Broad indices     Accumulate low  │   Through cycles
        ├──────────────────────────────────┤
- 45%   │  🛡️ 压舱石       永远不卖         │  组合基石
-       │  债券 + 固收      每季再平衡      │  稳定收益
+ 45%   │  🛡️ Bedrock         Never sell      │   Portfolio anchor
+       │  Bonds + Fixed     Quarterly rebal │   Stable yield
        ├──────────────────────────────────┤
- 15%   │  💰 现金预备     暴跌补仓弹药      │  灵活机动
-       │  余额宝/货基     保持流动性       │  等待机会
+ 15%   │  💰 Cash Reserve    Crash ammo      │   Tactical reserve
+       │  Money market      Stay liquid     │   Wait for opportunity
        └──────────────────────────────────┘
 ```
 
-| 层级 | 目标 | 仓位 | 管理规则 | 当前品种 |
+| Layer | Goal | Target | Rules | Current Holdings |
 |:--|:--|:--:|:--|:--|
-| 🛡️ 压舱石 | 稳定收益、防回撤 | **45%** | 永远不卖，每季再平衡 | 债券×2 + 黄金 |
-| 🚀 核心增长 | 长期增值 | **20%** | 定投为主，大跌补仓 | 混合基金 + 纳指×2 |
-| 🔥 卫星进攻 | 波段增强 | **20%** | -8% 硬止损，浮亏不加仓 | 半导体 + 证券 + 创新药 |
-| 💰 现金预备 | 流动性 + 抄底 | **15%** | 余额宝/货基，暴跌时动用 | 余额宝 |
+| 🛡️ Bedrock | Stable return, drawdown defense | **45%** | Never sell, quarterly rebalance | Bonds×2 + Gold |
+| 🚀 Core Growth | Long-term appreciation | **20%** | DCA primary, buy dips | Mixed fund + Nasdaq×2 |
+| 🔥 Satellite | Swing enhancement | **20%** | -8% hard stop, no averaging down | Semi + Securities + Pharma |
+| 💰 Cash Reserve | Liquidity + crash reserve | **15%** | Money market, deploy on crash | Yu'e Bao |
 
-> 💡 四层比例每月检查一次，偏离超过 5% 时触发再平衡
+> 💡 Check layer weights monthly; trigger rebalancing when deviation exceeds 5%
 
-### 📜 量化规则引擎
+### 📜 Quantified Rule Engine
 
-**四条铁律**：
+**Four Iron Laws**:
 
-1. **浮亏不加仓** — 只平仓、不补仓、不转换，杜绝越跌越买
-2. **-8% 硬止损** — 卫星层触及即砍，不考虑「反弹预期」
-3. **72h 冷静期** — 任何买入想法强制冻结 72 小时再执行
-4. **阶梯止盈** — +15% 卖 1/3 · +30% 卖 1/2 · +50% 清仓
+1. **No averaging down on losers** — Close only, no adding, no converting. No throwing good money after bad.
+2. **-8% hard stop** — Satellite layer: cut immediately on breach, no "bounce expectation" excuses.
+3. **72h cooling-off** — Every buy idea frozen for 72 hours before execution.
+4. **Tiered take-profit** — +15% sell 1/3 · +30% sell 1/2 · +50% close all
 
-> ⚠️ **口径说明**：此为股票/ETF 侧通用表述。基金侧（卫星层）以 `01-rules/投资规则手册_v3.3_正式版.md` 为准：**+10% 卖 1/3 · +20% 再卖 1/3 · 留 100 份底仓**。两者不冲突，按持仓类型对号入座。
+> ⚠️ **Note**: The above is the stock/ETF-side formula. Fund-side (Satellite layer) follows `01-rules/投资规则手册_v3.3_正式版.md`: **+10% sell 1/3 · +20% sell another 1/3 · keep 100-unit trail**. The two sets don't conflict — apply by holding type.
 
-**六条永久禁令**：
+**Six Permanent Bans**:
 
 ```
-🚫 不转换    🚫 不补仓      🚫 不当天换仓
-🚫 不碰过剩  🚫 不定投卫星  🚫 不 FOMO 追涨
+🚫 No converting   🚫 No averaging losers  🚫 No same-day swap
+🚫 No overcapacity  🚫 No DCA on satellite   🚫 No FOMO chasing
 ```
 
-**v3.3 新增过滤器**：
+**v3.3 New Filters**:
 
-| 过滤器 | 条件 | 效果 |
+| Filter | Condition | Effect |
 |:--|:--|:--|
-| 🔴 DDX 过滤器 | 半导体 DDX 连 2 日为正 | 才允许补仓 |
-| 🔴 纳指溢价率 | 溢价率 ≤ 3% | 才允许建仓场内纳指 |
-| 🟡 时间止损 | 买入满 30 天 | 浮亏未改善则清仓 |
-| 🟡 月操作限额 | ≤ 4 笔/月 | 超限冻结至下月 |
+| 🔴 DDX Filter | Semiconductor DDX positive 2 consecutive days | Only then allow adding |
+| 🔴 Nasdaq Premium | Premium rate ≤ 3% | Only then allow opening |
+| 🟡 Time Stop | Held 30 days | Close if loss not improving |
+| 🟡 Monthly Cap | ≤ 4 trades/month | Freeze until next month if exceeded |
 
-> 💡 每次操作前跑一遍[持仓全面检查清单](01-rules/持仓全面检查清单.md)，红灯不过不操作
+> 💡 Run through the [Position Checklist](01-rules/持仓全面检查清单.md) before every trade — red light means no go.
 
-### 📊 双路数据看板
+### 📊 Dual-Output Data Dashboard
 
-`rebuild.py` 一键生成，Desktop + 仓库副本同时输出：
+`rebuild.py` one-click generation, outputs to both Desktop and repo copy:
 
 ```
-portfolio_data.json (唯一可编辑数据源)
+portfolio_data.json (single editable data source)
         │
         ▼
-   rebuild.py ◀── 市场数据自动注入
+   rebuild.py ◀── Auto-injected market data
         │
    ┌────┴────┐
    ▼         ▼
  Desktop/   Anchor/06-dashboard/
- 看板HTML    看板HTML (仓库只读副本)
- 快照JSON    快照JSON
+ Dashboard   Dashboard (repo read-only copy)
+ Snapshot    Snapshot
  Excel       portfolio_data.json
 ```
 
-> 💡 **数据新鲜度报告**：rebuild 输出含市场数据年龄、规则警报、时间止损倒计时
+> 💡 **Data freshness report**: rebuild output includes market data age, rule alerts, time-stop countdown
 
-### 🧠 分析系统
+### 🧠 Analysis System
 
-内置分析助手，支持自然语言交互：
+Built-in analysis assistant, natural language interaction:
 
-- **📋 仓位点检**：说"仓位点检"，自动四层占比核对 + 红灯扫描
-- **📝 每日复盘**：说"更新今日数据"，mx-data 获取收盘 → 更新 JSON → rebuild
-- **📈 周报生成**：说"生成周报"，自动汇总本周操作 + 收益 + 规则触发
-- **🔍 月度归因**：说"月度归因"，完整月度收益拆解 + 规则审议 + 版本升级
-- **🔄 会话连续性**：说"继续"，读取会话检查点，秒级恢复上次上下文
+- **📋 Position Check**: Say "仓位点检", auto four-layer weight check + red-light scan
+- **📝 Daily Review**: Say "更新今日数据", mx-data fetches close → updates JSON → rebuild
+- **📈 Weekly Report**: Say "生成周报", auto-summarizes weekly trades + returns + rule triggers
+- **🔍 Monthly Attribution**: Say "月度归因", full monthly P&L decomposition + rule review + version upgrade
+- **🔄 Session Continuity**: Say "继续", reads session checkpoint, restores context in seconds
 
-### 🌐 在线演示看板
+### 🌐 Live Demo Dashboard
 
-GitHub Pages 自动部署，纯 HTML 深色终端风，零外部依赖：
+GitHub Pages auto-deploy, pure HTML dark terminal style, zero external dependencies:
 
-> 📋 **[在线演示 →](https://killian99cm.github.io/anchor-system)** 查看脱敏示例看板
+> 📋 **[Live Demo →](https://killian99cm.github.io/anchor-system)** View the anonymized sample dashboard
 
-| 看板功能 | 说明 |
+| Dashboard Feature | Description |
 |:--|:--|
-| 📊 KPI 卡片 | 四层占比、规则状态、版本评分 |
-| 🏗️ 金字塔可视化 | 四层比例图形化展示 |
-| 🚦 规则检查面板 | 实时显示各规则触发状态 |
-| 📈 收益走势图 | 每日 PnL + 大盘叠加对比 |
-| ⚠️ 待办追踪 | DDX/溢价率/时间止损倒计时 |
+| 📊 KPI Cards | Four-layer weights, rule status, version score |
+| 🏗️ Pyramid Viz | Graphical four-layer ratio display |
+| 🚦 Rule Check Panel | Real-time rule trigger status |
+| 📈 P&L Chart | Daily PnL + benchmark overlay |
+| ⚠️ Todo Tracker | DDX / premium rate / time-stop countdown |
 
-### 🔧 零门槛使用
+### 🔧 Zero-Friction Setup
 
 ```bash
 git clone https://github.com/killian99cm/anchor-system.git
 cd anchor-system
 
-# 方式 A: 交互式配置（推荐新手！）
+# Option A: Interactive setup (recommended for beginners!)
 python setup.py
-# → 按提示输入持仓 → 自动生成数据 → 自动生成看板 ✨
+# → Enter your holdings as prompted → auto-generates data → auto-generates dashboard ✨
 
-# 方式 B: 手动配置
+# Option B: Manual setup
 cp 06-dashboard/portfolio_data_example.json portfolio_data.json
-# 编辑 portfolio_data.json 填入持仓
+# Edit portfolio_data.json with your holdings
 python 05-scripts/rebuild.py
-# 双击 portfolio_analysis.html 查看
+# Open portfolio_analysis.html in your browser
 ```
 
-> 💡 **遇到问题？** → [FAQ](FAQ.md) | [故障排查](TROUBLESHOOTING.md) | [English README](README-EN.md)
+> 💡 **Stuck?** → [FAQ](FAQ.md) | [TROUBLESHOOTING](TROUBLESHOOTING.md) | [中文文档](README.zh-CN.md)
 
-**适用人群**：个人投资者、基金定投用户、想建立交易纪律的新手
+**For**: Individual investors, fund DCA users, beginners building trading discipline
 
-**典型场景**：每日收盘更新、每周仓位检查、每月收益归因、新机会评估
+**Typical workflow**: Daily close update, weekly position check, monthly P&L attribution, new opportunity evaluation
 
 <br>
 
-## 📂 目录结构
+## 📂 Directory Structure
 
 ```
 Anchor/
-├── 00-system/         数据更新协议 + 会话检查点
-├── 01-rules/         投资规则 v3.3 + 持仓检查清单 + 股票交易规则
-├── 02-strategy/         历史优化方案、可行性分析
-├── 03-analysis/         板块分析、市场评估、效果对比
-├── 04-reviews/         深度复盘 + 周报 + 月度归因
-├── 05-scripts/         rebuild.py · sync_all.py · 仓位计算器
-├── 06-dashboard/         HTML看板 + JSON快照（数据不上传）
-├── 07-memory/         Claude Memory 持久化备份
-├── 08-website/       Anchor Pro 体系介绍页
-└── .github/workflows/   CI 日度检查 + Pages 部署
+├── 00-system/         Data update protocol + session checkpoint
+├── 01-rules/          Investment rules v3.3 + position checklist + stock rules
+├── 02-strategy/       Historical optimizations, feasibility analyses
+├── 03-analysis/       Sector analysis, market assessment, performance comparison
+├── 04-reviews/        Deep reviews + weekly reports + monthly attribution
+├── 05-scripts/        rebuild.py · sync_all.py · position calculator
+├── 06-dashboard/      HTML dashboard + JSON snapshots (data not uploaded)
+├── 07-memory/         Claude Memory persistent backup
+├── 08-website/        Anchor Pro system overview page
+└── .github/workflows/ CI daily check + Pages deploy
 ```
 
 <br>
 
-## 🏗️ 系统架构
+## 🏗️ System Architecture
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                    数据采集层                         │
-│  mx-data API (主力)  │  AKShare (备用)  │  WebSearch  │
+│                  Data Collection Layer                 │
+│  mx-data API (primary) │  AKShare (fallback) │ Web    │
 └────────────────────────┬─────────────────────────────┘
                          │
                          ▼
 ┌──────────────────────────────────────────────────────┐
-│                  数据处理层                           │
-│  portfolio_data.json ──→ rebuild.py ──→ 双路输出     │
-│  (唯一可编辑源)          (核心引擎)      Desktop+副本  │
+│                  Data Processing Layer                 │
+│  portfolio_data.json ──→ rebuild.py ──→ dual output  │
+│  (single editable src)    (core engine)   Desktop+repo│
 └────────────────────────┬─────────────────────────────┘
                          │
           ┌──────────────┼──────────────┐
           ▼              ▼              ▼
     ┌──────────┐  ┌──────────┐  ┌──────────┐
-    │ HTML看板 │  │ JSON快照 │  │  Excel   │
-    │ 深色终端 │  │ 双副本   │  │ 桌面版   │
+    │ HTML     │  │ JSON     │  │  Excel   │
+    │ Dashboard│  │ Snapshot │  │  Desktop │
+    │ Dark UI  │  │ Dual copy│  │          │
     └──────────┘  └──────────┘  └──────────┘
           │
           ▼
 ┌──────────────────────────────────────────────────────┐
-│                  分析层 (自动)                          │
-│  每日复盘 │ 仓位点检 │ 周报生成 │ 月度归因 │ 机会评估  │
+│                  Analysis Layer (auto)                 │
+│  Daily review │ Position check │ Weekly │ Monthly     │
 └──────────────────────────────────────────────────────┘
 ```
 
 <br>
 
-## 📊 数据更新节奏
+## 📊 Data Update Cadence
 
-| 频率 | 操作 | 触发方式 | 命令 |
+| Frequency | Action | Trigger | Command |
 |:--:|------|------|:--|
-| ⚡ 实时 | 查询行情/DDX/溢价率 | `mx-data` API | `用 mx-data 获取XXX` |
-| 📅 每日 | 更新收盘数据 → rebuild | 手动或 CI | `更新今日数据` |
-| 📋 每周 | 仓位点检 + 周报 | 对 Claude 说 | `仓位点检` / `生成周报` |
-| 📈 每月 | 月度归因 + 规则审议 | 对 Claude 说 | `月度归因` |
+| ⚡ Real-time | Query quotes/DDX/premium | `mx-data` API | `用 mx-data 获取XXX` |
+| 📅 Daily | Update close data → rebuild | Manual or CI | `更新今日数据` |
+| 📋 Weekly | Position check + weekly report | Tell Claude | `仓位点检` / `生成周报` |
+| 📈 Monthly | Attribution + rule review | Tell Claude | `月度归因` |
 
 <br>
 
-## 📈 版本演进
+## 📈 Version History
 
-| 版本 | 日期 | 里程碑 |
+| Version | Date | Milestone |
 |:--|:--|:--|
-| v0.1 | 2025.06 | 初始持仓记录，手工 Excel |
-| v1.0 | 2025.08 | 三层结构 + 基础买卖规则 |
-| v2.0 | 2025.11 | 四层金字塔 + 双轨策略成型 |
-| v2.5 | 2026.03 | FDIS 引入 + 首版正式规则手册 |
-| v3.0 | 2026.05 | 全面重构：负面清单 + 进化机制 |
-| v3.1 | 2026.06 | AI 管理系统 + Claude Memory 体系 |
-| v3.2 | 2026.07 | DDX 过滤器 + 月度归因体系 |
-| **v3.3** | **2026.08** | **双路数据输出 + 会话连续性 + 四级数据协议** |
+| v0.1 | 2025.06 | Initial holdings record, manual Excel |
+| v1.0 | 2025.08 | Three-layer structure + basic buy/sell rules |
+| v2.0 | 2025.11 | Four-layer pyramid + dual-track strategy |
+| v2.5 | 2026.03 | FDIS introduced + first formal rule manual |
+| v3.0 | 2026.05 | Full rebuild: negative checklist + evolution mechanism |
+| v3.1 | 2026.06 | AI management system + Claude Memory framework |
+| v3.2 | 2026.07 | DDX filter + monthly attribution system |
+| **v3.3** | **2026.08** | **Dual-output data + session continuity + 4-tier data protocol** |
 
-> 💡 详细版本变更见 [CHANGELOG.md](CHANGELOG.md)
+> 💡 See [CHANGELOG.md](CHANGELOG.md) for detailed version history
 
 <br>
 
-## 📝 更新日志
+## 📝 Changelog
 
 ### 2026/08/06 - v3.3
 
-**🎉 系统全面升级**
+**🎉 Major System Upgrade**
 
-1. **数据通道打通**
-   - rebuild.py 双路输出：Desktop + Anchor/06-dashboard/ 同时写入
-   - portfolio_data.json 自动同步：Desktop(主) → Anchor(只读副本)
-   - sync_all.py 完全重写，修复所有路径引用
+1. **Data Pipeline**
+   - rebuild.py dual output: Desktop + Anchor/06-dashboard/ simultaneous writes
+   - portfolio_data.json auto-sync: Desktop (primary) → Anchor (read-only copy)
+   - sync_all.py fully rewritten with all path references fixed
 
-2. **可视化升级**
-   - 看板 HTML Premium 深色终端风重写
-   - anchor-pro.html 数据驱动重写（27.8KB → 31.5KB）
-   - 三层 HTML 导航链接全部打通
+2. **Visualization Upgrade**
+   - Dashboard HTML rewritten in Premium dark terminal style
+   - anchor-pro.html rewritten as data-driven (27.8KB → 31.5KB)
+   - Three-tier HTML navigation links all connected
 
-3. **新增系统文件**
-   - `数据更新协议.md`：实时/每日/每周/每月四级更新体系
-   - `会话检查点.md`：跨对话状态恢复，新对话秒级续接
-   - `数据新鲜度报告`：rebuild 输出含市场数据年龄 + 规则警报
+3. **New System Files**
+   - `数据更新协议.md`: Real-time/daily/weekly/monthly 4-tier update system
+   - `会话检查点.md`: Cross-conversation state recovery, instant resume in new sessions
+   - Data freshness report: rebuild output includes market data age + rule alerts
 
-4. **GitHub 化**
-   - .gitignore 排除 5 个敏感数据文件
-   - git rm --cached 脱敏已跟踪文件
-   - GitHub Actions Pages 自动部署
-   - 开源社区文件全补全（CONTRIBUTING / CODE_OF_CONDUCT / SECURITY / CHANGELOG）
+4. **GitHub Integration**
+   - .gitignore excludes 5 sensitive data files
+   - git rm --cached on previously tracked sensitive files
+   - GitHub Actions Pages auto-deploy
+   - Full open-source community files (CONTRIBUTING / CODE_OF_CONDUCT / SECURITY / CHANGELOG)
 
-5. **文档更新**
+5. **Documentation Update**
    - ANCHOR_体系总览 v3.2 → v3.3
-   - 持仓全面检查清单 / 股票交易规则 更新至 8/6
+   - Position checklist / stock trading rules updated to 8/6
 
-**🔧 升级说明**（已有本地部署用户）：
-- 必须更新：`rebuild.py`、`sync_all.py`、`06-dashboard/` 下所有文件
-- 可选更新：README.md、.gitignore
+**🔧 Upgrade Guide** (existing local deployments):
+- Must update: `rebuild.py`, `sync_all.py`, all files under `06-dashboard/`
+- Optional: README.md, .gitignore
 
 <details>
-<summary>👉 点击展开：<strong>历史更新</strong></summary>
+<summary>👉 Click to expand: <strong>History</strong></summary>
 
 ### 2026/07 - v3.2
 
-- DDX 过滤器：半导体补仓需 DDX 连 2 日为正
-- 纳指 ETF 溢价率规则：溢价率 ≤ 3% 才建仓
-- 月度归因体系完善
-- GitHub Actions 日度 CI
+- DDX Filter: Semiconductor addition requires DDX positive 2 consecutive days
+- Nasdaq ETF premium rule: premium ≤ 3% to open position
+- Monthly attribution system refined
+- GitHub Actions daily CI
 
 ### 2026/06 - v3.1
 
-- AI 投资管理系统架构
-- Claude Memory 持久化体系
-- 07-memory/ 目录建立
+- AI investment management system architecture
+- Claude Memory persistence framework
+- 07-memory/ directory established
 
 ### 2026/05 - v3.0
 
-- 四层金字塔结构成型
-- 负面清单机制
-- 规则进化机制
-- 投资规则手册正式版
+- Four-layer pyramid structure finalized
+- Negative checklist mechanism
+- Rule evolution mechanism
+- Formal investment rule manual
 
 ### 2025.06~2026.03 - v0.1~v2.5
 
-- v0.1: 初始持仓记录（手工 Excel）
-- v1.0: 三层结构 + 基础买卖规则
-- v2.0: 四层金字塔 + 双轨策略
-- v2.5: FDIS 引入 + 首版正式规则手册
+- v0.1: Initial holdings record (manual Excel)
+- v1.0: Three-layer structure + basic buy/sell rules
+- v2.0: Four-layer pyramid + dual-track strategy
+- v2.5: FDIS introduced + first formal rule manual
 
 </details>
 
 <br>
 
-## 🙏 致谢
+## 🙏 Acknowledgments
 
-感谢以下工具和服务使本项目成为可能：
+Thanks to the following tools and services that make this project possible:
 
-- **数据支持** — [东方财富妙想 AI](https://data.eastmoney.com/) 提供 mx-data API，实时准确的 A 股行情数据
-- **AI 支持** — [Claude](https://claude.ai) 提供复盘分析、规则优化、报告生成的智能辅助
-- **基础设施** — [GitHub](https://github.com) 免费提供 Actions 自动化和 Pages 部署
-- **启发项目** — [TrendRadar](https://github.com/sansan0/TrendRadar) 优秀的多平台聚合 + AI 分析架构
-
-<br>
-
-## 🤝 贡献
-
-欢迎提 Issue 和 PR！贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
-
-- 🐛 发现 Bug？开 [Bug Report](https://github.com/killian99cm/anchor-system/issues/new?template=bug_report.md)
-- 💡 有改进想法？开 [Feature Request](https://github.com/killian99cm/anchor-system/issues/new?template=feature_request.md)
-- 🔧 提交代码？Fork → Feature Branch → PR
-
-> ⚠️ **严禁提交真实持仓数据**。`.gitignore` 已配置，用 `portfolio_data_example.json` 测试。
+- **Data** — [East Money Miaoxiang AI](https://data.eastmoney.com/) provides the mx-data API with accurate real-time A-share market data
+- **AI** — [Claude](https://claude.ai) provides intelligent assistance for review analysis, rule optimization, and report generation
+- **Infrastructure** — [GitHub](https://github.com) provides free Actions automation and Pages deployment
+- **Inspiration** — [TrendRadar](https://github.com/sansan0/TrendRadar) excellent multi-platform aggregation + AI analysis architecture
 
 <br>
 
-## ⚠️ 免责声明
+## 🤝 Contributing
 
-**不构成投资建议。** 这是一个个人学习项目，记录了一个自学投资者的框架迭代过程。历史表现不代表未来收益。投资有风险，入市需谨慎。请勿直接跟单。
+Issues and PRs welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing.
+
+- 🐛 Found a bug? Open a [Bug Report](https://github.com/killian99cm/anchor-system/issues/new?template=bug_report.md)
+- 💡 Have an idea? Open a [Feature Request](https://github.com/killian99cm/anchor-system/issues/new?template=feature_request.md)
+- 🔧 Submitting code? Fork → Feature Branch → PR
+
+> ⚠️ **Never submit real holdings data**. `.gitignore` is configured — use `portfolio_data_example.json` for testing.
+
+<br>
+
+## ⚠️ Disclaimer
+
+**Not investment advice.** This is a personal learning project documenting a self-taught investor's framework iteration process. Past performance does not guarantee future results. Investing involves risk — invest with caution. Do not copy trades directly.
 
 ## 📄 License
 
-MIT © [killian99cm](https://github.com/killian99cm) — 框架代码自由使用，填入你自己的持仓数据即可。
+MIT © [killian99cm](https://github.com/killian99cm) — Framework code is free to use. Fill in your own holdings data and you're good to go.

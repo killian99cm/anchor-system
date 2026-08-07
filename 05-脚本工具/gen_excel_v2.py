@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""[DEPRECATED] Anchor Excel v2 — 5-sheet workbook
+已废弃 (2026-08-07)：统一使用 gen_excel_skill.py（10-sheet 完整版）。
+本文件保留供历史参考，sync_all.py 已改调 gen_excel_skill.py。
+"""
 """Anchor Excel Pro v2 — 5-sheet workbook"""
 import json
 from pathlib import Path

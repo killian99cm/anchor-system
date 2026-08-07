@@ -91,16 +91,16 @@ def sync():
     else:
         log.warning(f"rebuild.py not found at {rebuild}")
 
-    # 4. Generate Excel
-    gen_excel = os.path.join(ANCHOR_SCRIPTS, "gen_excel_v2.py")
+    # 4. Generate Excel (unified: gen_excel_skill.py — 10-sheet full version)
+    gen_excel = os.path.join(ANCHOR_SCRIPTS, "gen_excel_skill.py")
     if os.path.exists(gen_excel):
         ok, stdout, stderr = run(f'"{PY}" "{gen_excel}"')
         if ok:
-            log.info("gen_excel_v2.py [OK]")
+            log.info("gen_excel_skill.py [OK]")
         else:
-            log.warning("gen_excel_v2.py [FAILED]")
+            log.warning("gen_excel_skill.py [FAILED]")
     else:
-        log.info("gen_excel_v2.py not found, skipping Excel generation")
+        log.info("gen_excel_skill.py not found, skipping Excel generation")
 
     # 5. Save daily snapshot
     kb_docs = os.path.join(ANCHOR, "04-每日复盘")

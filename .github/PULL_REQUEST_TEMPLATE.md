@@ -28,4 +28,4 @@
 
 ---
 
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
+由 Anchor 体系自动生成

@@ -121,7 +121,7 @@ for i,ins in enumerate([
     ws.merge_cells(f'B{ir+1+i}:H{ir+1+i}'); ws[f'B{ir+1+i}']=ins; ws[f'B{ir+1+i}'].font=Font(name=SNS,size=11); ws.row_dimensions[ir+1+i].height=20
 
 fr=ir+len(["x"]*5)+3; ws.merge_cells(f'B{fr}:H{fr}')
-ws[f'B{fr}']=f"数据来源: 东方财富妙想 mx-data / mx-search  |  生成: 2026-07-02  |  工具: Claude Code + excel-generator Skill"
+ws[f'B{fr}']=f"数据来源: 东方财富妙想 mx-data / mx-search  |  生成: 2026-07-02  |  工具: Anchor 体系 + excel-generator"
 ws[f'B{fr}'].font=Font(name=SNS,size=8,italic=True,color='AAAAAA')
 ws.freeze_panes='B5'
 

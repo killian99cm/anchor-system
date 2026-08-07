@@ -51,12 +51,35 @@ def ask_yesno(prompt, default="y"):
     return val.lower().startswith("y") or val == ""
 
 # ── 预设模板 ──────────────────────────────────────────
+# 单一事实源：精确名称映射来自 data_processor.ANCHOR_MAP
+# setup.py 优先精确匹配 ANCHOR_MAP，未命中再用关键词兜底。
 FUND_GROUPS = {
     "1": {"name": "全局固收", "desc": "债券、固收+、黄金等稳健品种 → 压舱石层", "layer": "bedrock"},
     "2": {"name": "核心增长", "desc": "宽基指数、QDII、主动混合 → 核心增长层", "layer": "core"},
     "3": {"name": "进攻组合", "desc": "行业ETF、主题基金、个股 → 卫星进攻层", "layer": "sat"},
     "4": {"name": "现金预备", "desc": "余额宝、货币基金 → 现金预备层", "layer": "cash"},
 }
+
+# layer -> group 名
+LAYER_TO_GROUP = {
+    "bedrock": "全局固收",
+    "core": "核心增长",
+    "sat": "进攻组合",
+    "cash": "现金预备",
+}
+
+try:
+    # data_processor 位于 05-脚本工具/，从仓库根运行时需显式加入 path
+    _scripts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "05-脚本工具")
+    if _scripts_dir not in sys.path:
+        sys.path.insert(0, _scripts_dir)
+    from data_processor import ANCHOR_MAP
+    ANCHOR_NAME_TO_GROUP = {
+        name: LAYER_TO_GROUP.get(layer_info[0], "核心增长")
+        for name, layer_info in ANCHOR_MAP.items()
+    }
+except ImportError:
+    ANCHOR_NAME_TO_GROUP = {}
 
 FUND_TEMPLATES = {
     "债券基金": {"group": "全局固收", "note": "压舱石 — 稳定收益"},
@@ -107,12 +130,15 @@ def main():
                 continue
             break
 
-        # 尝试自动匹配分组
+        # 尝试自动匹配分组（优先精确匹配 ANCHOR_MAP 单一事实源，再关键词兜底）
         matched_group = None
-        for keyword, template in FUND_TEMPLATES.items():
-            if keyword in name:
-                matched_group = template
-                break
+        if name in ANCHOR_NAME_TO_GROUP:
+            matched_group = {"group": ANCHOR_NAME_TO_GROUP[name], "note": "精确匹配 ANCHOR_MAP"}
+        else:
+            for keyword, template in FUND_TEMPLATES.items():
+                if keyword in name:
+                    matched_group = template
+                    break
 
         if matched_group:
             print(green(f"  ✓ 自动识别: {matched_group['group']} — {matched_group['note']}"))

@@ -300,7 +300,7 @@ body::before{{
 </div>
 <div class="meta">
   ⚓ Anchor v3.3 · 压舱石 45% | 核心增长 20% | 卫星进攻 20% | 现金预备 15%<br>
-  回撤控制线：-5% ¥31,313 | -10% ¥29,665 | -15% ¥28,017 · 数据：东方财富 mx-data API<br>
+  回撤控制线：高点 ¥{embed['peak_assets']:,.0f} → -5% ¥{embed['peak_assets']*0.95:,.0f} | -10% ¥{embed['peak_assets']*0.90:,.0f} | -15% ¥{embed['peak_assets']*0.85:,.0f} · 数据：东方财富 mx-data API<br>
   <a href="Anchor/08-可视化网站/anchor-pro.html" style="color:var(--accent);text-decoration:none">📖 体系总览</a> ·
   <a href="Anchor/05-脚本工具/anchor_calculator.html" style="color:var(--accent);text-decoration:none">🔢 仓位计算器</a> ·
   🤖 Generated with Claude Code · 投资有风险，决策需谨慎
@@ -331,7 +331,8 @@ function rate(pnl,mv){{if(!mv||mv===pnl)return 0;return pnl/(mv-pnl)*100}}
   h+='<div class="kpi"><div class="kl">Hold PnL</div><div class="kv '+fc(D.totalPnl)+'">'+(D.totalPnl>=0?"+":"")+fm(Math.round(D.totalPnl))+'</div><div class="ks">10只活跃持仓 · 持仓盈亏</div></div>';
   h+='<div class="kpi"><div class="kl">SSE · 上证</div><div class="kv" style="color:var(--amber)">'+D.mkt.sh.close+'</div><div class="ks '+fc(String(D.mkt.sh.change).indexOf("+")===0)+'">'+D.mkt.sh.change+' · '+D.mkt.date+' '+D.mkt.day+'</div></div>';
   h+='<div class="kpi"><div class="kl">STAR 50</div><div class="kv '+fc(String(D.mkt.kc.change).indexOf("+")===0)+'">'+D.mkt.kc.close+'</div><div class="ks">'+D.mkt.kc.change+' · 定投: '+(D.dca||[]).join(" · ")+'</div></div>';
-  h+='<div class="kpi"><div class="kl">August Ops</div><div class="kv" style="color:var(--green)">0<span class="ku">/4</span></div><div class="ks">零操作 · 零违规 · 满分</div></div>';
+  var vo=D.violations||0, vt=(vo===0?'零违规 · 满分':vo+'次违规！');
+  h+='<div class="kpi"><div class="kl">August Ops</div><div class="kv '+(D.aug_ops>0?'': '')+'" style="color:'+(vo===0?'var(--green)':'var(--red)')+'">'+D.aug_ops+'<span class="ku">/'+D.aug_ops_max+'</span></div><div class="ks">'+vt+'</div></div>';
   document.getElementById("kpi").innerHTML=h;
 }})();
 
@@ -376,7 +377,8 @@ function rate(pnl,mv){{if(!mv||mv===pnl)return 0;return pnl/(mv-pnl)*100}}
   (D.rules||[]).forEach(function(r){{
     h+='<div class="rule-i '+r.lv+'"><span class="dot"></span><span>'+r.t+'</span></div>';
   }});
-  h+='<div style="margin-top:10px;font-size:9.5px;color:var(--text3);line-height:2">📏 回撤控制线（基于 ¥32,961）：<br><span class="a">-5% → ¥31,313（卫星减半）</span><br><span class="r">-10% → ¥29,665（卫星全清）</span><br><span class="r">-15% → ¥28,017（核心减1/3）</span></div>';
+  var pk=D.peak_assets||0;
+  h+='<div style="margin-top:10px;font-size:9.5px;color:var(--text3);line-height:2">📏 回撤控制线（高点 ¥'+fm(pk)+'）：<br><span class="a">-5% → ¥'+fm(Math.round(pk*0.95))+'（卫星减半）</span><br><span class="r">-10% → ¥'+fm(Math.round(pk*0.90))+'（卫星全清）</span><br><span class="r">-15% → ¥'+fm(Math.round(pk*0.85))+'（核心减1/3）</span></div>';
   document.getElementById("rules").innerHTML=h;
 }})();
 

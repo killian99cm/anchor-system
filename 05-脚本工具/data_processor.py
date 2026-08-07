@@ -52,6 +52,22 @@ def safe_float(val, default=0):
         return default
 
 
+def monthly_ops_summary(data, year=2026, month=8):
+    """Count operations for a given month. Returns (count, violation_count).
+    Single source of truth — used by rules, risk matrix, and HTML KPI.
+    Handles both '2026-08-07' and '8/7' date formats."""
+    txns = data.get('transactions', [])
+    prefix_iso = f'{year}-{month:02d}'
+    prefix_short = f'{month}/'
+    month_txns = []
+    for t in txns:
+        d = str(t.get('date', ''))
+        if d.startswith(prefix_iso) or d.startswith(prefix_short):
+            month_txns.append(t)
+    violation_count = sum(1 for t in month_txns if '违规' in str(t.get('note', '')))
+    return len(month_txns), violation_count
+
+
 def process_holdings(raw_holdings, stocks):
     """Process holdings into four-layer structure."""
     bedrock, core, sat, cash = [], [], [], []
@@ -120,11 +136,8 @@ def generate_rules(sat_holdings, data, mkt, totals):
     txns = data.get('transactions', [])
     pa = data.get('pending_actions', [])
 
-    # Count August operations
-    aug_txns = [t for t in txns if '2026-08' in str(t.get('date', ''))
-                or ('/8/' not in str(t.get('date', ''))
-                    and '/8' == str(t.get('date', ''))[:2])]
-    aug_ops_count = len(aug_txns)
+    # Count August operations (unified helper)
+    aug_ops_count, violation_count = monthly_ops_summary(data)
 
     # Stop-loss checks for satellite
     for item in sat_holdings:
@@ -156,8 +169,8 @@ def generate_rules(sat_holdings, data, mkt, totals):
     else:
         rules.append({"lv": "ra", "t": "创新药时间止损倒计时：8月20日截止"})
 
-    # 回撤
-    peak_ref = safe_float(data.get('_meta', {}).get('peak_assets', 37535), 37535)
+    # 回撤（基准来自规则手册 v3.3：高点 ¥39,510，可被 _meta.peak_assets 覆盖）
+    peak_ref = safe_float(data.get('_meta', {}).get('peak_assets', 39510), 39510)
     dd_pct = (totals['total'] - peak_ref) / peak_ref * 100
     safe_cushion = totals['total'] - 31313
 
@@ -170,9 +183,8 @@ def generate_rules(sat_holdings, data, mkt, totals):
     else:
         rules.append({"lv": "rg", "t": f"总资产距 -5% 回撤线 ¥31,313 还有 ¥{safe_cushion:,.0f} 安全垫"})
 
-    # 操作计数
+    # 操作计数 (from unified helper)
     max_ops = data.get('_meta', {}).get('max_monthly_ops', 4)
-    violation_count = sum(1 for t in aug_txns if '违规' in str(t.get('note', '')))
     rules.append({
         "lv": "rg" if violation_count == 0 else "rr",
         "t": f"8月操作 {aug_ops_count}/{max_ops} 笔 · {'零违规 · 纪律满分' if violation_count == 0 else f'{violation_count}次违规！'}"
@@ -185,10 +197,7 @@ def generate_risk_matrix(data, mkt_note, totals):
     """Generate dynamic risk matrix from data."""
     risks = []
     raw = data.get('holdings_summary', [])
-    txns = data.get('transactions', [])
-    aug_txns = [t for t in txns if '2026-08' in str(t.get('date', ''))]
-    aug_ops_count = len(aug_txns)
-    violation_count = sum(1 for t in aug_txns if '违规' in str(t.get('note', '')))
+    aug_ops_count, violation_count = monthly_ops_summary(data)
     kc = data.get('market', {}).get('kc', {})
 
     # DDX
@@ -333,6 +342,14 @@ def process_all(data):
     # Chart data
     chart_out = prepare_chart_data(data)
 
+    # Monthly ops summary (single source for HTML KPI)
+    aug_ops_count, violation_count = monthly_ops_summary(data)
+    max_ops = data.get('_meta', {}).get('max_monthly_ops', 4)
+
+    # Drawdown baseline (single source)
+    peak = safe_float(data.get('_meta', {}).get('peak_assets', 39510), 39510)
+    dd_pct = (totals['total'] - peak) / peak * 100 if peak else 0
+
     # Build result
     result = {
         "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
@@ -345,6 +362,11 @@ def process_all(data):
         "core_mv": round(totals['core_mv']),
         "sat_mv": round(totals['sat_mv']),
         "cash_mv": round(totals['cash_mv']),
+        "peak_assets": peak,
+        "dd_pct": round(dd_pct, 1),
+        "aug_ops": aug_ops_count,
+        "aug_ops_max": max_ops,
+        "violations": violation_count,
         "mkt": mkt,
         "dca": dca_list,
         "bedrock": bedrock,

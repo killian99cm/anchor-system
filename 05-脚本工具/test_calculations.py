@@ -10,18 +10,12 @@ import sys
 import unittest
 from datetime import date
 
-# ===== 被测逻辑（从 rebuild.py 提取） =====
+# ===== 被测逻辑：从 data_processor import 权威实现（单一事实源） =====
+# data_processor.py 是本文件所在目录
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from data_processor import fp, rate, safe_float, monthly_ops_summary
 
-def fp(v):
-    """Format profit with sign"""
-    return f"+{v:,.0f}" if v >= 0 else f"{v:,.0f}"
-
-def rate(pnl, mv):
-    """Calculate return rate: pnl / (mv - pnl)"""
-    if not mv or mv == pnl or mv - pnl == 0:
-        return 0
-    return pnl / (mv - pnl) * 100
-
+# 测试辅助函数（data_processor 未提供，纯测试用）
 def calc_layer_ratios(bedrock_mv, core_mv, sat_mv, cash_mv):
     """Calculate four-layer pyramid ratios"""
     total = bedrock_mv + core_mv + sat_mv + cash_mv
@@ -35,8 +29,9 @@ def calc_layer_ratios(bedrock_mv, core_mv, sat_mv, cash_mv):
         "total": round(total, 2)
     }
 
-def check_drawdown_level(current_total, peak=37535):
-    """Return drawdown level: 'safe', 'warn', 'critical-10', 'critical-15'"""
+def check_drawdown_level(current_total, peak=39510):
+    """Return drawdown level: 'safe', 'warn', 'critical-10', 'critical-15'
+    Default peak = 39510 (规则手册 v3.3 高点，与 data_processor 一致)"""
     dd_pct = (current_total - peak) / peak * 100
     if dd_pct <= -15:
         return ("critical-15", dd_pct)
@@ -51,27 +46,6 @@ def check_stop_loss(pnl, mv):
     """Check if a position triggers -8% stop loss"""
     r = rate(pnl, mv)
     return r <= -8, r
-
-def count_monthly_ops(transactions, year=2026, month=8):
-    """Count operations in a given month. Handles mixed date formats."""
-    count = 0
-    for t in transactions:
-        d = str(t.get('date', ''))
-        # Format 1: "2026-08-07"
-        if f'{year}-{month:02d}' in d:
-            count += 1
-        # Format 2: "8/7" or "8/7 14:49"
-        elif f'{month}/' in d and not f'{month}/2' in d.split('/')[1].split()[0] if '/' in d else True:
-            # Check it's actually month N (not day N of some other month)
-            parts = d.split('/')
-            if len(parts) >= 2:
-                try:
-                    m = int(parts[0])
-                    if m == month and (str(year) in d or len(parts[0]) <= 2):
-                        count += 1
-                except ValueError:
-                    pass
-    return count
 
 
 # ===== TESTS =====
@@ -183,18 +157,34 @@ class TestStopLoss(unittest.TestCase):
 
 
 class TestMonthlyOps(unittest.TestCase):
+    """操作计数使用 data_processor.monthly_ops_summary（单一事实源）"""
+
     def setUp(self):
-        self.txns = [
+        self.data = {"transactions": [
             {"date": "2026-08-07", "op": "加仓", "amount": 300},
             {"date": "2026-07-15", "op": "加仓", "amount": 200},
             {"date": "7/21 14:49", "op": "买入试探", "amount": 300},
-        ]
+        ]}
 
     def test_august_count(self):
-        self.assertEqual(count_monthly_ops(self.txns, year=2026, month=8), 1)
+        count, viol = monthly_ops_summary(self.data, year=2026, month=8)
+        self.assertEqual(count, 1)
+        self.assertEqual(viol, 0)
 
     def test_empty_transactions(self):
-        self.assertEqual(count_monthly_ops([], "2026-08"), 0)
+        count, viol = monthly_ops_summary({"transactions": []}, year=2026, month=8)
+        self.assertEqual(count, 0)
+
+    def test_real_data_consistency(self):
+        """真实数据：8/7 应计 1 笔操作且零违规"""
+        data_path = r"C:\Users\lenovo\Desktop\portfolio_data.json"
+        if not os.path.exists(data_path):
+            self.skipTest("portfolio_data.json not found")
+        with open(data_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        count, viol = monthly_ops_summary(data, year=2026, month=8)
+        self.assertEqual(count, 1, f"8月应1笔操作，实际{count}")
+        self.assertEqual(viol, 0)
 
 
 class TestRealPortfolioData(unittest.TestCase):
@@ -242,9 +232,9 @@ class TestRealPortfolioData(unittest.TestCase):
             self.assertGreaterEqual(mv, 0, f"Negative MV: {h.get('name')}")
 
     def test_drawdown_check(self):
-        """检查当前回撤级别 — 从_meta.peak_assets基准"""
+        """检查当前回撤级别 — 默认基准 39510（规则手册 v3.3 高点）"""
         current = self.data.get('total_assets', 0)
-        peak = self.data.get('_meta', {}).get('peak_assets', 37535)
+        peak = safe_float(self.data.get('_meta', {}).get('peak_assets', 39510), 39510)
         level, pct = check_drawdown_level(current, peak)
         print(f"\n  [INFO] Current: {current:,.0f}, Peak: {peak:,.0f}, DD: {pct:.1f}%, Level: {level}")
         # This is informational — the test always passes but reports the state

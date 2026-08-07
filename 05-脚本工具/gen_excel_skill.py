@@ -335,7 +335,14 @@ ws10.freeze_panes='B6'
 # ═══ Save ═══
 try:
     wb.save(OUT)
-    print("OK")
+    print("OK: " + OUT.name)
+    # Anchor copy
+    ANCHOR_OUT = Path(r"C:\Users\lenovo\Desktop\Anchor\06-看板数据\portfolio_holdings.xlsx")
+    try:
+        wb.save(ANCHOR_OUT)
+        print("OK: " + ANCHOR_OUT.name)
+    except PermissionError:
+        print("Anchor copy skipped (file locked)")
 except PermissionError:
     alt=Path(r"C:\Users\lenovo\Desktop\portfolio_holdings_new.xlsx")
     wb.save(alt)

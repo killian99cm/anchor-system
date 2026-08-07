@@ -120,7 +120,7 @@ metadata:
 portfolio_data.json（桌面·唯一可编辑）→ rebuild.py → HTML看板(×2) + Snapshot(×2) + Excel
                                                         → GitHub Pages 自动部署
 ```
-- 06-看板数据/portfolio_data.json 是只读副本
+- 06-dashboard/portfolio_data.json 是只读副本
 - 铁律：数据不一致时以桌面 JSON 为准
 
 ## 目标与现状

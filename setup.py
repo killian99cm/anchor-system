@@ -69,8 +69,8 @@ LAYER_TO_GROUP = {
 }
 
 try:
-    # data_processor 位于 05-脚本工具/，从仓库根运行时需显式加入 path
-    _scripts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "05-脚本工具")
+    # data_processor 位于 05-scripts/，从仓库根运行时需显式加入 path
+    _scripts_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "05-scripts")
     if _scripts_dir not in sys.path:
         sys.path.insert(0, _scripts_dir)
     from data_processor import ANCHOR_MAP
@@ -282,7 +282,7 @@ def main():
 
     # ── 下一步 ──
     print(bold(green("  🎉 下一步:")))
-    print(f"  {blue('1.')} 运行 {cyan('python 05-脚本工具/rebuild.py')} 生成看板")
+    print(f"  {blue('1.')} 运行 {cyan('python 05-scripts/rebuild.py')} 生成看板")
     print(f"  {blue('2.')} 双击打开 {cyan('portfolio_analysis.html')} 查看")
     print(f"  {blue('3.')} 对 Claude 说 {cyan('更新今日数据')} 获取实时行情")
     print()
@@ -296,7 +296,7 @@ def main():
     print(cyan("  🔧 正在生成看板..."))
     print()
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    rebuild_path = os.path.join("05-脚本工具", "rebuild.py")
+    rebuild_path = os.path.join("05-scripts", "rebuild.py")
     if os.path.exists(rebuild_path):
         os.system(f'python "{rebuild_path}"')
     else:

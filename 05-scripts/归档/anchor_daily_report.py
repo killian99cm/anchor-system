@@ -55,8 +55,8 @@ if sec:
 
 # ===== Try to read portfolio =====
 pf_paths = [
-    '06-看板数据/portfolio_data.json',
-    'Anchor/06-看板数据/portfolio_data.json',
+    '06-dashboard/portfolio_data.json',
+    'Anchor/06-dashboard/portfolio_data.json',
     'portfolio_data.json'
 ]
 pf = None
@@ -147,9 +147,9 @@ if sk:
     except Exception as e:
         print(f"-> 推送失败: {e}")
 
-os.makedirs('Anchor/04-每日复盘', exist_ok=True)
-os.makedirs('04-每日复盘', exist_ok=True)
-for d in ['Anchor/04-每日复盘', '04-每日复盘']:
+os.makedirs('Anchor/04-reviews', exist_ok=True)
+os.makedirs('04-reviews', exist_ok=True)
+for d in ['Anchor/04-reviews', '04-reviews']:
     try:
         with open(f'{d}/brief_{date_str}.md', 'w', encoding='utf-8') as f:
             f.write(report)

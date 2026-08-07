@@ -7,7 +7,7 @@
 能。你只需要：
 1. 电脑上装 Python（[python.org](https://python.org) 下载，勾选 "Add to PATH"）
 2. 编辑 `portfolio_data.json` 填入你的持仓（用记事本打开）
-3. 双击运行（或终端输入 `python 05-脚本工具/rebuild.py`）
+3. 双击运行（或终端输入 `python 05-scripts/rebuild.py`）
 4. 双击 `portfolio_analysis.html` 查看
 
 不需要写任何代码。如果有问题，运行 `python setup.py` 交互式引导配置。
@@ -32,7 +32,7 @@ Anchor 不是技术产品，是**投资纪律工具**。它帮你：
 
 ### Q: portfolio_data.json 怎么写？
 
-参考 `06-看板数据/portfolio_data_example.json`。核心字段：
+参考 `06-dashboard/portfolio_data_example.json`。核心字段：
 - `holdings_summary`: 基金列表（name/mv/pnl/group）
 - `stock_holdings`: 股票列表（name/shares/cost/price）
 - `yuebao`: 余额宝金额
@@ -60,7 +60,7 @@ Anchor 不是技术产品，是**投资纪律工具**。它帮你：
 
 检查：
 1. `rebuild.py` 是否运行成功（终端没有报错）
-2. 打开的是 `Desktop/portfolio_analysis.html`（不是 `06-看板数据/` 里的副本）
+2. 打开的是 `Desktop/portfolio_analysis.html`（不是 `06-dashboard/` 里的副本）
 3. `portfolio_data.json` 是否有数据
 
 ### Q: 怎么让看板在手机上也能看？
@@ -79,7 +79,7 @@ Anchor 不是技术产品，是**投资纪律工具**。它帮你：
 
 ### Q: 我可以改规则吗？
 
-当然。规则是你的，框架只是帮你执行。修改 `01-规则手册/` 下的文件，然后在 rebuild.py 中对应调整检查逻辑。
+当然。规则是你的，框架只是帮你执行。修改 `01-rules/` 下的文件，然后在 rebuild.py 中对应调整检查逻辑。
 
 ### Q: 浮亏为什么不加仓？
 
@@ -105,7 +105,7 @@ docker run -v ./your_data:/data killian99cm/anchor-system
 
 # 手动
 crontab -e
-# 添加：0 20 * * * cd /path/to/anchor && python 05-脚本工具/rebuild.py
+# 添加：0 20 * * * cd /path/to/anchor && python 05-scripts/rebuild.py
 ```
 
 ### Q: 能接入其他数据源吗？

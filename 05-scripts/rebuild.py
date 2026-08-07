@@ -21,7 +21,7 @@ log = logging.getLogger('rebuild')
 
 # ===== PATHS =====
 DESKTOP = r"C:\Users\lenovo\Desktop"
-ANCHOR_DATA = r"C:\Users\lenovo\Desktop\Anchor\06-看板数据"
+ANCHOR_DATA = r"C:\Users\lenovo\Desktop\Anchor\06-dashboard"
 DATA_PATH = os.path.join(DESKTOP, "portfolio_data.json")
 HTML_PATH = os.path.join(DESKTOP, "portfolio_analysis.html")
 HTML_PATH2 = os.path.join(ANCHOR_DATA, "portfolio_analysis.html")
@@ -318,8 +318,8 @@ body::before{{
 <div class="meta">
   ⚓ Anchor v3.3 · 压舱石 45% | 核心增长 20% | 卫星进攻 20% | 现金预备 15%<br>
   回撤控制线：高点 ¥{embed['peak_assets']:,.0f} → -5% ¥{embed['peak_assets']*0.95:,.0f} | -10% ¥{embed['peak_assets']*0.90:,.0f} | -15% ¥{embed['peak_assets']*0.85:,.0f} · 数据：东方财富 mx-data API<br>
-  <a href="Anchor/08-可视化网站/anchor-pro.html" style="color:var(--accent);text-decoration:none">📖 体系总览</a> ·
-  <a href="Anchor/05-脚本工具/anchor_calculator.html" style="color:var(--accent);text-decoration:none">🔢 仓位计算器</a> ·
+  <a href="Anchor/08-website/anchor-pro.html" style="color:var(--accent);text-decoration:none">📖 体系总览</a> ·
+  <a href="Anchor/05-scripts/anchor_calculator.html" style="color:var(--accent);text-decoration:none">🔢 仓位计算器</a> ·
   · 投资有风险，决策需谨慎
 </div>
 </div>

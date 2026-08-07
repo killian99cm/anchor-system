@@ -8,7 +8,7 @@ Anchor 月度归因辅助器 (P2-2)
     python gen_monthly_attribution.py                 # 本月
     python gen_monthly_attribution.py --month 2026-07 # 指定月
 输出:
-    04-每日复盘/月度归因_YYYY年M月.md (骨架，AI/用户补叙事)
+    04-reviews/月度归因_YYYY年M月.md (骨架，AI/用户补叙事)
 """
 import json
 import os
@@ -17,7 +17,7 @@ from datetime import date
 
 DESKTOP = r"C:\Users\lenovo\Desktop"
 DATA_PATH = os.path.join(DESKTOP, "portfolio_data.json")
-KB_DIR = os.path.join(DESKTOP, "Anchor", "04-每日复盘")
+KB_DIR = os.path.join(DESKTOP, "Anchor", "04-reviews")
 
 
 def load_data():

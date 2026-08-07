@@ -6,7 +6,7 @@ from pathlib import Path
 
 DATA = Path(r"C:\Users\lenovo\Desktop\portfolio_data.json")
 if not DATA.exists():
-    DATA = Path(r"C:\Users\lenovo\Desktop\Anchor\06-看板数据\portfolio_data.json")
+    DATA = Path(r"C:\Users\lenovo\Desktop\Anchor\06-dashboard\portfolio_data.json")
 
 with open(DATA, encoding="utf-8") as f:
     D = json.load(f)

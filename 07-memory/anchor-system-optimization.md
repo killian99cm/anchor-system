@@ -66,7 +66,7 @@ After:  data_processor.py (数据层) + rebuild.py (编排器/渲染)
 - #4 chart_data 补8/7点 + update_date
 - #5 操作计数统一 monthly_ops_summary()
 
-**🟡 代码健壮性**：#6 双Excel统一为gen_excel_skill.py(10Sheet)；#7 setup.py分类优先ANCHOR_MAP；#8 密钥无明文(关闭)；#9 02-策略优化/标注历史归档
+**🟡 代码健壮性**：#6 双Excel统一为gen_excel_skill.py(10Sheet)；#7 setup.py分类优先ANCHOR_MAP；#8 密钥无明文(关闭)；#9 02-strategy/标注历史归档
 
 **🟢 流程**：#10 HTML回撤文案数据驱动；#11 README止盈口径加注(基金+10/+20 vs 股票+15/+30/+50)；#12 预生成8月10日盘点清单
 
@@ -76,7 +76,7 @@ After:  data_processor.py (数据层) + rebuild.py (编排器/渲染)
 **P1-2 今日结论自动化**：`generate_today_conclusion()` 数据驱动三态，重建后 HTML 自动生成
 **P2-1 周报脚本** `gen_weekly_report.py`：合并 chart_data 补全缺失交易日，命名对齐 `weekly_report_YYYYMM_Wx`，**防覆盖**(已有文件→生成_draft)
 **P2-2 归因脚本** `gen_monthly_attribution.py`：自动统计交易/违规扫描，真实盈亏留用户填
-**P3 归档**：4闲置脚本 → `05-脚本工具/归档/`（anchor_analyzer/fetch_market/pull_market_data/anchor_daily_report），CI workflow路径已更新
+**P3 归档**：4闲置脚本 → `05-scripts/归档/`（anchor_analyzer/fetch_market/pull_market_data/anchor_daily_report），CI workflow路径已更新
 
 ### 测试套件（29 个测试）
 
@@ -95,14 +95,14 @@ After:  data_processor.py (数据层) + rebuild.py (编排器/渲染)
 ### 文档清理
 
 - 规则手册 v3.1/v3.2 → 归档，仅 v3.3 活跃
-- 02-策略优化/ → README 标注历史归档（口径矛盾勿据此操作）
+- 02-strategy/ → README 标注历史归档（口径矛盾勿据此操作）
 - 资产口径 ¥45,109 为错误数据 → _meta.data_provenance 注明
 
 ### 错误处理
 
 - sync_all.py：logging + 异常捕获 + 返回值
 - rebuild.py：JSON 校验 + 日志
-- 日志：`05-脚本工具/rebuild.log`、`sync_all.log`
+- 日志：`05-scripts/rebuild.log`、`sync_all.log`
 
 **Why**: 系统从手动编辑 JSON 起步，代码随需求增长变臃肿。agent-skills 插件实战应用，分三阶段系统性治理：架构/数据一致性/自动化。
 **How to apply**: 

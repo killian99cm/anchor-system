@@ -13,7 +13,7 @@ import datetime
 
 DATA = Path(r"C:\Users\lenovo\Desktop\portfolio_data.json")
 OUT = Path(r"C:\Users\lenovo\Desktop\portfolio_holdings.xlsx")
-OUT_ANCHOR = Path(r"C:\Users\lenovo\Desktop\Anchor\06-看板数据\portfolio_holdings.xlsx")
+OUT_ANCHOR = Path(r"C:\Users\lenovo\Desktop\Anchor\06-dashboard\portfolio_holdings.xlsx")
 
 with open(DATA, encoding="utf-8") as f:
     D = json.load(f)

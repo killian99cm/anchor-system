@@ -14,7 +14,7 @@ from pathlib import Path
 
 DESKTOP = Path(r"C:\Users\lenovo\Desktop")
 ANCHOR = DESKTOP / "Anchor"
-SCRIPTS = ANCHOR / "05-脚本工具"
+SCRIPTS = ANCHOR / "05-scripts"
 PY = r"C:\Users\lenovo\AppData\Local\Programs\Python\Python313\python"
 
 PASS, FAIL = 0, 0
@@ -95,7 +95,7 @@ def main():
     # 4. Excel 产物
     print("\n[4] portfolio_holdings.xlsx")
     xlsx_path = DESKTOP / "portfolio_holdings.xlsx"
-    xlsx_anchor = ANCHOR / "06-看板数据" / "portfolio_holdings.xlsx"
+    xlsx_anchor = ANCHOR / "06-dashboard" / "portfolio_holdings.xlsx"
     check("Excel 存在(桌面)", xlsx_path.exists())
     check("Excel 存在(Anchor)", xlsx_anchor.exists())
     if xlsx_path.exists():
@@ -103,8 +103,8 @@ def main():
 
     # 5. 副本一致性
     print("\n[5] 桌面 vs Anchor 副本")
-    check("HTML 副本一致", (DESKTOP / "portfolio_analysis.html").stat().st_size == (ANCHOR / "06-看板数据" / "portfolio_analysis.html").stat().st_size)
-    check("快照副本一致", (DESKTOP / "portfolio_snapshot.json").stat().st_size == (ANCHOR / "06-看板数据" / "portfolio_snapshot.json").stat().st_size)
+    check("HTML 副本一致", (DESKTOP / "portfolio_analysis.html").stat().st_size == (ANCHOR / "06-dashboard" / "portfolio_analysis.html").stat().st_size)
+    check("快照副本一致", (DESKTOP / "portfolio_snapshot.json").stat().st_size == (ANCHOR / "06-dashboard" / "portfolio_snapshot.json").stat().st_size)
 
     # 6. 运行核心测试
     print("\n[6] 核心计算测试 test_calculations.py")

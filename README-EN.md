@@ -99,9 +99,9 @@ cd anchor-system
 python setup.py
 
 # Option B: Manual setup
-cp 06-看板数据/portfolio_data_example.json portfolio_data.json
+cp 06-dashboard/portfolio_data_example.json portfolio_data.json
 # Edit portfolio_data.json with your holdings
-python 05-脚本工具/rebuild.py
+python 05-scripts/rebuild.py
 # Open portfolio_analysis.html
 ```
 

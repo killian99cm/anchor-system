@@ -22,8 +22,8 @@ log = logging.getLogger('sync_all')
 
 DESKTOP = r"C:\Users\lenovo\Desktop"
 ANCHOR = r"C:\Users\lenovo\Desktop\Anchor"
-ANCHOR_DATA = os.path.join(ANCHOR, "06-看板数据")
-ANCHOR_SCRIPTS = os.path.join(ANCHOR, "05-脚本工具")
+ANCHOR_DATA = os.path.join(ANCHOR, "06-dashboard")
+ANCHOR_SCRIPTS = os.path.join(ANCHOR, "05-scripts")
 PY = r"C:\Users\lenovo\AppData\Local\Programs\Python\Python313\python"
 
 def run(cmd, cwd=None):
@@ -122,7 +122,7 @@ def sync():
             log.warning("drawdown_alert.py 触发回撤线警告！请检查")
 
     # 7. Save daily snapshot
-    kb_docs = os.path.join(ANCHOR, "04-每日复盘")
+    kb_docs = os.path.join(ANCHOR, "04-reviews")
     os.makedirs(kb_docs, exist_ok=True)
 
     daily_file = os.path.join(kb_docs, f"daily_snapshot_{today}.md")

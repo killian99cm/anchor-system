@@ -25,12 +25,12 @@ jobs:
         env:
           MX_APIKEY: ${{ secrets.MX_APIKEY }}
           SERVER_KEY: ${{ secrets.SERVER_KEY }}
-        run: python "05-脚本工具/归档/anchor_daily_report.py"
+        run: python "05-scripts/归档/anchor_daily_report.py"
 
       - name: Push result
         run: |
           git config user.name "Anchor Bot"
           git config user.email "bot@anchor.investments"
-          git add 04-每日复盘/ 06-看板数据/
+          git add 04-reviews/ 06-dashboard/
           git diff --staged --quiet || git commit -m "Daily report $(date +%Y-%m-%d)"
           git push origin HEAD

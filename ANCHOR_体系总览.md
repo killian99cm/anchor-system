@@ -142,25 +142,25 @@ Anchor 是一套面向个人投资者的基金投资纪律框架。不是选基�
 
 | 工具 | 路径 | 用途 | 运行方式 |
 |------|------|------|------|
-| `rebuild.py` | `05-脚本工具/` | ⭐ 主生成器：JSON→HTML+快照 | `python rebuild.py` |
-| `sync_all.py` | `05-脚本工具/` | 一键同步所有输出 | `python sync_all.py` |
-| `data_processor.py` | `05-脚本工具/` | 数据层：分类/规则/风险计算 | 被 rebuild 调用 |
-| `gen_excel_skill.py` | `05-脚本工具/` | 生成 10-Sheet Excel | `python gen_excel_skill.py` |
-| `gen_weekly_report.py` | `05-脚本工具/` | 自动生成周报骨架 | `python gen_weekly_report.py` |
-| `gen_monthly_attribution.py` | `05-脚本工具/` | 自动生成月度归因骨架 | `python gen_monthly_attribution.py` |
-| `test_calculations.py` | `05-脚本工具/` | 29 项核心计算测试 | `python test_calculations.py` |
-| `anchor_calculator.html` | `05-脚本工具/` | 仓位计算器 | 浏览器打开 |
+| `rebuild.py` | `05-scripts/` | ⭐ 主生成器：JSON→HTML+快照 | `python rebuild.py` |
+| `sync_all.py` | `05-scripts/` | 一键同步所有输出 | `python sync_all.py` |
+| `data_processor.py` | `05-scripts/` | 数据层：分类/规则/风险计算 | 被 rebuild 调用 |
+| `gen_excel_skill.py` | `05-scripts/` | 生成 10-Sheet Excel | `python gen_excel_skill.py` |
+| `gen_weekly_report.py` | `05-scripts/` | 自动生成周报骨架 | `python gen_weekly_report.py` |
+| `gen_monthly_attribution.py` | `05-scripts/` | 自动生成月度归因骨架 | `python gen_monthly_attribution.py` |
+| `test_calculations.py` | `05-scripts/` | 29 项核心计算测试 | `python test_calculations.py` |
+| `anchor_calculator.html` | `05-scripts/` | 仓位计算器 | 浏览器打开 |
 
-> 旧脚本（anchor_analyzer/fetch_market/pull_market_data/anchor_daily_report）已归档至 `05-脚本工具/归档/`，被 mx-data skill 取代。
+> 旧脚本（anchor_analyzer/fetch_market/pull_market_data/anchor_daily_report）已归档至 `05-scripts/归档/`，被 mx-data skill 取代。
 
 ### 输出文件
 
 | 文件 | 位置 | 说明 |
 |------|------|------|
-| `portfolio_analysis.html` | 桌面 + `06-看板数据/` | ⭐ Premium 实时看板 |
-| `portfolio_snapshot.json` | 桌面 + `06-看板数据/` | 快照数据 |
-| `anchor-pro.html` | `08-可视化网站/` | Anchor 体系介绍页 |
-| `portfolio_holdings.xlsx` | 桌面 + `06-看板数据/` | Excel 持仓表 |
+| `portfolio_analysis.html` | 桌面 + `06-dashboard/` | ⭐ Premium 实时看板 |
+| `portfolio_snapshot.json` | 桌面 + `06-dashboard/` | 快照数据 |
+| `anchor-pro.html` | `08-website/` | Anchor 体系介绍页 |
+| `portfolio_holdings.xlsx` | 桌面 + `06-dashboard/` | Excel 持仓表 |
 
 ### 4.1 数据源优先级
 
@@ -182,7 +182,7 @@ mx-data → mx-search → AKShare → WebSearch → App验证
 ### 5.1 复盘文件归档
 
 ```
-04-每日复盘/
+04-reviews/
   ├── deep_review_YYYYMMDD.md    ← 每日深度复盘
   ├── market_report_*.md          ← 盘中快报
   ├── weekly_report_*.md          ← 周报

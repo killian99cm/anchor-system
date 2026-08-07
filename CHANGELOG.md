@@ -18,15 +18,15 @@
 - 数据新鲜度报告（rebuild.py 输出含市场数据年龄 + 规则警报）
 
 ### 变更
-- rebuild.py 双路输出：Desktop + Anchor/06-看板数据/ 同时写入
+- rebuild.py 双路输出：Desktop + Anchor/06-dashboard/ 同时写入
 - sync_all.py 完全重写，修复所有路径引用
 - README.md 全面升级（badges + 架构图 + 快速开始）
 - anchor-pro.html 数据驱动重写（27.8KB → 31.5KB）
 - CLAUDE.md 重写为系统入口点
 
 ### 修复
-- `06-看板数据/portfolio_analysis.html` 数据断连 → 双路输出
-- `06-看板数据/portfolio_data.json` 旧数据差¥5,240 → 自动同步
+- `06-dashboard/portfolio_analysis.html` 数据断连 → 双路输出
+- `06-dashboard/portfolio_data.json` 旧数据差¥5,240 → 自动同步
 - GitHub Actions CI 三处阻断错误（checkout@v5→v4, setup-python@v6→v5, 路径）
 - anchor_calculator.html CSS 变量 `--text3` 未定义
 
@@ -60,7 +60,7 @@
 ### 新增
 - AI 投资管理系统架构
 - Claude Memory 持久化体系
-- 07-记忆文件/ 目录
+- 07-memory/ 目录
 
 ---
 

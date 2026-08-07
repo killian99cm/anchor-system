@@ -27,15 +27,15 @@ jobs:
         run: |
           mkdir -p _site
           # Copy example dashboard as index
-          cp "06-看板数据/portfolio_analysis_example.html" _site/index.html
-          cp "06-看板数据/portfolio_data_example.json" _site/
+          cp "06-dashboard/portfolio_analysis_example.html" _site/index.html
+          cp "06-dashboard/portfolio_data_example.json" _site/
           # Copy anchor-pro page
-          cp "08-可视化网站/anchor-pro.html" _site/anchor-pro.html
+          cp "08-website/anchor-pro.html" _site/anchor-pro.html
           # Copy calculator
-          cp "05-脚本工具/anchor_calculator.html" _site/anchor_calculator.html
+          cp "05-scripts/anchor_calculator.html" _site/anchor_calculator.html
           # Create redirects from old paths
-          mkdir -p _site/06-看板数据
-          cp "06-看板数据/portfolio_analysis_example.html" "_site/06-看板数据/portfolio_analysis.html"
+          mkdir -p _site/06-dashboard
+          cp "06-dashboard/portfolio_analysis_example.html" "_site/06-dashboard/portfolio_analysis.html"
 
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3

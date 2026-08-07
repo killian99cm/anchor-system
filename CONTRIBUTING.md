@@ -30,8 +30,8 @@ cd anchor-system
 git checkout -b feature/my-improvement
 
 # 4. 用示例数据测试
-cp 06-看板数据/portfolio_data_example.json portfolio_data.json
-python 05-脚本工具/rebuild.py
+cp 06-dashboard/portfolio_data_example.json portfolio_data.json
+python 05-scripts/rebuild.py
 
 # 5. 提交（不要包含敏感文件）
 # .gitignore 已配置，git add 时会自动排除

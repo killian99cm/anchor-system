@@ -5,7 +5,7 @@ Anchor 体系总览页 (anchor-pro.html) 数据生成器 (短板2)
 叙事部分（胜率/教训/对比/规则/演变）保持模板内容不变，仅更新实时数字。
 
 用法: python gen_anchor_pro.py
-输出: 08-可视化网站/anchor-pro.html (就地更新 var D 数据块)
+输出: 08-website/anchor-pro.html (就地更新 var D 数据块)
 """
 import json
 import os
@@ -15,7 +15,7 @@ from pathlib import Path
 DESKTOP = Path(r"C:\Users\lenovo\Desktop")
 ANCHOR = DESKTOP / "Anchor"
 DATA_PATH = DESKTOP / "portfolio_data.json"
-PRO_HTML = ANCHOR / "08-可视化网站" / "anchor-pro.html"
+PRO_HTML = ANCHOR / "08-website" / "anchor-pro.html"
 
 # 持仓显示名映射（与页面一致）
 NAME_MAP = {

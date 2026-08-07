@@ -1,57 +1,57 @@
-# Anchor 移动端搭建指南
+# Anchor Mobile Setup Guide
 
-> 10分钟 | ¥0月费 | 完成后每天微信自动收到行情简报
+> 10 minutes | ¥0/month | After setup, you'll get a daily market briefing on WeChat automatically
 
 ---
 
-## 第一步：注册 GitHub（如果还没有）
+## Step 1: Register for GitHub (if you haven't already)
 
-1. 打开 https://github.com
-2. 点击 Sign up → 用邮箱注册
-3. 验证邮箱 → 登录
+1. Open https://github.com
+2. Click Sign up → register with your email
+3. Verify your email → log in
 
-## 第二步：创建仓库
+## Step 2: Create a Repository
 
-1. 点击右上角 `+` → `New repository`
+1. Click `+` in the top-right → `New repository`
 2. Repository name: `anchor-system`
-3. 选择 `Public`
-4. 点击 `Create repository`
+3. Choose `Public`
+4. Click `Create repository`
 
-## 第三步：上传文件
+## Step 3: Upload Files
 
-1. 把整个 `Anchor` 文件夹拖到 GitHub 网页上
-2. 等文件上传完 → 点击 `Commit changes`
+1. Drag the entire `Anchor` folder onto the GitHub web page
+2. Wait for the upload to finish → click `Commit changes`
 
-## 第四步：注册 Server酱（微信推送）
+## Step 4: Register for Server酱 (WeChat push)
 
-1. 打开 https://sct.ftqq.com
-2. 点击「登入」→ 用微信扫码登录
-3. 点击「SendKey」→ 复制你的 `SCT` 开头的 Key
+1. Open https://sct.ftqq.com
+2. Click "Sign in" → scan the QR code with WeChat to log in
+3. Click "SendKey" → copy your Key that starts with `SCT`
 
-## 第五步：设置密钥
+## Step 5: Set Up Secrets
 
-在 GitHub 仓库页面：
+On the GitHub repository page:
 
-1. 点击 `Settings` → `Secrets and variables` → `Actions`
-2. 点击 `New repository secret`
-3. 添加两个密钥：
+1. Click `Settings` → `Secrets and variables` → `Actions`
+2. Click `New repository secret`
+3. Add two secrets:
 
 | Name | Value |
 |------|------|
-| `MX_APIKEY` | 你的 mx-data API Key |
-| `SERVER_KEY` | 你的 Server酱 SCT Key |
+| `MX_APIKEY` | Your mx-data API Key |
+| `SERVER_KEY` | Your Server酱 SCT Key |
 
-## 第六步：启动
+## Step 6: Launch
 
-1. 点击仓库顶部的 `Actions` 标签
-2. 点击 `Anchor Daily Report`
-3. 点击 `Run workflow` → `Run workflow`
+1. Click the `Actions` tab at the top of the repository
+2. Click `Anchor Daily Report`
+3. Click `Run workflow` → `Run workflow`
 
 ---
 
-## ✅ 完成！
+## ✅ Done!
 
-以后每个交易日 15:30，你的微信会自动收到：
+From now on, every trading day at 15:30, your WeChat will automatically receive:
 
 ```
 ⚓ Anchor · 2026-07-25
@@ -63,8 +63,8 @@
 
 ---
 
-## 🆘 遇到问题？
+## 🆘 Having trouble?
 
-- GitHub Actions 报错 → 发截图给我
-- 微信收不到推送 → 检查 Server酱 Key
-- mx-data 拉不到数据 → 检查 API Key
+- GitHub Actions error → send me a screenshot
+- Not receiving WeChat push → check the Server酱 Key
+- mx-data can't fetch data → check the API Key

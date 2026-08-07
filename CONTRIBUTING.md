@@ -1,55 +1,55 @@
-# 贡献指南
+# Contributing Guide
 
-感谢你对 Anchor 投资管理系统的关注！
+Thank you for your interest in the Anchor investment management system!
 
-## 提交内容注意事项
+## Before You Submit
 
-### ⚠️ 严禁包含真实持仓数据
-- 不要提交 `portfolio_data.json`
-- 不要提交 `portfolio_snapshot.json`
-- 不要提交 `portfolio_analysis.html`（含嵌入数据）
-- 不要提交 `portfolio_holdings.xlsx`
-- 使用 `portfolio_data_example.json` 进行测试
+### ⚠️ Never Commit Real Holdings Data
+- Never commit `portfolio_data.json`
+- Never commit `portfolio_snapshot.json`
+- Never commit `portfolio_analysis.html` (contains embedded data)
+- Never commit `portfolio_holdings.xlsx`
+- Use `portfolio_data_example.json` for testing
 
-### 可以贡献的内容
-- 🐛 Bug 修复（代码、脚本、HTML）
-- 📖 文档改进（规则手册、README、注释）
-- 🎨 可视化优化（看板 HTML/CSS）
-- 🔧 新功能（数据采集、分析工具、回测）
-- 🌐 翻译
+### What You Can Contribute
+- 🐛 Bug fixes (code, scripts, HTML)
+- 📖 Documentation improvements (rule manual, README, comments)
+- 🎨 Visualization improvements (dashboard HTML/CSS)
+- 🔧 New features (data collection, analysis tools, backtesting)
+- 🌐 Translations
 
-## 提交流程
+## Submission Process
 
 ```bash
-# 1. Fork 仓库
-# 2. Clone 你的 Fork
+# 1. Fork the repository
+# 2. Clone your fork
 git clone https://github.com/YOUR_USERNAME/anchor-system.git
 cd anchor-system
 
-# 3. 创建功能分支
+# 3. Create a feature branch
 git checkout -b feature/my-improvement
 
-# 4. 用示例数据测试
+# 4. Test with example data
 cp 06-dashboard/portfolio_data_example.json portfolio_data.json
 python 05-scripts/rebuild.py
 
-# 5. 提交（不要包含敏感文件）
-# .gitignore 已配置，git add 时会自动排除
+# 5. Commit (do not include sensitive files)
+# .gitignore is configured and will automatically exclude them on git add
 
-# 6. Push 并提 PR
+# 6. Push and open a PR
 ```
 
-## 代码风格
+## Code Style
 
-- **Python**: 保持简单，不引入新依赖除非必要
-- **HTML/CSS**: 深色终端风，零外部依赖
-- **Markdown**: 中文文档，清晰优先
+- **Python**: Keep it simple; don't add new dependencies unless necessary
+- **HTML/CSS**: Dark terminal style, zero external dependencies
+- **Markdown**: Chinese documentation, clarity first
 
-## Issue 规范
+## Issue Guidelines
 
-- 🐛 Bug 报告：描述复现步骤 + 预期行为
-- 💡 功能建议：描述使用场景 + 为什么需要
+- 🐛 Bug reports: describe reproduction steps + expected behavior
+- 💡 Feature suggestions: describe the use case + why it's needed
 
-## 行为准则
+## Code of Conduct
 
-本项目遵循 [Contributor Covenant](CODE_OF_CONDUCT.md)。请保持友善和建设性。
+This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md). Please stay kind and constructive.

@@ -1,117 +1,117 @@
-# ❓ 常见问题 FAQ
+# ❓ Frequently Asked Questions (FAQ)
 
-## 入门
+## Getting Started
 
-### Q: 我完全不懂 Python，能用吗？
+### Q: I don't know Python at all. Can I use this?
 
-能。你只需要：
-1. 电脑上装 Python（[python.org](https://python.org) 下载，勾选 "Add to PATH"）
-2. 编辑 `portfolio_data.json` 填入你的持仓（用记事本打开）
-3. 双击运行（或终端输入 `python 05-scripts/rebuild.py`）
-4. 双击 `portfolio_analysis.html` 查看
+Yes. You only need to:
+1. Install Python on your computer (download from [python.org](https://python.org), check "Add to PATH")
+2. Edit `portfolio_data.json` to fill in your holdings (open with Notepad)
+3. Double-click to run (or type `python 05-scripts/rebuild.py` in a terminal)
+4. Double-click `portfolio_analysis.html` to view
 
-不需要写任何代码。如果有问题，运行 `python setup.py` 交互式引导配置。
+No coding required. If you have any problems, run `python setup.py` for an interactive guided setup.
 
-### Q: 我不是程序员，这个对我有什么用？
+### Q: I'm not a programmer. What's this useful for me?
 
-Anchor 不是技术产品，是**投资纪律工具**。它帮你：
-- 记录所有持仓，一目了然
-- 自动检查规则（止损/止盈/时间到期）
-- 生成可视看板，不用打开 N 个 App
-- AI 辅助复盘，省去手动计算
+Anchor isn't a tech product — it's an **investment discipline tool**. It helps you:
+- Record all your holdings at a glance
+- Automatically check the rules (stop-loss / take-profit / time expiry)
+- Generate a visual dashboard without opening N apps
+- Get AI-assisted reviews that save manual calculation
 
-### Q: 需要付费吗？
+### Q: Does it cost money?
 
-完全免费。代码开源（MIT），数据用免费 API，看板纯 HTML 零依赖。
+Completely free. The code is open source (MIT), data comes from free APIs, and the dashboard is pure HTML with zero dependencies.
 
-## 数据
+## Data
 
-### Q: 我的持仓数据会上传到网上吗？
+### Q: Will my holdings data be uploaded to the internet?
 
-**不会。** `.gitignore` 已排除所有敏感文件。如果你不用 Git，数据只在本地。如果上传 GitHub，敏感文件会被自动忽略。
+**No.** `.gitignore` already excludes all sensitive files. If you don't use Git, the data stays on your machine only. If you upload to GitHub, sensitive files are automatically ignored.
 
-### Q: portfolio_data.json 怎么写？
+### Q: How do I write portfolio_data.json?
 
-参考 `06-dashboard/portfolio_data_example.json`。核心字段：
-- `holdings_summary`: 基金列表（name/mv/pnl/group）
-- `stock_holdings`: 股票列表（name/shares/cost/price）
-- `yuebao`: 余额宝金额
-- `market`: 市场行情数据
+Refer to `06-dashboard/portfolio_data_example.json`. Core fields:
+- `holdings_summary`: fund list (name/mv/pnl/group)
+- `stock_holdings`: stock list (name/shares/cost/price)
+- `yuebao`: Yu'ebao balance
+- `market`: market data
 
-详细说明运行 `python setup.py` 交互式配置。
+For details, run `python setup.py` for interactive configuration.
 
-### Q: 数据从哪里来？
+### Q: Where does the data come from?
 
-优先级：`mx-data API（东方财富）→ AKShare → WebSearch → App 截图`
+Priority: `mx-data API (Eastmoney) → AKShare → WebSearch → App screenshots`
 
-日常更新对 Claude 说"更新今日数据"即可自动获取。
+For daily updates, just tell Claude "update today's data" and it will fetch automatically.
 
-### Q: 多久更新一次？
+### Q: How often should I update?
 
-| 频率 | 操作 |
+| Frequency | Action |
 |:--|:--|
-| 每日 | 收盘后更新 JSON → rebuild |
-| 每周 | 仓位点检 + 生成周报 |
-| 每月 | 月度归因 + 规则审议 |
+| Daily | Update JSON after market close → rebuild |
+| Weekly | Position check + generate weekly report |
+| Monthly | Monthly attribution + rule review |
 
-## 看板
+## Dashboard
 
-### Q: 看板打开是空白的？
+### Q: The dashboard opens blank?
 
-检查：
-1. `rebuild.py` 是否运行成功（终端没有报错）
-2. 打开的是 `Desktop/portfolio_analysis.html`（不是 `06-dashboard/` 里的副本）
-3. `portfolio_data.json` 是否有数据
+Check:
+1. Did `rebuild.py` run successfully (no errors in the terminal)?
+2. Are you opening `Desktop/portfolio_analysis.html` (not the copy in `06-dashboard/`)?
+3. Does `portfolio_data.json` contain data?
 
-### Q: 怎么让看板在手机上也能看？
+### Q: How can I view the dashboard on my phone?
 
-部署 GitHub Pages 后自动适配移动端。或者直接发 HTML 文件到手机浏览器。
+Once you deploy GitHub Pages, it adapts to mobile automatically. Or just send the HTML file to your phone's browser.
 
-### Q: 能不能自定义颜色/布局？
+### Q: Can I customize the colors/layout?
 
-可以。`rebuild.py` 的 HTML 模板是纯 CSS 变量，改 `:root` 块即可换主题。
+Yes. The HTML template in `rebuild.py` uses pure CSS variables — edit the `:root` block to switch themes.
 
-## 规则
+## Rules
 
-### Q: 为什么有这么多规则？太死板了吧？
+### Q: Why so many rules? Isn't this too rigid?
 
-规则是为了**管住情绪**。回测验证：109 笔实盘中，所有最大亏损都发生在违反规则时。规则不保证赚钱，但保证不死。
+Rules exist to **keep emotions in check**. Backtested validation: across 109 real trades, every maximum loss happened when a rule was violated. Rules don't guarantee profit, but they guarantee survival.
 
-### Q: 我可以改规则吗？
+### Q: Can I change the rules?
 
-当然。规则是你的，框架只是帮你执行。修改 `01-rules/` 下的文件，然后在 rebuild.py 中对应调整检查逻辑。
+Of course. The rules are yours; the framework just helps you enforce them. Edit the files under `01-rules/`, then adjust the corresponding check logic in rebuild.py.
 
-### Q: 浮亏为什么不加仓？
+### Q: Why not add to a losing position?
 
-数据证明：个人投资者最大的亏损来自"越跌越买"。浮亏说明判断错了，加仓是加重错误。宁可错过反弹，也不加仓亏损品种。
+The data proves it: the biggest losses for individual investors come from "buying more as the price falls." An unrealized loss means your call was wrong, and averaging down amplifies the mistake. Better to miss a rebound than to add to a losing position.
 
-## 技术
+## Technical
 
-### Q: 需要安装什么依赖？
+### Q: What dependencies do I need to install?
 
 - Python 3.8+
-- 基础库：json, os, shutil（Python 自带）
-- 可选：pandas（Excel 导出用）
+- Standard library: json, os, shutil (bundled with Python)
+- Optional: pandas (for Excel export)
 
 ```bash
-pip install pandas  # 仅 Excel 导出需要
+pip install pandas  # only needed for Excel export
 ```
 
-### Q: 怎么部署到服务器？
+### Q: How do I deploy to a server?
 
 ```bash
 # Docker (coming soon)
 docker run -v ./your_data:/data killian99cm/anchor-system
 
-# 手动
+# Manual
 crontab -e
-# 添加：0 20 * * * cd /path/to/anchor && python 05-scripts/rebuild.py
+# Add: 0 20 * * * cd /path/to/anchor && python 05-scripts/rebuild.py
 ```
 
-### Q: 能接入其他数据源吗？
+### Q: Can I integrate other data sources?
 
-可以。修改 `rebuild.py` 的数据加载逻辑，适配任意 JSON 格式。或者对 Claude 说"帮我接入 XXX 数据源"。
+Yes. Modify the data-loading logic in `rebuild.py` to adapt to any JSON format. Or just tell Claude "help me integrate the XXX data source".
 
-### Q: 怎么贡献代码？
+### Q: How do I contribute code?
 
-参见 [CONTRIBUTING.md](CONTRIBUTING.md)。欢迎 PR！
+See [CONTRIBUTING.md](CONTRIBUTING.md). PRs are welcome!

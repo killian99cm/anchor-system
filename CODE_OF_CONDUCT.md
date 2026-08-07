@@ -1,37 +1,37 @@
-# 贡献者行为准则
+# Contributor Code of Conduct
 
-## 我们的承诺
+## Our Pledge
 
-为了营造一个开放和友好的环境，我们承诺让每个人都能无骚扰地参与本项目。
+In order to foster an open and friendly environment, we pledge to make participation in this project a harassment-free experience for everyone.
 
-## 我们的标准
+## Our Standards
 
-### 鼓励的行为
-- 友好和包容的语言
-- 尊重不同的观点和经验
-- 建设性的批评
-- 关注对社区最有利的事
-- 对其他社区成员保持同理心
+### Encouraged Behavior
+- Friendly and inclusive language
+- Respect for different viewpoints and experiences
+- Constructive criticism
+- Focus on what is best for the community
+- Empathy toward other community members
 
-### 不可接受的行为
-- 性别化或挑衅性语言
-- 恶意评论、侮辱或人身攻击
-- 任何形式的骚扰
-- 未经许可发布他人隐私信息
-- 其他不专业的行为
+### Unacceptable Behavior
+- Sexualized or provocative language
+- Malicious comments, insults, or personal attacks
+- Harassment of any kind
+- Publishing others' private information without permission
+- Other unprofessional conduct
 
-## 执行
+## Enforcement
 
-维护者有权删除、编辑或拒绝违反本准则的评论、提交、Issue 和 PR。严重违规可能导致被禁止参与。
+Maintainers have the right to remove, edit, or reject comments, commits, Issues, and PRs that violate this code of conduct. Serious violations may result in a ban from participation.
 
-## 适用范围
+## Scope
 
-本行为准则适用于所有项目空间及代表项目的公开场合。
+This code of conduct applies to all project spaces and to public settings where an individual represents the project.
 
-## 报告
+## Reporting
 
-如遇违反行为准则的情况，请在 GitHub Issue 中标记 @killian99cm。
+If you encounter a violation of this code of conduct, tag @killian99cm in a GitHub Issue.
 
 ---
 
-本准则基于 [Contributor Covenant](https://www.contributor-covenant.org) v2.1。
+This code of conduct is based on the [Contributor Covenant](https://www.contributor-covenant.org) v2.1.

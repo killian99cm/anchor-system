@@ -1,78 +1,78 @@
-# 🔧 常见问题排查
+# 🔧 Troubleshooting
 
-## 安装
+## Installation
 
 ### `python: command not found`
 
-**原因**：Python 未安装或未加入 PATH。
+**Cause**: Python is not installed or not on the PATH.
 
-**解决**：
-1. 去 [python.org](https://python.org) 下载 Python 3.8+
-2. 安装时 **勾选 "Add Python to PATH"**
-3. 重新打开终端，输入 `python --version` 验证
+**Fix**:
+1. Download Python 3.8+ from [python.org](https://python.org)
+2. During installation, **check "Add Python to PATH"**
+3. Reopen the terminal and run `python --version` to verify
 
 ### `ModuleNotFoundError: No module named 'xxx'`
 
-**解决**：
+**Fix**:
 ```bash
-pip install pandas   # Excel 导出需要
-pip install requests # 如果需要手动获取数据（rebuild.py 不依赖此库）
+pip install pandas   # needed for Excel export
+pip install requests # needed if you fetch data manually (rebuild.py doesn't depend on this)
 ```
 
-大部分依赖 Python 自带，不需要额外安装。
+Most dependencies are bundled with Python, so no extra installs are needed.
 
 ## rebuild.py
 
 ### `FileNotFoundError: portfolio_data.json`
 
-**原因**：`portfolio_data.json` 不在当前目录。
+**Cause**: `portfolio_data.json` is not in the current directory.
 
-**解决**：
+**Fix**:
 ```bash
-# 方式1: 用 setup.py 生成
+# Option 1: generate it with setup.py
 python setup.py
 
-# 方式2: 复制示例
+# Option 2: copy the example
 cp 06-dashboard/portfolio_data_example.json portfolio_data.json
 
-# 方式3: 在 Anchor 根目录运行
+# Option 3: run from the Anchor root directory
 cd C:\Users\lenovo\Desktop\Anchor
 python 05-scripts/rebuild.py
 ```
 
 ### `KeyError: 'xxx'`
 
-**原因**：`portfolio_data.json` 缺少必需字段。
+**Cause**: `portfolio_data.json` is missing a required field.
 
-**解决**：对照 `portfolio_data_example.json` 检查你的 JSON 结构。或运行 `python setup.py --reset` 重新生成。
+**Fix**: Compare your JSON structure against `portfolio_data_example.json`. Or run `python setup.py --reset` to regenerate it.
 
-### 中文乱码
+### Garbled Chinese characters
 
-**原因**：终端编码问题（常见于 Git Bash）。
+**Cause**: Terminal encoding issue (common in Git Bash).
 
-**解决**：文件内容是正确的（UTF-8），只是终端显示乱码。打开生成的 HTML 看板不会有问题。或在 PowerShell/CMD 中运行。
+**Fix**: The file content is fine (UTF-8); only the terminal display is garbled. The generated HTML dashboard will render correctly. Or run it in PowerShell/CMD.
 
 ### `UnicodeDecodeError`
 
-**原因**：配置文件不是 UTF-8 编码。
+**Cause**: The config file is not UTF-8 encoded.
 
-**解决**：用 VS Code / Notepad++ 打开 `portfolio_data.json`，另存为 UTF-8。
+**Fix**: Open `portfolio_data.json` in VS Code / Notepad++ and save it as UTF-8.
 
-## 看板
+## Dashboard
 
-### 看板空白/数据为 0
+### Dashboard blank / data shows 0
 
-**检查清单**：
-1. `rebuild.py` 运行了吗？看终端输出确认成功
-2. 打开的是 `Desktop/portfolio_analysis.html` 还是旧副本？
-3. `portfolio_data.json` 的 `total_assets` > 0 吗？
-4. 浏览器控制台（F12）有报错吗？
+**Checklist**:
+1. Did you run `rebuild.py`? Check the terminal output to confirm success.
+2. Are you opening `Desktop/portfolio_analysis.html` or an old copy?
+3. Is `total_assets` > 0 in `portfolio_data.json`?
+4. Any errors in the browser console (F12)?
 
-### 图表不显示
+### Charts not displaying
 
-**原因**：`chart_data` 数组为空或格式不对。
+**Cause**: The `chart_data` array is empty or malformed.
 
-**解决**：确保 JSON 中有 `chart_data` 字段，格式：
+**Fix**: Make sure the JSON has a `chart_data` field, formatted like:
 ```json
 "chart_data": [
   {"d": "08-01", "sh": 3900, "star": 1700, "pnl": 100},
@@ -80,69 +80,69 @@ python 05-scripts/rebuild.py
 ]
 ```
 
-### 手机上看布局错乱
+### Broken layout on mobile
 
-**原因**：看板针对桌面设计。
+**Cause**: The dashboard is designed for desktop.
 
-**解决**：
-- GitHub Pages 版本自动适配移动端
-- 本地版本在手机横屏查看效果更好
-- 或部署到 GitHub Pages 后用手机访问
+**Fix**:
+- The GitHub Pages version adapts to mobile automatically
+- The local version looks better in landscape on a phone
+- Or deploy to GitHub Pages and access it from your phone
 
 ## GitHub
 
-### 推送被拒绝
+### Push rejected
 
-**原因**：GitHub 网络不通（常见于中国大陆）。
+**Cause**: Cannot reach GitHub (common in mainland China).
 
-**解决**：
+**Fix**:
 ```bash
-# 切换到 SSH
+# Switch to SSH
 git remote set-url origin git@github.com:killian99cm/anchor-system.git
 
-# 或配置代理
+# Or configure a proxy
 git config --global http.proxy http://127.0.0.1:7890
 ```
 
-### GitHub Pages 不更新
+### GitHub Pages not updating
 
-**检查**：
-1. Actions 是否跑完变绿？（https://github.com/你的用户名/anchor-system/actions）
-2. Settings → Pages 是否选了 "GitHub Actions"？
-3. 等 1-2 分钟，CDN 有缓存
+**Check**:
+1. Did the Actions workflow complete and turn green? (https://github.com/YOUR_USERNAME/anchor-system/actions)
+2. In Settings → Pages, is "GitHub Actions" selected?
+3. Wait 1-2 minutes; the CDN caches.
 
-### Fork 后怎么同步上游更新？
+### How do I sync upstream updates after forking?
 
 ```bash
-# 添加原仓库为 upstream
+# Add the original repo as upstream
 git remote add upstream https://github.com/killian99cm/anchor-system.git
 
-# 拉取合并
+# Fetch and merge
 git fetch upstream
 git merge upstream/main
 
-# 解决冲突后推送
+# Push after resolving conflicts
 git push origin main
 ```
 
-## 数据
+## Data
 
-### mx-data 查询失败
+### mx-data query fails
 
-**原因**：API Key 未配置或过期。
+**Cause**: The API Key is not configured or has expired.
 
-**解决**：
-1. 去 https://dl.dfcfs.com/m/itc4 获取 API Key
-2. 设置环境变量：`export MX_APIKEY=your_key`
-3. 或直接用 WebSearch / App 数据手动填入 JSON
+**Fix**:
+1. Get an API Key from https://dl.dfcfs.com/m/itc4
+2. Set the environment variable: `export MX_APIKEY=your_key`
+3. Or manually fill the JSON using WebSearch / App data
 
-### 基金净值不更新
+### Fund NAV not updating
 
-**原因**：场外基金净值通常在 20:00-22:00 才公布。
+**Cause**: Off-exchange fund NAVs are usually published between 20:00 and 22:00.
 
-**解决**：等晚间再运行 rebuild。或先用当日估算值，次日修正。
+**Fix**: Run rebuild again in the evening. Or use the day's estimated value first and correct it the next day.
 
 ---
 
-如果以上都没解决你的问题，请提 Issue：
+If none of the above solved your problem, please open an Issue:
 https://github.com/killian99cm/anchor-system/issues/new?template=bug_report.md

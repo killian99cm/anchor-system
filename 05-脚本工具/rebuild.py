@@ -2,9 +2,22 @@
 """
 Anchor v3.3 Premium 投资看板生成器
 从 portfolio_data.json 生成 premium 级 portfolio_analysis.html + portfolio_snapshot.json
+
+架构: data_processor.py (数据层) → rebuild.py (渲染层/编排)
 """
-import json, os
+import json, os, logging, shutil
 from datetime import datetime, date
+
+# ===== LOGGING =====
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(message)s',
+    handlers=[
+        logging.FileHandler(os.path.join(os.path.dirname(__file__), 'rebuild.log'), encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+log = logging.getLogger('rebuild')
 
 # ===== PATHS =====
 DESKTOP = r"C:\Users\lenovo\Desktop"
@@ -15,166 +28,47 @@ HTML_PATH2 = os.path.join(ANCHOR_DATA, "portfolio_analysis.html")
 SNAPSHOT_PATH = os.path.join(DESKTOP, "portfolio_snapshot.json")
 SNAPSHOT_PATH2 = os.path.join(ANCHOR_DATA, "portfolio_snapshot.json")
 
-with open(DATA_PATH, 'r', encoding='utf-8') as f:
-    data = json.load(f)
+# ===== IMPORT DATA PROCESSOR =====
+from data_processor import process_all, fp, fc, validate_data
 
-now = datetime.now()
-update_time = now.strftime('%Y-%m-%d %H:%M:%S')
+# ===== LOAD & PROCESS DATA =====
+try:
+    with open(DATA_PATH, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+except FileNotFoundError:
+    log.error(f"portfolio_data.json not found at {DATA_PATH}")
+    exit(1)
+except json.JSONDecodeError as e:
+    log.error(f"Invalid JSON: {e}")
+    exit(1)
 
-# ===== ANCHOR LAYER MAPPING =====
-ANCHOR_MAP = {
-    "鹏华畅享债券C": ("bedrock", "永远不卖", "tag-b"),
-    "中银稳健增利债券A": ("bedrock", "永远不卖", "tag-b"),
-    "国泰黄金ETF联接A": ("bedrock", "定投中", "tag-a"),
-    "华泰柏瑞纳斯达克100ETF联接A": ("core", "定投 10/天", "tag-g"),
-    "天弘纳斯达克100指数(QDII)C": ("core", "QDII", "tag-g"),
-    "天弘通利混合A": ("core", "偏压舱石", "tag-b"),
-    "易方达恒生港股通创新药ETF联接C": ("sat", "13天倒计时", "tag-a"),
-    "易方达证券ETF联接C": ("sat", "PB1.32", "tag-a"),
-    "华夏国证半导体芯片ETF联接C": ("sat", "DDX暂停", "tag-r"),
-    "余额宝": ("cash", "现金预备", "tag-g"),
+embed = process_all(data)
+
+# Report any warnings
+for w in embed.get('_warnings', []):
+    log.warning(w)
+
+# ===== SNAPSHOT =====
+totals = {k: embed[k] for k in ['total', 'fundMv', 'stockMv', 'cashMv', 'totalPnl']}
+snapshot = {
+    "update_time": embed['time'],
+    "total_assets": embed['total'],
+    "fund_mv": embed['fundMv'],
+    "stock_mv": embed['stockMv'],
+    "cash_mv": embed['cashMv'],
+    "total_pnl": embed['totalPnl'],
+    "layer_summary": {
+        "bedrock": {"mv": embed['bedrock_mv'], "pct": round(embed['bedrock_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
+        "core": {"mv": embed['core_mv'], "pct": round(embed['core_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
+        "sat": {"mv": embed['sat_mv'], "pct": round(embed['sat_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
+        "cash": {"mv": embed['cash_mv'], "pct": round(embed['cash_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
+    },
+    "dca_running": embed['dca'],
+    "watchlist": embed['wl'],
+    "pending_actions": embed['pa'],
+    "rule_checks": embed['rules'],
+    "chart_data": embed['chart'],
 }
-
-def fp(v): return f"+{v:,.0f}" if v >= 0 else f"{v:,.0f}"
-def fc(v): return "g" if v >= 0 else "r"
-
-# ===== Process holdings =====
-raw = data.get('holdings_summary', [])
-stocks = data.get('stock_holdings', [])
-
-bedrock, core, sat, cash = [], [], [], []
-
-for h in raw:
-    name = h.get('name', '')
-    mv = h.get('mv', 0) or 0
-    if mv <= 0: continue
-    layer_info = ANCHOR_MAP.get(name)
-    if not layer_info: continue
-    layer, tag, tc = layer_info
-    pnl = float(str(h.get('pnl', 0)).replace(',', ''))
-    dp = float(str(h.get('day_pnl', 0) or 0).replace(',', ''))
-    item = {"n": name, "mv": round(mv, 2), "pnl": round(pnl, 2),
-            "dp": round(dp, 2), "tag": tag, "tc": tc}
-    if layer == 'bedrock': bedrock.append(item)
-    elif layer == 'core': core.append(item)
-    elif layer == 'sat': sat.append(item)
-    elif layer == 'cash': cash.append(item)
-
-# Add stock
-for s in stocks:
-    price = s.get('price', 0); shares = s.get('shares', 0)
-    mv = shares * price
-    pnl = float(str(s.get('pnl', 0)).replace(',', ''))
-    dp = float(str(s.get('day_pnl', 0) or 0).replace(',', ''))
-    bedrock.append({"n": s.get('name', '515180'), "mv": round(mv, 2),
-                    "pnl": round(pnl, 2), "dp": round(dp, 2),
-                    "tag": "永远不卖", "tc": "tag-b", "st": 1})
-
-# ===== Compute totals =====
-bedrock_mv = sum(i['mv'] for i in bedrock)
-core_mv = sum(i['mv'] for i in core)
-sat_mv = sum(i['mv'] for i in sat)
-cash_mv = sum(i['mv'] for i in cash)
-fund_mv_total = bedrock_mv + core_mv + sat_mv
-total = bedrock_mv + core_mv + sat_mv + cash_mv
-stock_mv = sum(i['mv'] for i in bedrock if i.get('st'))
-total_pnl = sum(i['pnl'] for i in bedrock + core + sat + cash)
-
-# ===== Market =====
-mkt = data.get('market', {})
-sh = mkt.get('sh', {})
-kc = mkt.get('kc', {})
-dca_list = [str(d) for d in data.get('dca_running', [])]
-
-# ===== Watchlist & Pending =====
-wl = data.get('watchlist', [])
-pa = data.get('pending_actions', [])
-
-# ===== Rule checks =====
-rules = []
-sat_total = sum(i['mv'] for i in sat)
-for item in sat:
-    r = item['pnl'] / (item['mv'] - item['pnl']) * 100 if item['mv'] != item['pnl'] else 0
-    if r <= -8:
-        rules.append({"lv": "rr", "t": f"{item['n'][:12]} 浮亏 {r:.1f}% 触发 -8% 止损线！"})
-
-rules.append({"lv": "rr", "t": "半导体 DDX = -0.016（8/6转负）-> 补仓暂停，等待 DDX 连2日为正"})
-rules.append({"lv": "rr", "t": "纳指ETF溢价率 ~10-12% -> 不建仓，等待溢价率 <= 3%"})
-rules.append({"lv": "ra", "t": "创新药时间止损倒计时：8月20日截止（剩13天），当前浮亏 -4.0%"})
-dd_pct = (total - 37535) / 37535 * 100  # old peak reference
-if dd_pct <= -15:
-    rules.append({"lv": "rr", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -15% 线！核心增长减 1/3"})
-elif dd_pct <= -10:
-    rules.append({"lv": "rr", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -10% 线！卫星全部清仓"})
-elif dd_pct <= -5:
-    rules.append({"lv": "ra", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -5% 线！卫星仓位减半"})
-else:
-    rules.append({"lv": "rg", "t": f"总资产距 -5% 回撤线 31,313 还有 {total - 31313:,.0f} 安全垫"})
-rules.append({"lv": "rg", "t": "8月操作 0/4 笔 · 零违规 · 纪律满分"})
-
-# ===== Risk matrix =====
-risks = [
-    {"l": "red", "n": "半导体DDX转负", "d": "主力-20.73亿净流出", "c": "r"},
-    {"l": "red", "n": "纳指ETF高溢价", "d": "溢价率~10-12%", "c": "r"},
-    {"l": "red", "n": "科创50主力流出", "d": "DDX=-0.089，连续3日", "c": "r"},
-    {"l": "amber", "n": "创新药时间压力", "d": "距8/20剩13天", "c": "a"},
-    {"l": "amber", "n": "成交量萎缩", "d": "2.66->1.17万亿", "c": "a"},
-    {"l": "amber", "n": "黄金短期过热", "d": "两日+4.5%", "c": "a"},
-    {"l": "green", "n": "固收稳定产出", "d": "债券+黄金正收益", "c": "g"},
-    {"l": "green", "n": "纪律执行满分", "d": "8月零操作零违规", "c": "g"},
-]
-
-# ===== Daily summaries (compact) =====
-ds_out = []
-for d in data.get('daily_summaries', [])[:13]:
-    ops = " · ".join([o.get('op', '') for o in d.get('operations', [])]) or "无"
-    sh_d = d.get('shanghai', {})
-    kc_d = d.get('kechuang50', {})
-    ds_out.append({
-        "dt": d.get('date', '')[:10],
-        "dy": d.get('day', ''),
-        "sh": str(sh_d.get('close', '--')),
-        "sc": str(sh_d.get('change', '--')),
-        "kc": str(kc_d.get('close', '--')),
-        "kcc": str(kc_d.get('change', '--')),
-        "pnl": str(d.get('portfolio_day_pnl_est', '--')),
-        "note": d.get('market_note', '')[:200],
-        "ops": ops
-    })
-
-# ===== Chart data =====
-chart_out = []
-for c in data.get('chart_data', []):
-    chart_out.append({
-        "d": c.get('d', ''),
-        "sh": round(c.get('sh', 0)),
-        "st": round(c.get('star', 0)),
-        "pnl": round(float(str(c.get('pnl', 0)).replace(',', '')), 0)
-    })
-
-# ===== Build embedded JSON =====
-embed = {
-    "time": update_time,
-    "total": round(total, 2),
-    "fundMv": round(fund_mv_total, 2),
-    "cashMv": round(cash_mv, 2),
-    "stockMv": round(stock_mv, 2),
-    "totalPnl": round(total_pnl, 2),
-    "mkt": mkt,
-    "dca": dca_list,
-    "bedrock": bedrock,
-    "core": core,
-    "sat": sat,
-    "cash": cash,
-    "rules": rules,
-    "wl": wl,
-    "pa": pa,
-    "risks": risks,
-    "ds": ds_out,
-    "chart": chart_out
-}
-
-embed_json = json.dumps(embed, ensure_ascii=False)
 
 # ===== PREMIUM HTML =====
 html = f'''<!DOCTYPE html>
@@ -414,7 +308,7 @@ body::before{{
 </div>
 
 <script>
-var D = {embed_json};
+var D = {json.dumps(embed, ensure_ascii=False)};
 
 function fp(v){{return v>=0?"+"+v.toFixed(0):v.toFixed(0)}}
 function fc(v){{return v>=0?"g":"r"}}
@@ -443,10 +337,10 @@ function rate(pnl,mv){{if(!mv||mv===pnl)return 0;return pnl/(mv-pnl)*100}}
 
 (function(){{
   var lyrs=[
-    {{k:"bed",icon:"🛡️",label:"压舱石",mv:{round(bedrock_mv)},tgt:45}},
-    {{k:"core",icon:"🚀",label:"核心增长",mv:{round(core_mv)},tgt:20}},
-    {{k:"sat",icon:"🔥",label:"卫星进攻",mv:{round(sat_mv)},tgt:20}},
-    {{k:"csh",icon:"💰",label:"现金预备",mv:{round(cash_mv)},tgt:15}}
+    {{k:"bed",icon:"🛡️",label:"压舱石",mv:{embed['bedrock_mv']},tgt:45}},
+    {{k:"core",icon:"🚀",label:"核心增长",mv:{embed['core_mv']},tgt:20}},
+    {{k:"sat",icon:"🔥",label:"卫星进攻",mv:{embed['sat_mv']},tgt:20}},
+    {{k:"csh",icon:"💰",label:"现金预备",mv:{embed['cash_mv']},tgt:15}}
   ];
   var h='<h3>四层金字塔</h3>';
   lyrs.forEach(function(l){{
@@ -568,72 +462,46 @@ setTimeout(function(){{
 # ===== WRITE =====
 os.makedirs(ANCHOR_DATA, exist_ok=True)
 
-# 同步数据源 JSON 到看板目录
-import shutil
+# Sync data JSON to Anchor dir
 data_json_dest = os.path.join(ANCHOR_DATA, "portfolio_data.json")
 if os.path.abspath(DATA_PATH) != os.path.abspath(data_json_dest):
     shutil.copy2(DATA_PATH, data_json_dest)
+    log.info(f"Data JSON  -> {data_json_dest}")
 
 for p in [HTML_PATH, HTML_PATH2]:
     with open(p, 'w', encoding='utf-8') as f:
         f.write(html)
+    log.info(f"Premium HTML -> {p} ({len(html):,} bytes)")
 
-# ===== SNAPSHOT =====
-snapshot = {
-    "update_time": update_time,
-    "total_assets": round(total, 2),
-    "fund_mv": round(fund_mv_total, 2),
-    "stock_mv": round(stock_mv, 2),
-    "cash_mv": round(cash_mv, 2),
-    "total_pnl": round(total_pnl, 2),
-    "layer_summary": {
-        "bedrock": {"mv": round(bedrock_mv, 2), "pct": round(bedrock_mv/total*100, 1) if total > 0 else 0},
-        "core": {"mv": round(core_mv, 2), "pct": round(core_mv/total*100, 1) if total > 0 else 0},
-        "sat": {"mv": round(sat_mv, 2), "pct": round(sat_mv/total*100, 1) if total > 0 else 0},
-        "cash": {"mv": round(cash_mv, 2), "pct": round(cash_mv/total*100, 1) if total > 0 else 0},
-    },
-    "dca_running": dca_list,
-    "watchlist": wl,
-    "pending_actions": pa,
-    "rule_checks": rules,
-    "chart_data": chart_out,
-}
 for sp in [SNAPSHOT_PATH, SNAPSHOT_PATH2]:
     with open(sp, 'w', encoding='utf-8') as f:
         json.dump(snapshot, f, ensure_ascii=False, indent=2)
+    log.info(f"Snapshot    -> {sp}")
 
-print(f"[OK] Data JSON  -> {data_json_dest}")
-print(f"[OK] Premium HTML -> {HTML_PATH} ({len(html):,} bytes)")
-print(f"[OK] Premium HTML -> {HTML_PATH2} ({len(html):,} bytes)")
-print(f"[OK] Snapshot    -> {SNAPSHOT_PATH}")
-print(f"[OK] Snapshot    -> {SNAPSHOT_PATH2}")
-print(f"     Total: CNY {total:,.0f} | Bedrock: {bedrock_mv/total*100:.0f}% | Core: {core_mv/total*100:.0f}% | Sat: {sat_mv/total*100:.0f}% | Cash: {cash_mv/total*100:.0f}%")
-print(f"     PnL: {fp(total_pnl)} | Holdings: {len(bedrock)+len(core)+len(sat)+len(cash)} active")
+log.info(f"Total: CNY {embed['total']:,.0f} | Bedrock: {embed['bedrock_mv']/embed['total']*100:.0f}% | Core: {embed['core_mv']/embed['total']*100:.0f}% | Sat: {embed['sat_mv']/embed['total']*100:.0f}% | Cash: {embed['cash_mv']/embed['total']*100:.0f}%")
+log.info(f"PnL: {fp(embed['totalPnl'])} | Holdings: {len(embed['bedrock'])+len(embed['core'])+len(embed['sat'])+len(embed['cash'])} active")
 
 # Data freshness check
 today = date.today()
-mkt_date_str = mkt.get('date', '')
+mkt_date_str = embed['mkt'].get('date', '')
 try:
     mkt_date = datetime.strptime(mkt_date_str, '%Y-%m-%d').date()
     mkt_age = (today - mkt_date).days
 except:
     mkt_age = 999
 
-print(f"\n----- Data Freshness -----")
-print(f"  Market data: {mkt_date_str} ({mkt_age}d ago) {'[STALE]' if mkt_age > 1 else '[OK]'}")
-print(f"  Holdings: {len(bedrock)+len(core)+len(sat)+len(cash)} active, {len([h for h in raw if h.get('mv',0)==0 and '已清仓' in str(h.get('group',''))])} cleared")
-print(f"  Watchlist: {len(wl)} items | Pending: {len(pa)} items")
+log.info(f"\n----- Data Freshness -----")
+log.info(f"  Market data: {mkt_date_str} ({mkt_age}d ago) {'[STALE]' if mkt_age > 1 else '[OK]'}")
 
-# Rule alerts summary
-alerts = [r for r in rules if r.get('lv') == 'rr']
-warns = [r for r in rules if r.get('lv') == 'ra']
-print(f"  Rule Alerts: {len(alerts)} RED, {len(warns)} AMBER")
+alerts = [r for r in embed['rules'] if r.get('lv') == 'rr']
+warns = [r for r in embed['rules'] if r.get('lv') == 'ra']
+log.info(f"  Rule Alerts: {len(alerts)} RED, {len(warns)} AMBER")
 
-# Remind about time-sensitive items
-for pa_item in pa:
+# Timer reminder
+for pa_item in embed['pa']:
     pa_text = str(pa_item).lower()
     if '8/20' in pa_text or '8月20' in pa_text:
         remaining = (date(2026, 8, 20) - today).days
-        print(f"  [TIMER] 创新药时间止损: {remaining}天剩余")
+        log.info(f"  [TIMER] 创新药时间止损: {remaining}天剩余")
 
-print("Done.")
+log.info("Done.")

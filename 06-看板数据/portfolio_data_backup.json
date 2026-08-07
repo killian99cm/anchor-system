@@ -1,0 +1,82 @@
+{
+  "update_date": "2026-07-02",
+  "total_assets": 33147.80,
+  "yuebao": 7625.57,
+  "yuebao_total_return": 325.91,
+  "day_return_rate": -0.0119,
+  "shanghai_index": 4028.90,
+  "shanghai_change": -0.0203,
+
+  "groups": {
+    "defense": {"name": "防御组合", "day_return": 18.97, "day_rate": 0.0107, "cumul_return": -105.42},
+    "offense": {"name": "进攻组合", "day_return": null, "day_rate": null, "cumul_return": null},
+    "global_fixed_income": {"name": "全局固收&现金"},
+    "global_qdii": {"name": "全局海外QDII"},
+    "global_broad": {"name": "全局宽基/金融"}
+  },
+
+  "holdings": [
+    {"name": "华泰柏瑞上证红利ETF联接A", "code": "", "mv": 1793.90, "group": "防御组合", "day_pnl": 18.97, "hold_pnl": -27.78, "cumul_pnl": -5.53, "day_change": 0.0107, "hold_rate": -0.0153, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+
+    {"name": "广发港股通科技ETF联接A", "code": "025197", "mv": 408.58, "group": "进攻组合", "day_pnl": -9.27, "hold_pnl": -92.84, "cumul_pnl": -113.47, "day_change": -0.0222, "hold_rate": -0.1851, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "平安中证卫星产业指数C", "code": "", "mv": 1088.55, "group": "进攻组合", "day_pnl": -40.91, "hold_pnl": -125.59, "cumul_pnl": -118.44, "day_change": -0.0362, "hold_rate": -0.1035, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "国泰黄金ETF联接A", "code": "", "mv": 1330.20, "group": "进攻组合", "day_pnl": 26.89, "hold_pnl": -209.80, "cumul_pnl": -137.12, "day_change": 0.0209, "hold_rate": -0.1392, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "易方达恒生港股通创新药ETF联接C", "code": "港股", "mv": 2044.19, "group": "进攻组合", "day_pnl": 113.08, "hold_pnl": -177.32, "cumul_pnl": -482.60, "day_change": 0.0586, "hold_rate": -0.0799, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "平安中证光伏产业指数C", "code": "", "mv": 1101.98, "group": "进攻组合", "day_pnl": -54.79, "hold_pnl": -108.02, "cumul_pnl": -63.17, "day_change": -0.0474, "hold_rate": -0.0901, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "诺安研究精选股票C", "code": "", "mv": 2425.13, "group": "进攻组合", "day_pnl": -82.52, "hold_pnl": -81.69, "cumul_pnl": 25.53, "day_change": -0.0329, "hold_rate": -0.0326, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "景顺长城衡瑞精选混合", "code": "026376", "mv": 916.39, "group": "进攻组合", "day_pnl": -46.61, "hold_pnl": 16.39, "cumul_pnl": 16.39, "day_change": -0.0484, "hold_rate": 0.0247, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "易方达中证银行ETF联接(LOF)C", "code": "", "mv": 394.18, "group": "进攻组合", "day_pnl": 4.57, "hold_pnl": 0.00, "cumul_pnl": 9.02, "day_change": 0.0117, "hold_rate": 0.0, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "华夏国证半导体芯片ETF联接C", "code": "7/2+300", "mv": 936.38, "group": "进攻组合", "day_pnl": -58.37, "hold_pnl": 121.70, "cumul_pnl": 539.62, "day_change": -0.0840, "hold_rate": 0.2364, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "招商深证TMT50ETF联接A", "code": "", "mv": 719.51, "group": "进攻组合", "day_pnl": -48.94, "hold_pnl": 153.48, "cumul_pnl": 288.88, "day_change": -0.0637, "hold_rate": 0.2711, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "天弘通利混合A", "code": "000573", "mv": 1709.53, "group": "进攻组合", "day_pnl": -56.86, "hold_pnl": 150.88, "cumul_pnl": 253.15, "day_change": -0.0322, "hold_rate": 0.0968, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+    {"name": "华泰柏瑞中证2000指数增强C", "code": "", "mv": 2560.03, "group": "进攻组合", "day_pnl": -40.23, "hold_pnl": 11.91, "cumul_pnl": 41.14, "day_change": -0.0155, "hold_rate": 0.0047, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+
+    {"name": "鹏华畅享债券C", "code": "015257", "mv": 6711.45, "group": "全局固收", "day_pnl": null, "hold_pnl": 411.45, "cumul_pnl": 411.45, "day_change": -0.0059, "hold_rate": 0.0653, "week_pnl": 16.99, "month_pnl": -51.52, "ytd_change": 0.0622},
+    {"name": "中银稳健增利债券A", "code": "163806", "mv": 4627.35, "group": "全局固收", "day_pnl": null, "hold_pnl": 147.28, "cumul_pnl": 147.28, "day_change": -0.0007, "hold_rate": 0.0329, "week_pnl": 7.08, "month_pnl": -2.61, "ytd_change": 0.0197},
+    {"name": "余额宝", "code": "流动性", "mv": 7625.57, "group": "全局固收", "day_pnl": 0.22, "hold_pnl": null, "cumul_pnl": 325.91, "day_change": null, "hold_rate": null, "week_pnl": null, "month_pnl": null, "ytd_change": null},
+
+    {"name": "天弘纳斯达克100指数(QDII)C", "code": "QDII", "mv": 1330.45, "group": "全局QDII", "day_pnl": null, "hold_pnl": 170.45, "cumul_pnl": 170.45, "day_change": -0.0152, "hold_rate": 0.1469, "week_pnl": 12.54, "month_pnl": -0.65, "ytd_change": 0.1514},
+    {"name": "华泰柏瑞纳斯达克100ETF联接A", "code": "QDII", "mv": 2100.38, "group": "全局QDII", "day_pnl": null, "hold_pnl": 248.75, "cumul_pnl": 248.75, "day_change": -0.0150, "hold_rate": 0.1343, "week_pnl": 21.09, "month_pnl": -0.40, "ytd_change": 0.1512},
+    {"name": "天弘全球高端制造混合(QDII)C", "code": "QDII", "mv": 400.95, "group": "全局QDII", "day_pnl": null, "hold_pnl": 0.96, "cumul_pnl": 0.96, "day_change": -0.0306, "hold_rate": 0.0024, "week_pnl": -8.45, "month_pnl": -0.03, "ytd_change": 1.1036},
+
+    {"name": "易方达证券ETF联接C", "code": "", "mv": 1015.35, "group": "全局宽基", "day_pnl": null, "hold_pnl": 15.36, "cumul_pnl": 15.36, "day_change": -0.0233, "hold_rate": 0.0154, "week_pnl": 33.20, "month_pnl": 19.82, "ytd_change": -0.0291}
+  ],
+
+  "cleared_funds": [
+    {"name": "南方红利低波50ETF联接C", "group": "防御", "cumul_pnl": 3.63},
+    {"name": "天弘中证红利低波动100ETF联接C", "group": "防御", "cumul_pnl": 1.34},
+    {"name": "易方达红利低波ETF联接C", "group": "防御", "cumul_pnl": -104.86},
+    {"name": "泰康半导体量化选股股票C", "group": "进攻", "cumul_pnl": 299.54},
+    {"name": "国投瑞银白银期货(LOF)A", "group": "进攻", "cumul_pnl": 23.58},
+    {"name": "嘉实中证新能源汽车指数C", "group": "进攻", "cumul_pnl": 18.06},
+    {"name": "中银MSCI中国A50互联互通指数增强C", "group": "进攻", "cumul_pnl": 1.88},
+    {"name": "永赢先进制造智选混合C", "group": "进攻", "cumul_pnl": -1.97},
+    {"name": "天弘中证科创创业50ETF联接C", "group": "进攻", "cumul_pnl": -11.55},
+    {"name": "天弘创业板ETF联接C", "group": "进攻", "cumul_pnl": -32.24},
+    {"name": "易方达信息产业混合A", "group": "进攻", "cumul_pnl": -52.20},
+    {"name": "天弘中证细分化工产业主题ETF联接C", "group": "进攻", "cumul_pnl": -54.57},
+    {"name": "金鹰科技创新股票A", "group": "进攻", "cumul_pnl": -136.28},
+    {"name": "中航混改精选混合C", "group": "进攻", "cumul_pnl": -226.00},
+    {"name": "嘉实中证软件服务ETF联接C", "group": "进攻", "cumul_pnl": -615.95},
+    {"name": "易方达黄金ETF联接C", "group": "全局", "cumul_pnl": 0.24}
+  ],
+
+  "transactions": [
+    {"date": "2026-07-02", "name": "华夏国证半导体芯片ETF联接C", "op": "买入", "amount": 300, "note": "收盘前加仓，买在-8.4%低位"},
+    {"date": "2026-07-02", "name": "易方达中证银行ETF联接C", "op": "买入", "amount": 400, "note": "重新买入，盈亏重置为0"},
+    {"date": "2026-07-02", "name": "平安中证光伏产业指数C", "op": "定投/加仓", "amount": 19, "note": "份额变动，1082.93→1101.98"},
+    {"date": "2026-07-02", "name": "易方达黄金ETF联接C", "op": "清仓", "amount": 0.79, "note": "清理余留，累计+0.24"},
+    {"date": "2026-06-30", "name": "招商深证TMT50ETF联接A", "op": "减仓", "amount": "大量", "note": "止盈卖出老仓，大幅降低仓位"},
+    {"date": "2026-06-27", "name": "景顺长城衡瑞精选混合", "op": "买入", "amount": 900, "note": "新开仓+追加，科技混合"},
+    {"date": "2026-06-25", "name": "易方达证券ETF联接C", "op": "买入", "amount": 994, "note": "新开仓，博弈7月券商行情"},
+    {"date": "2026-06-25", "name": "天弘全球高端制造混合C", "op": "买入", "amount": 348, "note": "新开仓+定投积累"},
+    {"date": "2026-06-15", "name": "华泰中证2000指数增强C", "op": "调仓", "amount": 2607, "note": "从红利低波转入"},
+    {"date": "2026-06-15", "name": "易方达红利低波ETF联接C", "op": "清仓", "amount": "全部", "note": "转出至中证2000，累计-104.86"},
+    {"date": "2026-06-01", "name": "嘉实中证软件服务ETF联接C", "op": "清仓", "amount": "全部", "note": "止损清仓，累计-615.95"},
+    {"date": "2026-05-01", "name": "金鹰科技创新股票A", "op": "清仓", "amount": "全部", "note": "止损清仓，累计-136.28"},
+    {"date": "2026-04-01", "name": "华泰纳斯达克100 A", "op": "定投累计", "amount": 1800, "note": "每天10元定投+手动加仓"},
+    {"date": "2026-04-01", "name": "天弘纳斯达克100 C", "op": "定投累计", "amount": 1100, "note": "定投积累"},
+    {"date": "2026-03-15", "name": "中银稳健增利债券A", "op": "买入", "amount": 4500, "note": "债券底仓"},
+    {"date": "2025", "name": "已清仓合计16只(含历史)", "op": "清仓", "amount": "—", "note": "累计清仓16只，总盈亏-851.06"}
+  ]
+}

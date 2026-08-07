@@ -1,22 +1,27 @@
-# 敏感数据 — 本地独有，不上传 GitHub
-06-看板数据/portfolio_data.json
-06-看板数据/portfolio_holdings.xlsx
-06-看板数据/portfolio_snapshot.json
-06-看板数据/portfolio_data_backup.json
-
-# 含嵌入真实数据的看板 — 用 _example 版本替代
-06-看板数据/portfolio_analysis.html
-
-# 桌面快捷方式（不在仓库内）
-../portfolio_analysis.html
-../portfolio_data.json
-../portfolio_snapshot.json
-../portfolio_holdings.xlsx
-
-# Python
+# Anchor 投资管理系统
 __pycache__/
 *.pyc
+*.pyo
+*.log
 
-# 系统临时文件
+# IDE
+.vscode/
+.idea/
+
+# OS
 .DS_Store
 Thumbs.db
+
+# Data cache
+05-脚本工具/mx_cache/*.xlsx
+05-脚本工具/mx_cache/*.json
+
+# Generated output (from source data)
+06-看板数据/portfolio_analysis.html
+06-看板数据/portfolio_snapshot.json
+06-看板数据/portfolio_data.json
+06-看板数据/portfolio_holdings.xlsx
+
+# mx_cache text files
+05-脚本工具/mx_cache/*.txt
+05-脚本工具/mx_cache/*_description.txt

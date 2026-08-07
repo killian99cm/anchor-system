@@ -25,7 +25,7 @@ jobs:
         env:
           MX_APIKEY: ${{ secrets.MX_APIKEY }}
           SERVER_KEY: ${{ secrets.SERVER_KEY }}
-        run: python 05-脚本工具/anchor_daily_report.py
+        run: python "05-脚本工具/归档/anchor_daily_report.py"
 
       - name: Push result
         run: |

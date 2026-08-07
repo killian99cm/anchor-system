@@ -13,7 +13,7 @@
 
 [![Data-mxdata](https://img.shields.io/badge/Data-mx_data_API-4d8af0?style=flat-square)](https://data.eastmoney.com/)
 [![Dashboard-ZeroDep](https://img.shields.io/badge/Dashboard-Pure_HTML/Zero_JS_Deps-00d69e?style=flat-square)](https://killian99cm.github.io/anchor-system)
-[![AI-Claude](https://img.shields.io/badge/AI-Claude-f04668?style=flat-square)](https://claude.ai)
+[![分析-自动](https://img.shields.io/badge/分析-自动-f04668?style=flat-square)](https://github.com/killian99cm/anchor-system)
 [![CI-GitHub Actions](https://img.shields.io/badge/CI-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)](https://github.com/killian99cm/anchor-system/actions)
 [![Demo-Pages](https://img.shields.io/badge/Demo-GitHub_Pages-4285F4?style=flat-square&logo=github)](https://killian99cm.github.io/anchor-system)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python)](https://www.python.org/)

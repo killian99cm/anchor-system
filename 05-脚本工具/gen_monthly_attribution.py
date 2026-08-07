@@ -119,7 +119,7 @@ def build_report(data, year, month):
 ## 五、卫星胜率
 
 本月卫星操作 **{len(sat_ops)}** 笔{sat_note}。
-操作清单：【AI/用户补】
+操作清单：【待补】
 
 ## 六、规则执行检查
 
@@ -151,7 +151,7 @@ def build_report(data, year, month):
 3. 一个月能验证吗？
 → 三过吸收 / 两过搁置 / 一过拒绝
 
-- 【AI/用户填提案】
+- 【待填提案】
 
 ## 九、版本与归档
 
@@ -162,7 +162,7 @@ def build_report(data, year, month):
 
 ---
 
-*生成：Claude Code + mx-data · 数据以用户提供为准 · 投资有风险*
+*数据：mx-data · 以用户提供为准 · 投资有风险*
 """
     return report
 

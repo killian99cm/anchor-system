@@ -320,7 +320,7 @@ body::before{{
   回撤控制线：高点 ¥{embed['peak_assets']:,.0f} → -5% ¥{embed['peak_assets']*0.95:,.0f} | -10% ¥{embed['peak_assets']*0.90:,.0f} | -15% ¥{embed['peak_assets']*0.85:,.0f} · 数据：东方财富 mx-data API<br>
   <a href="Anchor/08-可视化网站/anchor-pro.html" style="color:var(--accent);text-decoration:none">📖 体系总览</a> ·
   <a href="Anchor/05-脚本工具/anchor_calculator.html" style="color:var(--accent);text-decoration:none">🔢 仓位计算器</a> ·
-  🤖 Generated with Claude Code · 投资有风险，决策需谨慎
+  · 投资有风险，决策需谨慎
 </div>
 </div>
 

@@ -14,7 +14,7 @@
 
 [![数据源-mxdata](https://img.shields.io/badge/数据源-mx_data_API-4d8af0?style=flat-square)](https://data.eastmoney.com/)
 [![看板-零依赖](https://img.shields.io/badge/看板-纯HTML/零依赖-00d69e?style=flat-square)](https://killian99cm.github.io/anchor-system)
-[![AI-Claude](https://img.shields.io/badge/AI-Claude-f04668?style=flat-square)](https://claude.ai)
+[![分析-自动](https://img.shields.io/badge/分析-自动-f04668?style=flat-square)](https://github.com/killian99cm/anchor-system)
 [![自动化-GitHub Actions](https://img.shields.io/badge/自动化-GitHub_Actions-2088FF?style=flat-square&logo=github-actions)](https://github.com/killian99cm/anchor-system/actions)
 [![部署-GitHub Pages](https://img.shields.io/badge/演示-GitHub_Pages-4285F4?style=flat-square&logo=github)](https://killian99cm.github.io/anchor-system)
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=flat-square&logo=python)](https://www.python.org/)
@@ -39,7 +39,7 @@
 | 🏗️ **架构** | 四层金字塔（压舱石45% / 核心增长20% / 卫星进攻20% / 现金预备15%） |
 | 📜 **规则** | 4条铁律 + 6条永久禁令 + 月度操作限额 + 阶梯止盈 |
 | 📊 **数据** | mx-data API → rebuild.py → 双路输出看板（桌面 + 仓库副本） |
-| 🤖 **AI** | Claude 辅助：每日复盘、仓位点检、周报生成、月度归因 |
+| 🧠 **分析** | 每日复盘、仓位点检、周报生成、月度归因 |
 | 🔄 **节奏** | 实时行情 / 每日更新 / 每周点检 / 每月归因 |
 
 </details>
@@ -52,7 +52,7 @@
 
 | [🧠 核心理念](#-核心理念) | [📜 规则体系](#-规则体系) | [⚡ 快速开始](#-快速开始) | [📂 目录结构](#-目录结构) | [📊 数据更新](#-数据更新节奏) |
 |:---:|:---:|:---:|:---:|:---:|
-| [🏗️ 系统架构](#️-系统架构) | [📈 版本演进](#-版本演进) | [🤖 AI 系统](#-ai-分析系统) | [🌐 在线演示](#-在线演示) | [📝 更新日志](#-更新日志) |
+| [🏗️ 系统架构](#️-系统架构) | [📈 版本演进](#-版本演进) | [🧠 分析系统](#-ai-分析系统) | [🌐 在线演示](#-在线演示) | [📝 更新日志](#-更新日志) |
 | [❓ FAQ](FAQ.md) | [🔧 故障排查](TROUBLESHOOTING.md) | [English](README-EN.md) | [🤝 贡献](CONTRIBUTING.md) | [📄 License](LICENSE) |
 
 </div>
@@ -137,9 +137,9 @@ portfolio_data.json (唯一可编辑数据源)
 
 > 💡 **数据新鲜度报告**：rebuild 输出含市场数据年龄、规则警报、时间止损倒计时
 
-### 🤖 AI 分析系统
+### 🧠 分析系统
 
-基于 Claude 的智能投资助手，支持自然语言交互：
+内置分析助手，支持自然语言交互：
 
 - **📋 仓位点检**：说"仓位点检"，自动四层占比核对 + 红灯扫描
 - **📝 每日复盘**：说"更新今日数据"，mx-data 获取收盘 → 更新 JSON → rebuild
@@ -228,7 +228,7 @@ Anchor/
           │
           ▼
 ┌──────────────────────────────────────────────────────┐
-│                  AI 分析层 (Claude)                    │
+│                  分析层 (自动)                          │
 │  每日复盘 │ 仓位点检 │ 周报生成 │ 月度归因 │ 机会评估  │
 └──────────────────────────────────────────────────────┘
 ```

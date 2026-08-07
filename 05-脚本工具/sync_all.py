@@ -102,7 +102,26 @@ def sync():
     else:
         log.info("gen_excel_skill.py not found, skipping Excel generation")
 
-    # 5. Save daily snapshot
+    # 5. Regenerate anchor-pro.html (体系总览页动态数据)
+    gen_pro = os.path.join(ANCHOR_SCRIPTS, "gen_anchor_pro.py")
+    if os.path.exists(gen_pro):
+        ok, stdout, stderr = run(f'"{PY}" "{gen_pro}"')
+        if ok:
+            log.info("gen_anchor_pro.py [OK]")
+        else:
+            log.warning("gen_anchor_pro.py [FAILED]")
+
+    # 6. Drawdown alert check
+    dd_alert = os.path.join(ANCHOR_SCRIPTS, "drawdown_alert.py")
+    if os.path.exists(dd_alert):
+        ok, stdout, stderr = run(f'"{PY}" "{dd_alert}" --check')
+        if ok:
+            log.info("drawdown_alert.py [OK] (safe)")
+        else:
+            # rc 1=amber, 2=red — 记录警告
+            log.warning("drawdown_alert.py 触发回撤线警告！请检查")
+
+    # 7. Save daily snapshot
     kb_docs = os.path.join(ANCHOR, "04-每日复盘")
     os.makedirs(kb_docs, exist_ok=True)
 

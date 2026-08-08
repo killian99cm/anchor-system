@@ -33,6 +33,17 @@ Thumbs.db
 03-analysis/
 04-reviews/
 07-memory/
+05-scripts/gen_excel_skill.py
+05-scripts/gen_excel_v2.py
+05-scripts/gen_weekly_report.py
+05-scripts/sync_all.py
+05-scripts/transaction_ledger.md
+05-scripts/归档/
+ANCHOR_体系总览.md
+FAQ.md
+README.md
+README.zh-CN.md
+setup.py
 
 # mx_cache text files
 05-scripts/mx_cache/*.txt

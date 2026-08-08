@@ -24,6 +24,15 @@ Thumbs.db
 06-dashboard/portfolio_snapshot.json
 06-dashboard/portfolio_data.json
 06-dashboard/portfolio_holdings.xlsx
+06-dashboard/portfolio_data_backup.json
+
+# Private investment workspace — keep locally, never publish
+00-system/会话检查点.md
+01-rules/
+02-strategy/
+03-analysis/
+04-reviews/
+07-memory/
 
 # mx_cache text files
 05-scripts/mx_cache/*.txt

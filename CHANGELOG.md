@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0
 
 ---
 
+## [v3.3.1] — 2026-08-08
+
+### Added
+
+- Unified state contract in generated dashboard/snapshot: `state`, `drawdown_state`, `ops_state`, `risk_state`, `freeze_state`, `clock_state`, `factor_clusters`, and `opportunity_scores`.
+- Dynamic holding contract in generated dashboard/snapshot/public example data: `holding_counts`, `layers`, `layer_order`, and `layer_meta`.
+- Public publishing boundary smoke checks for `08-website/anchor-pro.html`: verifies sanitized example data, zero private asset total, visible example label, whitespace-tolerant private-token absence, dynamic layer rendering, and forbidden-card schema consistency.
+- Hash-based Desktop vs `06-dashboard/` copy consistency validation in `smoke_test.py`.
+- Holding-row take-profit/profile display in generated dashboard output.
+
+### Changed
+
+- Operation-count rendering is fully data-driven from `ops_state.label` instead of hard-coded "August Ops".
+- Operation discipline text now distinguishes clean, at-limit, over-limit, and actual violation states.
+- `smoke_test.py` now runs end-to-end checks covering rebuild output, state contracts, dynamic holding contracts, snapshot, Excel, public page, public static-copy sanitization, and core calculation tests.
+- GitHub Pages deploy workflow now triggers on `main`.
+
+### Fixed
+
+- Public `anchor-pro.html` embed parser/checks now tolerate both `var D = {...}` and `var D={...}` formats.
+- Copy consistency checks now compare content hashes and avoid unsafe `.stat()` calls when files are missing.
+- Public example cash display is no longer tied to a fixed `余额宝` label in generated content.
+- Public page generation now maps all example holding/stock names to generic labels, scans the final HTML for whitespace-spaced private tokens, and aligns forbidden-card data keys with the renderer.
+
+---
+
 ## [v3.3] — 2026-08-06
 
 ### Added

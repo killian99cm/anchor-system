@@ -1,270 +1,274 @@
-# Anchor Optimization Design
+# Anchor 优化设计
 
-Date: 2026-08-07
-Status: Draft for review
+日期：2026-08-07
+状态：待评审草案
 
-## 1. Goal
+## 1. 目标
 
-Improve Anchor in five ways without changing the core investment philosophy:
+在不改变 Anchor 核心投资哲学的前提下，从五个方面优化系统：
 
-1. Close rule loopholes that can cause inconsistent actions or accidental overtrading.
-2. Increase risk-adjusted return rather than raw return.
-3. Improve drawdown defense and regime-aware risk handling.
-4. Make the system easier to maintain by consolidating shared logic and outputs.
-5. Make daily use more intelligent and easier to operate.
+1. 堵住运行规则漏洞，避免动作不一致或过度交易。
+2. 提升风险调整后收益，而不是单纯追求更高收益。
+3. 强化回撤防御和市场状态感知。
+4. 通过统一共享逻辑和输出，提高维护性。
+5. 提升日常使用的智能度和易用性。
 
-This design intentionally does **not** add the promo-image work yet. The promo image will be handled after the optimization work is complete.
+本设计**暂不包含宣传图工作**。宣传图会在优化完成后单独处理。
 
-## 2. Non-Goals
+## 2. 非目标
 
-- Do not change the meaning of the core Anchor rules.
-- Do not introduce a new runtime framework or frontend stack.
-- Do not redesign the dashboard visually in this pass.
-- Do not expose live holdings or private desktop-only artifacts in public assets.
-- Do not replace the existing single-JSON data flow with a new storage layer.
+- 不改变核心规则语义。
+- 不引入新的运行时框架或前端栈。
+- 不在这次修改中重做看板视觉。
+- 不在公开素材中暴露真实持仓或桌面私有产物。
+- 不引入新的存储层来替换现有的单 JSON 数据流。
 
-## 3. Current Problems
+## 3. 现存问题
 
-### 3.1 Rule loopholes
+### 3.1 规则漏洞
 
-Anchor already has strong rules, but some actions are still driven by isolated signals. For example:
+Anchor 已经有较强的规则，但部分动作仍然依赖孤立信号。例如：
 
-- DDX confirms entries, but it does not yet combine cleanly with price position.
-- Stop-loss exists, but it does not explicitly account for regime context.
-- Take-profit is disciplined, but it may cut strong trends too early.
-- Cash reserve is fixed rather than regime-aware.
+- DDX 能确认进场，但还没有与价格位置形成稳定联动。
+- 止损已经存在，但没有明确考虑市场状态。
+- 止盈足够纪律化，但在强趋势行情里可能过早卖飞。
+- 现金预备层是固定思路，而不是跟随状态变化。
 
-### 3.2 Return quality gaps
+### 3.2 收益质量缺口
 
-Anchor does not yet rank opportunities explicitly. This can lead to two unwanted behaviors:
+Anchor 目前还没有显式的机会分级。这会带来两种不理想的情况：
 
-- entering too early on weak signals,
-- missing stronger trends because the system does not distinguish observation, probe, add, and expand states.
+- 弱信号时过早进场；
+- 强趋势时没有清晰地区分观察、试探、加仓、扩仓。
 
-### 3.3 Risk control gaps
+### 3.3 风控缺口
 
-- Single-position risk logic and portfolio context are not fully linked.
-- Time-stop and price-stop can conflict without a clear priority ladder.
-- There is no unified operation freeze switch when the market or data is ambiguous.
+- 单仓风险逻辑和组合上下文还没有完全联动。
+- 时间止损和价格止损在某些情况下缺少清晰的优先级。
+- 当市场或数据不明确时，还没有统一的“冻结操作”总开关。
 
-### 3.4 Maintainability gaps
+### 3.4 维护性缺口
 
-- Shared concepts such as drawdown baseline, monthly operation count, and risk status appear in multiple files.
-- Some generated artifacts can drift from the JSON source of truth.
-- Deployment and public artifacts are not fully separated from private operational data.
+- 回撤基准、月操作次数、风险状态等共享概念散落在多个文件里。
+- 某些生成产物可能和 JSON 源数据产生漂移。
+- 部署产物和公开物料还没有完全与私有运营数据隔离。
 
-### 3.5 Ease-of-use gaps
+### 3.5 易用性缺口
 
-- Daily operation still requires too much manual interpretation.
-- Output hierarchy can be clearer for fast scanning.
-- Error messages and status messages can be more actionable.
+- 日常操作仍然需要太多人工解释。
+- 输出层级还可以更适合快速扫描。
+- 错误消息和状态消息还可以更可执行。
 
-## 4. Recommended Design
+## 4. 推荐设计
 
-### 4.1 Principle: one source of truth
+### 4.1 原则：单一事实源
 
-`portfolio_data.json` remains the only authoritative data source. Every other artifact must be derived from it or validated against it.
+`portfolio_data.json` 保持为唯一权威数据源。其他所有产物都必须从它派生，或者与它做一致性校验。
 
-Shared calculations should be consolidated into one reusable contract for:
+共享计算需要收敛到一个统一合同，用于：
 
-- peak assets / drawdown baseline,
-- monthly operation count,
-- layer classification,
-- rule status,
-- risk state.
+- 峰值资产 / 回撤基准
+- 月操作次数
+- 层级映射
+- 规则状态
+- 风险状态
 
-### 4.2 Principle: hard gates first, soft intelligence second
+### 4.2 原则：先硬门槛，后软智能
 
-Any new intelligence must sit behind hard risk gates. The system should never “be smart” in a way that weakens discipline.
+任何新智能都必须放在硬风控门槛之后。系统不能因为“更聪明”而削弱纪律。
 
-Priority order:
+优先级如下：
 
-1. Safety and consistency.
-2. Risk-adjusted return.
-3. Maintainability.
-4. Convenience and automation.
+1. 安全与一致性
+2. 风险调整后收益
+3. 可维护性
+4. 便利性与自动化
 
-### 4.3 Principle: stateful but deterministic
+### 4.3 原则：状态机优先，而不是预测机
 
-Anchor should behave like a state machine, not a prediction engine.
+Anchor 应该更像一个状态机，而不是预测系统。
 
-For each trade decision, the system should determine:
+每次交易判断都应先确定：
 
-- market regime,
-- opportunity score,
-- position state,
-- risk state,
-- allowed action.
+- 市场状态
+- 机会评分
+- 持仓状态
+- 风险状态
+- 允许动作
 
-The result must be deterministic from the same input data.
+同样的输入，必须得到确定性的输出。
 
-## 5. Functional Changes
+## 5. 功能变化
 
-### 5.1 Unified portfolio contract
+### 5.1 统一组合合同
 
-Create one shared calculation contract used by `data_processor.py`, `rebuild.py`, `test_calculations.py`, and `smoke_test.py` for:
+为 `data_processor.py`、`rebuild.py`、`test_calculations.py` 和 `smoke_test.py` 建立统一的计算合同，覆盖：
 
-- drawdown baseline,
-- monthly operation count,
-- layer mapping,
-- rule status,
-- conclusion state.
+- 回撤基准
+- 月操作次数
+- 层级映射
+- 规则状态
+- 今日结论状态
 
-The design should keep backward-compatible defaults but remove silent drift.
+设计上保留向后兼容的默认值，但要消除静默漂移。
 
-### 5.2 Cross-artifact consistency gate
+### 5.2 跨产物一致性校验
 
-Extend the validation flow so the following must agree before a rebuild is considered healthy:
+在重建结果被视为“健康”之前，以下产物必须一致：
 
 - `portfolio_data.json`
 - `portfolio_snapshot.json`
 - `portfolio_analysis.html`
 - `anchor-pro.html`
 
-Checks should cover totals, dates, and baseline values. As a deployment hygiene fix, the public GitHub Pages workflow should follow the actual `main` branch instead of `master`.
+校验内容至少包括总资产、日期和基准值。
 
-### 5.3 Opportunity scoring
+### 5.3 机会评分
 
-Add a non-binding opportunity score to improve return quality.
+增加一个非绑定的机会评分，用来提升收益质量。
 
-The score should classify opportunities into:
+评分将机会分成：
 
-- Observe
-- Probe
-- Add
-- Expand candidate
+- 观察
+- 试探
+- 加仓
+- 扩仓候选
 
-Inputs may include:
+输入可包括：
 
-- DDX trend,
-- price position,
-- volume / turnover,
-- existing holdings,
-- market regime,
-- monthly operation budget,
-- negative-list restrictions.
+- DDX 趋势
+- 价格位置
+- 成交量 / 成交额
+- 现有持仓
+- 市场状态
+- 月度操作预算
+- 负面清单限制
 
-This score should not directly replace the existing rules; it should help decide whether an action is worth considering.
+这个评分不能直接替代原有规则，它只是帮助判断一个动作值不值得考虑。
 
-### 5.4 Trend-strength awareness
+### 5.4 趋势强度感知
 
-Add a trend-strength regime so strong moves are not treated the same as weak rebounds.
+增加一个趋势强度状态层，避免把强趋势和弱反弹当成同一种行情处理。
 
-Possible regimes:
+可选状态：
 
-- Weak
-- Repair
-- Strong trend
-- Overheated
+- 弱势
+- 修复
+- 强趋势
+- 过热
 
-This regime can influence take-profit timing, cash target, and whether a probe can be upgraded to an add.
+这个状态可以影响止盈时机、现金目标，以及试探仓是否能升级为加仓。
 
-### 5.5 Risk regime state machine
+### 5.5 风险状态机
 
-Introduce a simple risk-state ladder:
+引入一个简单的风险状态梯度：
 
-- Defense
-- Watch
-- Normal
-- Attack
+- 防守
+- 观望
+- 常规
+- 进攻
 
-This state determines:
+这个状态决定：
 
-- cash target range,
-- whether new entries are allowed,
-- how strict the probe/add gate should be,
-- whether the system should freeze new actions.
+- 现金目标范围
+- 是否允许新开仓
+- 试探 / 加仓门槛要多严格
+- 系统是否应冻结新动作
 
-### 5.6 Stop-loss confirmation window
+### 5.6 止损确认窗
 
-Keep the -8% stop-loss rule, but when a position crosses the line, the system should first check whether the move is part of a broader regime failure or just a noisy dip.
+保留 -8% 止损规则，但当单仓跌破阈值时，系统先判断这是不是更大范围的市场失效，还是只是短期噪音。
 
-The confirmation window should check:
+确认窗至少检查：
 
-- DDX direction,
-- peer sector weakness,
-- market regime,
-- time-stop status,
-- whether the position is already classified as weak.
+- DDX 方向
+- 同板块是否普遍转弱
+- 市场状态
+- 时间止损状态
+- 当前仓位是否已经被判定为弱势仓
 
-If the confirmation conditions are not met, the system can wait one day and re-evaluate.
+如果确认条件不成立，可以先等待一天再复核。
 
-### 5.7 Strong-trend take-profit protection
+### 5.7 强趋势止盈保护
 
-Keep the current tiered take-profit logic, but allow a strong-trend exception when the trend is clearly healthy.
+保留现有阶梯止盈逻辑，但在强趋势明确健康时，允许止盈动作获得保护。
 
-A position should be allowed to continue running when:
+满足以下条件时，可以让仓位继续奔跑：
 
-- DDX stays positive for at least 3 days,
-- the sector outperforms the benchmark,
-- turnover expands,
-- the position does not show fast deterioration.
+- DDX 连续 3 日为正
+- 板块跑赢基准
+- 成交额扩张
+- 仓位没有出现快速恶化
 
-In that case, a planned take-profit can become a protected hold with an updated stop line.
+这时，原本的止盈动作可以变成“受保护持有”，同时上移保护线。
 
-### 5.8 Regime-aware cash target
+### 5.8 状态化现金目标
 
-Convert the cash reserve from a fixed target into a regime-aware target band:
+把现金预备层从固定目标改为状态化区间：
 
-- Defense: 15%–20%
-- Normal: 12%–15%
-- Attack: 8%–12%
+- 防守：15%–20%
+- 常规：12%–15%
+- 进攻：8%–12%
 
-The system chooses the band from market and portfolio conditions, but still keeps the existing cash-reserve role intact.
+系统根据市场和组合状态自动选择区间，但仍保留现金预备层的原始角色。
 
-### 5.9 Operation freeze switch
+### 5.9 冻结操作开关
 
-Add a single freeze state that blocks new entries when:
+新增一个统一的冻结状态，在以下情况阻止新增开仓：
 
-- data is stale or missing,
-- signals conflict,
-- market conditions are extreme,
-- monthly operation cap is reached,
-- the system is in defense mode and a risk trigger is active.
+- 数据过期或缺失
+- 信号冲突
+- 市场处于极端状态
+- 月度操作额度已满
+- 系统处于防守模式且已触发风险信号
 
-Freeze should prevent new actions, not force liquidation.
+冻结只阻止新动作，不强制平仓。
 
-### 5.10 Better daily usability
+### 5.10 提升日常易用性
 
-Standardize the output order in summaries and dashboard text:
+统一摘要和看板文本的输出顺序：
 
-1. Current state
-2. Risk alerts
-3. Allowed actions
-4. Disallowed actions
-5. Next watch points
+1. 当前状态
+2. 风险提示
+3. 允许动作
+4. 禁止动作
+5. 下一步观察点
 
-Also make the short command workflow more consistent so common tasks can be triggered with fewer words.
+同时让常用口令更一致，尽量用更少的词触发常见任务。
 
-## 6. Public/Private Boundary
+### 5.11 修正 GitHub Pages 的部署分支
 
-Public-facing assets must use sanitized or example data only.
+把公开 GitHub Pages 工作流的触发分支从 `master` 改为真实主线 `main`，避免公共站点因为分支名称不一致而静默失效。
 
-This means:
+## 6. 公私边界
 
-- no raw private holdings in social assets,
-- no Desktop-only operational artifacts in public copy,
-- no live portfolio numbers in public story packs,
-- GitHub Pages should publish only public/demo assets.
+公开素材必须只使用脱敏数据或示例数据。
 
-## 7. Validation Plan
+这意味着：
 
-The design should be considered complete only when the following pass:
+- 社交宣传物料里不能出现真实持仓；
+- 不能把桌面私有产物直接复制到公开内容；
+- 公开故事包不能使用实时组合数字；
+- GitHub Pages 只能发布公开 / 演示资产。
 
-- calculation tests still pass,
-- smoke tests still pass,
-- rebuild output agrees with source JSON,
-- HTML outputs agree on totals and dates,
-- the public demo remains free of private data.
+## 7. 验证计划
 
-## 8. Scope Guardrails
+只有在以下内容都通过后，这份设计才算完成：
 
-This design intentionally leaves out:
+- 计算测试仍然通过；
+- smoke 测试仍然通过；
+- rebuild 输出与源 JSON 一致；
+- HTML 输出之间的总资产和日期一致；
+- 公开演示仍然不包含私有数据。
 
-- promo image generation,
-- broad dashboard redesign,
-- new trading strategies,
-- new external dependencies,
-- any change to core rule semantics.
+## 8. 范围护栏
 
-If future work wants to go beyond these guardrails, it should be split into a separate spec.
+这份设计刻意不包含：
+
+- 宣传图生成；
+- 大规模看板重做；
+- 新交易策略；
+- 新外部依赖；
+- 对核心规则语义的任何修改。
+
+如果后续工作要超出这些护栏，应该单独拆成另一份 spec。

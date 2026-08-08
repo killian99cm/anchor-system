@@ -8,6 +8,9 @@ __pycache__/
 .vscode/
 .idea/
 
+# Claude skill runtime state
+.superpowers/
+
 # OS
 .DS_Store
 Thumbs.db

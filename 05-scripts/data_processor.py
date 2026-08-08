@@ -9,19 +9,8 @@ from datetime import date, datetime, timedelta
 
 
 # ===== ANCHOR LAYER MAPPING =====
-ANCHOR_MAP = {
-    # 只固定层级归属；状态标签由 derive_holding_tag() 按当前数据动态计算。
-    "鹏华畅享债券C": ("bedrock", "", "tag-b"),
-    "中银稳健增利债券A": ("bedrock", "", "tag-b"),
-    "国泰黄金ETF联接A": ("bedrock", "", "tag-a"),
-    "华泰柏瑞纳斯达克100ETF联接A": ("core", "", "tag-g"),
-    "天弘纳斯达克100指数(QDII)C": ("core", "", "tag-g"),
-    "天弘通利混合A": ("core", "", "tag-b"),
-    "易方达恒生港股通创新药ETF联接C": ("sat", "", "tag-a"),
-    "易方达证券ETF联接C": ("sat", "", "tag-a"),
-    "华夏国证半导体芯片ETF联接C": ("sat", "", "tag-a"),
-    "余额宝": ("cash", "", "tag-g"),
-}
+# 仅用 group / 关键词兜底分类；不在源码里固化具体持仓名称。
+ANCHOR_MAP = {}
 
 LAYER_ORDER = ["bedrock", "core", "sat", "cash"]
 LAYER_META = {
@@ -138,13 +127,13 @@ def derive_take_profit_profile(name, layer):
     if layer == 'cash':
         return '冻结72h后可用'
     if layer == 'bedrock':
-        if '515180' in name or '红利' in name:
+        if '红利' in name or '高股息' in name or '股息' in name:
             return '+30%卖1/3'
         if '黄金' in name:
             return '定投中 / 永不卖'
         return '永不卖'
     if layer == 'core':
-        if '纳指' in name or '纳斯达克' in name:
+        if '纳指' in name or '纳斯达克' in name or 'QDII' in name or '全球高端制造' in name:
             return '定投持有 / 估值阈值'
         return '持有'
     if '创新药' in name:
@@ -178,10 +167,10 @@ def derive_holding_tag(name, layer, data=None, mkt=None, existing_tag=''):
             return '定投中' if '黄金' in str(data.get('dca_running', '')) else '永不卖', 'tag-a'
         return existing_tag or derive_take_profit_profile(name, layer), tc
     if layer == 'core':
-        if '纳指' in name or '纳斯达克' in name:
+        if '纳指' in name or '纳斯达克' in name or 'QDII' in name or '全球高端制造' in name:
             if '溢价' in text:
                 return '溢价冻结', 'tag-r'
-            if any(name in str(x) or '纳指' in str(x) or '纳斯达克' in str(x) for x in data.get('dca_running', [])):
+            if any(('纳指' in str(x) or '纳斯达克' in str(x) or 'QDII' in str(x) or '全球高端制造' in str(x)) for x in data.get('dca_running', [])):
                 return '定投中', 'tag-g'
             return '估值观察', 'tag-a'
         return existing_tag or derive_take_profit_profile(name, layer), tc
@@ -335,7 +324,7 @@ def compute_clock_state(data, today=None):
 
     def key(name):
         name = str(name)
-        for kw in ('创新药', '半导体', '芯片', '证券', '纳指', '纳斯达克', '黄金', '红利'):
+        for kw in ('创新药', '半导体', '芯片', '证券', '纳指', '纳斯达克', 'QDII', '黄金', '红利', '高端制造'):
             if kw in name:
                 return kw
         return name[:8]
@@ -391,7 +380,7 @@ def compute_factor_clusters(data, totals):
     stock_items = data.get('stock_holdings', [])
     clusters = {
         'growth_beta': ['纳指', '纳斯达克', '半导体', '芯片', '创新药', '证券'],
-        'defensive_income': ['债券', '红利', '余额宝'],
+        'defensive_income': ['债券', '红利', '现金'],
         'gold': ['黄金'],
     }
     out = {}

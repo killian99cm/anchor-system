@@ -127,13 +127,6 @@ def private_tokens_from_data(data, embed):
         val = hc.get(key)
         if isinstance(val, int) and val:
             tokens.add(f'{val}{suffix}')
-    for token in [
-        '余额宝', '10只基金 + 1只股票 + 余额宝', '10只活跃持仓', '12个活跃项',
-        '18626', '5875', '5428', '109笔实盘交易', '109笔交易', '28只清仓基金',
-        '13个月数据', '13个月盈亏走势', '13个月合计', '¥2,343',
-        '日均亏损从 -¥86 降到 -¥66', '真实亏损案例', '实盘持仓'
-    ]:
-        tokens.add(token)
     return sorted(tokens, key=len, reverse=True)
 
 

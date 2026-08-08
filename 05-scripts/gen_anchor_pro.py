@@ -39,35 +39,27 @@ KEYWORD_TO_LAYER = [
     ("半导体", "sat"), ("芯片", "sat"), ("创新药", "sat"), ("证券", "sat"),
     ("现金", "cash"), ("货币", "cash"),
 ]
-PRIVATE_TOKENS = [
-    "示例黄金基金",
-    "示例联接基金恒生港股通创新药ETF联接C",
-    "示例行业基金半导体芯片ETF联接C",
-    "示例联接基金证券ETF联接C",
-    "示例指数基金通利混合A",
-    "示例债券基金",
-    "示例债券基金B",
-    "示例指数基金纳斯达克100指数",
-    "示例宽基基金纳斯达克100",
-    "100红利",
-    "余额宝",
-    "515180",
-    "35485.73",
-    "32961",
-    "10只基金 + 1只股票 + 余额宝",
-    "10只活跃持仓",
-    "12个活跃项",
-    "109笔实盘交易",
-    "109笔交易",
-    "28只清仓基金",
-    "13个月数据",
-    "13个月盈亏走势",
-    "13个月合计",
-    "¥2,343",
-    "日均亏损从 -¥86 降到 -¥66",
-    "真实亏损案例",
-    "实盘持仓",
-]
+def private_tokens_from_local_portfolio():
+    """Collect private leak markers from local private portfolio data if present."""
+    local_path = DESKTOP / "portfolio_data.json"
+    if not local_path.exists():
+        return []
+    try:
+        data = json.loads(local_path.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    tokens = set()
+    for section in ("holdings_summary", "stock_holdings"):
+        for item in data.get(section, []):
+            for key in ("name", "code"):
+                value = str(item.get(key, "")).strip()
+                if value:
+                    tokens.add(value)
+    for key in ("total_assets", "fund_account", "stock_account", "yuebao", "total_hold_pnl_est"):
+        value = data.get(key)
+        if isinstance(value, (int, float)) and value:
+            tokens.add(str(int(round(value))))
+    return sorted(tokens, key=len, reverse=True)
 
 EXAMPLE_NAME_BY_LAYER = {
     "bedrock": "示例压舱基金",
@@ -165,7 +157,7 @@ def public_display_name(layer, item_type, index):
 
 def sensitive_tokens_from_input(data):
     """Build a leak list from the source JSON, even when _example=true is set."""
-    tokens = set(PRIVATE_TOKENS)
+    tokens = set(private_tokens_from_local_portfolio())
     for section in ("holdings_summary", "stock_holdings"):
         for item in data.get(section, []):
             for key in ("name", "code"):
@@ -191,7 +183,8 @@ def contains_sensitive_token(text, token):
 
 
 def leaked_tokens(text, data):
-    return [token for token in sensitive_tokens_from_input(data) if contains_sensitive_token(text, token)]
+    tokens = private_tokens_from_local_portfolio()
+    return [token for token in tokens if contains_sensitive_token(text, token)]
 
 
 def build_data(data):

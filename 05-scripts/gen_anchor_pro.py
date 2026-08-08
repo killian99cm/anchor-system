@@ -17,6 +17,7 @@ DESKTOP = Path(r"C:\Users\lenovo\Desktop")
 ANCHOR = DESKTOP / "Anchor"
 PUBLIC_DATA_PATH = ANCHOR / "06-dashboard" / "portfolio_data_example.json"
 PRO_HTML = ANCHOR / "08-website" / "anchor-pro.html"
+EXAMPLE_HTML = ANCHOR / "06-dashboard" / "portfolio_analysis_example.html"
 
 LAYER_ORDER = ["bedrock", "core", "sat", "cash"]
 LAYER_META = {
@@ -357,20 +358,24 @@ def json_block(data):
     return block
 
 
-def main():
-    data = load_public_data()
-    if not PRO_HTML.exists():
-        raise SystemExit(f"[ERROR] 未找到 {PRO_HTML}")
-    html = PRO_HTML.read_text(encoding="utf-8")
+def replace_data_block(html, new_block):
     match = re.search(r"var\s+D\s*=\s*\{", html)
     if not match:
         raise SystemExit("[ERROR] 未找到 var D={...} 数据块，请检查模板格式")
     end = html.find("};", match.start())
     if end < 0:
         raise SystemExit("[ERROR] 未找到 var D 数据块结尾 ;")
+    return html[:match.start()] + new_block + html[end + 1:]
 
+
+def main():
+
+    data = load_public_data()
+    if not PRO_HTML.exists():
+        raise SystemExit(f"[ERROR] 未找到 {PRO_HTML}")
     new_block = json_block(data)
-    new_html = html[:match.start()] + new_block + html[end + 1:]
+    html = PRO_HTML.read_text(encoding="utf-8")
+    new_html = replace_data_block(html, new_block)
     replacements = {
         'content="109笔实盘迭代。四层金字塔体系。少亏指南，不是赚钱秘籍。"': 'content="四层金字塔投资纪律体系。示例数据演示，少亏指南，不是赚钱秘籍。"',
         "⚓ 109笔实盘交易 · 13个月数据 · v3.3 持续迭代": "⚓ 示例交易复盘 · 脱敏数据 · v3.3 持续迭代",
@@ -397,6 +402,15 @@ def main():
         raise SystemExit(f"[ERROR] 公开HTML包含私有标记：{', '.join(leaked[:5])}")
     PRO_HTML.write_text(new_html, encoding="utf-8")
     print(f"[OK] anchor-pro.html 已更新为公开示例数据: {PRO_HTML}")
+
+    if EXAMPLE_HTML.exists():
+        example_html = EXAMPLE_HTML.read_text(encoding="utf-8")
+        example_html = replace_data_block(example_html, new_block)
+        example_leaked = leaked_tokens(example_html, data)
+        if example_leaked:
+            raise SystemExit(f"[ERROR] 示例首页包含私有标记：{', '.join(example_leaked[:5])}")
+        EXAMPLE_HTML.write_text(example_html, encoding="utf-8")
+        print(f"[OK] portfolio_analysis_example.html 已同步公开示例数据: {EXAMPLE_HTML}")
     print(f"     示例总资产 {data.get('total_assets')} · 更新 {data.get('update_date', data.get('update_time', ''))}")
 
 

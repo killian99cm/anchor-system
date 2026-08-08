@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0
 ### Added
 
 - Unified state contract in generated dashboard/snapshot: `state`, `drawdown_state`, `ops_state`, `risk_state`, `freeze_state`, `clock_state`, `factor_clusters`, and `opportunity_scores`.
+- Public homepage example now shares the sanitized `var D` contract with `anchor-pro.html` and is covered by smoke checks.
+- Inline JavaScript syntax checks in `smoke_test.py` catch blank-page regressions before release.
 - Dynamic holding contract in generated dashboard/snapshot/public example data: `holding_counts`, `layers`, `layer_order`, and `layer_meta`.
 - Public publishing boundary smoke checks for `08-website/anchor-pro.html`: verifies sanitized example data, zero private asset total, visible example label, whitespace-tolerant private-token absence, dynamic layer rendering, and forbidden-card schema consistency.
 - Hash-based Desktop vs `06-dashboard/` copy consistency validation in `smoke_test.py`.

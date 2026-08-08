@@ -5,22 +5,32 @@ Anchor v3.3 — 数据处理器
 独立于渲染层，可单独测试
 """
 import json
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 
 # ===== ANCHOR LAYER MAPPING =====
 ANCHOR_MAP = {
-    "示例债券基金": ("bedrock", "永远不卖", "tag-b"),
-    "示例债券基金B": ("bedrock", "永远不卖", "tag-b"),
-    "示例黄金基金": ("bedrock", "定投中", "tag-a"),
-    "示例宽基基金纳斯达克100ETF联接A": ("core", "定投 10/天", "tag-g"),
-    "示例指数基金纳斯达克100指数(QDII)C": ("core", "QDII", "tag-g"),
-    "示例指数基金通利混合A": ("core", "偏压舱石", "tag-b"),
-    "示例联接基金恒生港股通创新药ETF联接C": ("sat", "13天倒计时", "tag-a"),
-    "示例联接基金证券ETF联接C": ("sat", "PB1.32", "tag-a"),
-    "示例行业基金半导体芯片ETF联接C": ("sat", "DDX暂停", "tag-r"),
-    "余额宝": ("cash", "现金预备", "tag-g"),
+    # 只固定层级归属；状态标签由 derive_holding_tag() 按当前数据动态计算。
+    "示例债券基金": ("bedrock", "", "tag-b"),
+    "示例债券基金B": ("bedrock", "", "tag-b"),
+    "示例黄金基金": ("bedrock", "", "tag-a"),
+    "示例宽基基金纳斯达克100ETF联接A": ("core", "", "tag-g"),
+    "示例指数基金纳斯达克100指数(QDII)C": ("core", "", "tag-g"),
+    "示例指数基金通利混合A": ("core", "", "tag-b"),
+    "示例联接基金恒生港股通创新药ETF联接C": ("sat", "", "tag-a"),
+    "示例联接基金证券ETF联接C": ("sat", "", "tag-a"),
+    "示例行业基金半导体芯片ETF联接C": ("sat", "", "tag-a"),
+    "余额宝": ("cash", "", "tag-g"),
 }
+
+LAYER_ORDER = ["bedrock", "core", "sat", "cash"]
+LAYER_META = {
+    "bedrock": {"k": "bed", "icon": "🛡️", "label": "压舱石", "cls": "b0", "target": 45},
+    "core": {"k": "core", "icon": "🚀", "label": "核心增长", "cls": "b1", "target": 20},
+    "sat": {"k": "sat", "icon": "🔥", "label": "卫星进攻", "cls": "b2", "target": 20},
+    "cash": {"k": "csh", "icon": "💰", "label": "现金预备", "cls": "b3", "target": 15},
+}
+TAG_CLASS_BY_LAYER = {"bedrock": "tag-b", "core": "tag-g", "sat": "tag-a", "cash": "tag-g"}
 
 
 def fp(v):
@@ -52,17 +62,493 @@ def safe_float(val, default=0):
         return default
 
 
-def monthly_ops_summary(data, year=2026, month=8):
+def data_reference_date(data, fallback=None):
+    """Return the source-data date so rule countdowns do not drift by runtime date."""
+    for key in ('update_date', 'update_time'):
+        raw = data.get(key)
+        if not raw:
+            continue
+        try:
+            return datetime.strptime(str(raw)[:10], '%Y-%m-%d').date()
+        except ValueError:
+            continue
+    return fallback or date.today()
+
+
+DEFAULT_CASH_FLOOR = 0.10
+DEFAULT_MONTHLY_OPS = 4
+
+
+def get_peak_assets(data):
+    """Return the required peak-assets baseline from portfolio data."""
+    peak = data.get('_meta', {}).get('peak_assets')
+    if peak in (None, '', 0):
+        raise ValueError("Missing required _meta.peak_assets")
+    peak = safe_float(peak, 0)
+    if peak <= 0:
+        raise ValueError("Missing required _meta.peak_assets")
+    return peak
+
+
+def drawdown_status(total, peak):
+    """Return explicit drawdown status with signed precedence."""
+    if peak <= 0:
+        raise ValueError("peak_assets must be > 0")
+    dd_pct = (total - peak) / peak * 100
+    cushion = total - peak * 0.95
+    lines = {
+        'minus5': round(peak * 0.95, 2),
+        'minus10': round(peak * 0.90, 2),
+        'minus15': round(peak * 0.85, 2),
+    }
+    if dd_pct >= 0:
+        return {"level": "safe", "line": None, "dd_pct": dd_pct, "action": "new-high", "cushion": cushion, "lines": lines}
+    if dd_pct <= -15:
+        return {"level": "red", "line": 15, "dd_pct": dd_pct, "action": "核心增长减 1/3", "cushion": total - peak * 0.85, "lines": lines}
+    if dd_pct <= -10:
+        return {"level": "red", "line": 10, "dd_pct": dd_pct, "action": "卫星全部清仓", "cushion": total - peak * 0.90, "lines": lines}
+    if dd_pct <= -5:
+        return {"level": "amber", "line": 5, "dd_pct": dd_pct, "action": "卫星仓位减半", "cushion": cushion, "lines": lines}
+    return {"level": "safe", "line": None, "dd_pct": dd_pct, "action": None, "cushion": cushion, "lines": lines}
+
+
+def compute_drawdown_state(data, totals):
+    """Return normalized drawdown state using portfolio data."""
+    peak = get_peak_assets(data)
+    peak_note = data.get('_meta', {}).get('peak_note', '')
+    status = drawdown_status(totals['total'], peak)
+    triggered_line = status['line']
+    if status['level'] == 'safe' and status['dd_pct'] >= 0:
+        triggered_line = None
+    return {
+        'peak_assets': peak,
+        'peak_note': peak_note,
+        'dd_pct': round(status['dd_pct'], 1),
+        'dd_level': status['level'],
+        'safe_cushion': round(status['cushion'], 2),
+        'lines': status['lines'],
+        'triggered_line': triggered_line,
+        'action': status['action'],
+    }
+
+
+def derive_take_profit_profile(name, layer):
+    """Return a visible take-profit profile for each holding."""
+    name = str(name)
+    if layer == 'cash':
+        return '冻结72h后可用'
+    if layer == 'bedrock':
+        if '515180' in name or '红利' in name:
+            return '+30%卖1/3'
+        if '黄金' in name:
+            return '定投中 / 永不卖'
+        return '永不卖'
+    if layer == 'core':
+        if '纳指' in name or '纳斯达克' in name:
+            return '定投持有 / 估值阈值'
+        return '持有'
+    if '创新药' in name:
+        return '-8%止损 / +10%+20% / 30天'
+    if '证券' in name:
+        return '-8%止损 / PB1.35·1.6'
+    if '半导体' in name or '芯片' in name:
+        return 'DDX连2日为正才加仓'
+    if '黄金' in name:
+        return '定投中'
+    return '-8%止损 / 阶梯止盈'
+
+
+def derive_holding_tag(name, layer, data=None, mkt=None, existing_tag=''):
+    """Return a current-state tag; holdings and labels can change with market data."""
+    data = data or {}
+    name = str(name)
+    mkt_note = str((mkt or data.get('market', {}) or {}).get('note', ''))
+    text = ' '.join([
+        mkt_note,
+        str(data.get('pending_actions', '')),
+        str(data.get('watchlist', '')),
+        str(data.get('dca_running', '')),
+    ])
+    tc = TAG_CLASS_BY_LAYER.get(layer, 'tag-a')
+
+    if layer == 'cash':
+        return existing_tag or '现金预备', tc
+    if layer == 'bedrock':
+        if '黄金' in name:
+            return '定投中' if '黄金' in str(data.get('dca_running', '')) else '永不卖', 'tag-a'
+        return existing_tag or derive_take_profit_profile(name, layer), tc
+    if layer == 'core':
+        if '纳指' in name or '纳斯达克' in name:
+            if '溢价' in text:
+                return '溢价冻结', 'tag-r'
+            if any(name in str(x) or '纳指' in str(x) or '纳斯达克' in str(x) for x in data.get('dca_running', [])):
+                return '定投中', 'tag-g'
+            return '估值观察', 'tag-a'
+        return existing_tag or derive_take_profit_profile(name, layer), tc
+    if layer == 'sat':
+        if '创新药' in name:
+            remaining = (date(2026, 8, 20) - data_reference_date(data)).days
+            return f'{remaining}天倒计时', 'tag-a' if remaining > 5 else 'tag-r'
+        if '半导体' in name or '芯片' in name:
+            if 'DDX转负' in text or 'DDX为负' in text:
+                return 'DDX暂停', 'tag-r'
+            if 'DDX' in text and ('为正' in text or '转正' in text):
+                return 'DDX观察', 'tag-a'
+            return 'DDX待确认', 'tag-a'
+        if '证券' in name:
+            if 'PB' in text:
+                return 'PB观察', 'tag-a'
+            return '估值观察', 'tag-a'
+        return existing_tag or '动态观察', tc
+    return existing_tag or '', tc
+
+
+def derive_portfolio_state(total, cash_mv, dd_pct, mkt_note, ops_count, max_ops, violation_count=0):
+    """Derive a conservative portfolio state and freeze flags."""
+    cash_ratio = cash_mv / total if total else 0
+    note = str(mkt_note or '')
+    freeze_reasons = []
+
+    if dd_pct <= -15:
+        freeze_reasons.append('-15%回撤')
+    elif dd_pct <= -10:
+        freeze_reasons.append('-10%回撤')
+    if cash_ratio < DEFAULT_CASH_FLOOR:
+        freeze_reasons.append(f'现金{cash_ratio*100:.1f}%<10%')
+    if ops_count >= max_ops:
+        freeze_reasons.append(f'月操作{ops_count}/{max_ops}已满')
+    if 'DDX转负' in note:
+        freeze_reasons.append('DDX转负')
+    if '溢价' in note and ('10-12%' in note or '高溢价' in note):
+        freeze_reasons.append('纳指高溢价')
+    if violation_count > 0 and (dd_pct <= -10 or cash_ratio < DEFAULT_CASH_FLOOR):
+        freeze_reasons.append(f'{violation_count}次违规')
+
+    if dd_pct <= -15 or cash_ratio < DEFAULT_CASH_FLOOR:
+        state = '防守'
+    elif dd_pct <= -10 or 'DDX转负' in note or ops_count >= max_ops:
+        state = '观望'
+    elif 'DDX连' in note and ('为正' in note or '转正' in note) and '转负' not in note:
+        state = '进攻'
+    else:
+        state = '常规'
+
+    return {
+        'state': state,
+        'cash_ratio': cash_ratio,
+        'freeze_new_buy': bool(freeze_reasons),
+        'freeze_reasons': freeze_reasons,
+        'allow_existing_exits': True,
+    }
+
+
+def compute_risk_state(rules, risks, drawdown_state, ops_state, mkt=None):
+    """Normalize current risk status from existing outputs."""
+    level = 'green'
+    reasons = []
+    rule_text = ' '.join(str(r.get('t', '')) for r in rules)
+    risk_text = ' '.join(str(r.get('n', '')) + ' ' + str(r.get('d', '')) for r in risks)
+    mkt_note = str((mkt or {}).get('note', ''))
+
+    if drawdown_state.get('dd_level') == 'red' or ops_state.get('is_over_limit'):
+        level = 'red'
+    elif drawdown_state.get('dd_level') == 'amber' or ops_state.get('is_at_limit') or any(r.get('lv') == 'rr' for r in rules):
+        level = 'amber'
+
+    if 'DDX转负' in rule_text or 'DDX转负' in risk_text or 'DDX转负' in mkt_note:
+        reasons.append('DDX转负')
+    if drawdown_state.get('dd_level') == 'red':
+        reasons.append(f"回撤{drawdown_state.get('dd_pct', 0):.1f}%")
+    elif drawdown_state.get('dd_level') == 'amber':
+        reasons.append(f"回撤{drawdown_state.get('dd_pct', 0):.1f}%")
+    if ops_state.get('is_over_limit'):
+        reasons.append(f"月操作{ops_state.get('count', 0)}/{ops_state.get('max', 0)}")
+    if '纳指ETF高溢价' in risk_text:
+        reasons.append('纳指高溢价')
+    if any('时间止损' in s for s in [rule_text, risk_text]):
+        reasons.append('时间止损关注')
+
+    label = '安全'
+    if level == 'red':
+        label = '需要行动'
+    elif level == 'amber':
+        label = '关注即可'
+
+    return {
+        'level': level,
+        'label': label,
+        'red_count': sum(1 for r in rules if r.get('lv') == 'rr'),
+        'amber_count': sum(1 for r in rules if r.get('lv') == 'ra'),
+        'green_count': sum(1 for r in rules if r.get('lv') == 'rg'),
+        'reasons': reasons,
+    }
+
+
+def compute_freeze_state(data, ops_state, risk_state, mkt=None, totals=None):
+    """Return a non-trading freeze summary."""
+    mkt_note = str((mkt or {}).get('note', ''))
+    reasons = []
+    if ops_state.get('is_at_limit'):
+        reasons.append(f"月操作{ops_state.get('count', 0)}/{ops_state.get('max', 0)}已满")
+    if risk_state.get('level') == 'red':
+        reasons.append('风险红灯')
+    if risk_state.get('level') == 'amber' and ops_state.get('is_at_limit'):
+        reasons.append('风险+操作双重约束')
+    if totals:
+        total = totals.get('total', 0) or 0
+        cash_ratio = (totals.get('cash_mv', 0) or 0) / total if total else 0
+        if cash_ratio < DEFAULT_CASH_FLOOR:
+            reasons.append(f'现金{cash_ratio*100:.1f}%<10%硬下限')
+    if 'DDX转负' in mkt_note or 'DDX转负' in risk_state.get('reasons', []):
+        reasons.append('DDX转负')
+    if '纳指高溢价' in risk_state.get('reasons', []) or ('溢价' in mkt_note and ('10-12%' in mkt_note or '高溢价' in mkt_note)):
+        reasons.append('纳指高溢价')
+    if data.get('_meta', {}).get('peak_assets') in (None, '', 0):
+        reasons.append('峰值基准缺失')
+
+    frozen = bool(reasons)
+    level = 'red' if risk_state.get('level') == 'red' else ('amber' if reasons else 'green')
+    return {
+        'frozen': frozen,
+        'level': level,
+        'reasons': reasons,
+        'allow_existing_exits': True,
+    }
+
+
+def compute_clock_state(data, today=None):
+    """Derive visible holding-age and cooldown clocks from transactions."""
+    if today is None:
+        today = data_reference_date(data)
+
+    def parse_dt(raw):
+        s = str(raw or '').strip()
+        for fmt in ('%Y-%m-%d', '%m/%d %H:%M', '%m/%d'):
+            try:
+                dt = datetime.strptime(s[:10] if fmt == '%Y-%m-%d' else s, fmt).date()
+                if fmt != '%Y-%m-%d':
+                    dt = dt.replace(year=today.year)
+                return dt
+            except ValueError:
+                continue
+        return None
+
+    def key(name):
+        name = str(name)
+        for kw in ('创新药', '半导体', '芯片', '证券', '纳指', '纳斯达克', '黄金', '红利'):
+            if kw in name:
+                return kw
+        return name[:8]
+
+    buys = {}
+    sells = {}
+    for t in data.get('transactions', []):
+        dt = parse_dt(t.get('date'))
+        if not dt:
+            continue
+        k = key(t.get('name', ''))
+        op = str(t.get('op', ''))
+        if any(x in op for x in ('买入', '加仓', '定投')):
+            buys.setdefault(k, []).append(dt)
+        if any(x in op for x in ('卖出', '减仓', '清仓', '止盈')):
+            sells.setdefault(k, []).append(dt)
+
+    holding_clocks = []
+    for h in data.get('holdings_summary', []):
+        if (h.get('mv', 0) or 0) <= 0 or h.get('group') != '进攻组合':
+            continue
+        k = key(h.get('name', ''))
+        dates = sorted(buys.get(k, []))
+        entry = dates[0] if dates else None
+        last_buy = dates[-1] if dates else None
+        holding_clocks.append({
+            'name': h.get('name', ''),
+            'entry_date': entry.isoformat() if entry else '',
+            'last_buy_date': last_buy.isoformat() if last_buy else '',
+            'holding_days': (today - entry).days if entry else None,
+            'time_stop_days_left': max(30 - (today - entry).days, 0) if entry else None,
+        })
+
+    cooldowns = []
+    for k, dates in sells.items():
+        last = max(dates)
+        until = last + timedelta(days=3)
+        remaining = max((until - today).days, 0)
+        cooldowns.append({
+            'name_key': k,
+            'last_sell_at': last.isoformat(),
+            'cooldown_until': until.isoformat(),
+            'cooldown_days_left': remaining,
+            'active': remaining > 0,
+        })
+
+    return {'holdings': holding_clocks, 'cooldowns': cooldowns}
+
+
+def compute_factor_clusters(data, totals):
+    """Conservative factor proxy map for monthly concentration warnings."""
+    active = [h for h in data.get('holdings_summary', []) if (h.get('mv', 0) or 0) > 0]
+    stock_items = data.get('stock_holdings', [])
+    clusters = {
+        'growth_beta': ['纳指', '纳斯达克', '半导体', '芯片', '创新药', '证券'],
+        'defensive_income': ['债券', '红利', '余额宝'],
+        'gold': ['黄金'],
+    }
+    out = {}
+    total = totals.get('total', 0) or 0
+    for name, kws in clusters.items():
+        mv = sum(h.get('mv', 0) or 0 for h in active if any(kw in str(h.get('name', '')) for kw in kws))
+        for s in stock_items:
+            s_name = str(s.get('name') or s.get('code') or '')
+            s_mv = (s.get('mv') if s.get('mv') is not None else (s.get('shares', 0) or 0) * (s.get('price', 0) or 0)) or 0
+            if any(kw in s_name for kw in kws):
+                mv += s_mv
+        out[name] = {'mv': round(mv, 2), 'pct': round(mv / total * 100, 1) if total else 0}
+    out['thresholds'] = {'growth_beta_warn_pct': 40, 'growth_beta_block_pct': 50}
+    return out
+
+
+def compute_opportunity_scores(data, ops_state, risk_state, freeze_state, totals):
+    """Return advisory opportunity scores without changing trading semantics."""
+    out = []
+    for item in data.get('watchlist', []):
+        sector = str(item.get('sector', ''))
+        trigger = str(item.get('trigger', ''))
+        status = str(item.get('status', ''))
+        reasons = []
+        score = 20
+        if '回调' in trigger or '低位' in trigger:
+            score += 20
+            reasons.append('回调观察位')
+        if '🟢' in status:
+            score += 10
+        if freeze_state.get('frozen'):
+            reasons.append('冻结中')
+            score -= 15
+        grade = '观察'
+        if score >= 60:
+            grade = '扩仓候选'
+        elif score >= 45:
+            grade = '加仓候选'
+        elif score >= 30:
+            grade = '试探'
+        out.append({
+            'name': sector,
+            'score': score,
+            'grade': grade,
+            'blocked_by': freeze_state.get('reasons', []),
+            'reasons': reasons,
+        })
+    for item in data.get('pending_actions', []):
+        name = str(item.get('name', ''))
+        reasons = []
+        score = 25
+        if 'DDX' in name or 'PB' in name or '溢价' in name or '时间止损' in name:
+            score += 15
+            reasons.append('规则驱动')
+        if freeze_state.get('frozen'):
+            score -= 10
+            reasons.append('冻结中')
+        grade = '观察'
+        if score >= 60:
+            grade = '扩仓候选'
+        elif score >= 45:
+            grade = '加仓候选'
+        elif score >= 30:
+            grade = '试探'
+        out.append({
+            'name': name,
+            'score': score,
+            'grade': grade,
+            'blocked_by': freeze_state.get('reasons', []),
+            'reasons': reasons,
+        })
+    return out
+
+
+def pending_action_priority(item):
+    """Return a unified pending-action label for UI and summary blocks."""
+    return str(item.get('priority') or item.get('p') or item.get('name') or item.get('action') or '')
+
+
+def normalize_pending_actions(items):
+    """Normalize pending_actions into the compact UI contract used by the dashboard."""
+    normalized = []
+    for item in items or []:
+        normalized.append({
+            'p': pending_action_priority(item),
+            't': str(item.get('name') or item.get('t') or item.get('action') or ''),
+            'd': str(item.get('action') or item.get('d') or ''),
+            'u': str(item.get('updated') or item.get('u') or ''),
+            'name': str(item.get('name') or item.get('t') or item.get('action') or ''),
+            'action': str(item.get('action') or item.get('d') or ''),
+            'priority': str(item.get('priority') or item.get('p') or ''),
+            'updated': str(item.get('updated') or item.get('u') or ''),
+        })
+    return normalized
+
+
+def current_ops_period(data, today=None):
+    """Return the current operation period as (year, month, label)."""
+    meta = data.get('_meta', {})
+    year = meta.get('ops_year')
+    month = meta.get('ops_month')
+    if year is not None and month is not None:
+        try:
+            year = int(year)
+            month = int(month)
+            return year, month, f'{month}月'
+        except (ValueError, TypeError):
+            pass
+
+    update_date = data.get('update_date') or data.get('update_time')
+    if update_date:
+        try:
+            dt = datetime.strptime(str(update_date)[:10], '%Y-%m-%d').date()
+            return dt.year, dt.month, f'{dt.month}月'
+        except ValueError:
+            pass
+
+    if today is None:
+        today = date.today()
+    return today.year, today.month, f'{today.month}月'
+
+
+def compute_ops_state(data, today=None):
+    """Return normalized monthly operation state."""
+    year, month, label = current_ops_period(data, today=today)
+    count, violation_count = monthly_ops_summary(data, year=year, month=month)
+    max_ops = int(safe_float(data.get('_meta', {}).get('max_monthly_ops', DEFAULT_MONTHLY_OPS), DEFAULT_MONTHLY_OPS))
+    if max_ops <= 0:
+        max_ops = DEFAULT_MONTHLY_OPS
+    remaining = max(max_ops - count, 0)
+    return {
+        'year': year,
+        'month': month,
+        'label': label,
+        'count': count,
+        'max': max_ops,
+        'remaining': remaining,
+        'violations': violation_count,
+        'is_at_limit': count >= max_ops,
+        'is_over_limit': count > max_ops,
+    }
+
+
+def monthly_ops_summary(data, year=None, month=None):
     """Count operations for a given month. Returns (count, violation_count).
     Single source of truth — used by rules, risk matrix, and HTML KPI.
     Handles both '2026-08-07' and '8/7' date formats."""
+    if year is None or month is None:
+        year, month, _ = current_ops_period(data)
     txns = data.get('transactions', [])
-    prefix_iso = f'{year}-{month:02d}'
-    prefix_short = f'{month}/'
+    prefix_iso = f'{int(year):04d}-{int(month):02d}'
+    prefix_short = f'{int(month)}/'
+    prefix_short_z = f'{int(month):02d}/'
     month_txns = []
     for t in txns:
         d = str(t.get('date', ''))
-        if d.startswith(prefix_iso) or d.startswith(prefix_short):
+        if d.startswith(prefix_iso) or d.startswith(prefix_short) or d.startswith(prefix_short_z):
             month_txns.append(t)
     violation_count = sum(1 for t in month_txns if '违规' in str(t.get('note', '')))
     return len(month_txns), violation_count
@@ -84,28 +570,33 @@ KEYWORD_TO_LAYER = [
 ]
 
 
-def resolve_layer(name, group):
-    """Determine layer from: group field → ANCHOR_MAP override → keyword fallback.
+def normalize_layer(layer):
+    layer = str(layer or '').strip()
+    return layer if layer in LAYER_ORDER else ''
+
+
+def resolve_layer(name, group, item=None):
+    """Determine layer from explicit data → ANCHOR_MAP → group → keyword fallback.
     Returns (layer, tag, tc) or None if unresolvable."""
-    # 1. ANCHOR_MAP 精确覆盖（最高优先，允许修正 group 偏差）
+    item = item or {}
+    explicit_layer = normalize_layer(item.get('layer') or item.get('anchor_layer'))
+    if explicit_layer:
+        return (explicit_layer, item.get('tag', ''), item.get('tc') or TAG_CLASS_BY_LAYER[explicit_layer])
     if name in ANCHOR_MAP:
         return ANCHOR_MAP[name]
-    # 2. group 字段（数据驱动，新基金自动归类）
     if group and group in GROUP_TO_LAYER:
         layer = GROUP_TO_LAYER[group]
-        tag = "自动" if layer in ("sat",) else ""
-        tc = {"bedrock": "tag-b", "core": "tag-g", "sat": "tag-a", "cash": "tag-g"}[layer]
-        return (layer, tag, tc)
-    # 3. 关键词兜底
+        return (layer, item.get('tag', ''), item.get('tc') or TAG_CLASS_BY_LAYER[layer])
     for kw, layer in KEYWORD_TO_LAYER:
-        if kw in name:
-            return (layer, "", {"bedrock": "tag-b", "core": "tag-g", "sat": "tag-a", "cash": "tag-g"}[layer])
+        if kw in str(name):
+            return (layer, item.get('tag', ''), item.get('tc') or TAG_CLASS_BY_LAYER[layer])
     return None
 
 
-def process_holdings(raw_holdings, stocks):
+def process_holdings(raw_holdings, stocks, data=None, mkt=None):
     """Process holdings into four-layer structure.
     P1-1: 智能分类 — 优先 group 字段(JSON)，ANCHOR_MAP 精确覆盖，关键词兜底。"""
+    data = data or {}
     bedrock, core, sat, cash = [], [], [], []
     dropped = []
 
@@ -115,17 +606,21 @@ def process_holdings(raw_holdings, stocks):
         if mv <= 0:
             continue
         group = h.get('group', '')
-        layer_info = resolve_layer(name, group)
+        layer_info = resolve_layer(name, group, h)
         if not layer_info:
             dropped.append(name)
             continue
-        layer, tag, tc = layer_info
+        layer, existing_tag, tc = layer_info
         pnl = safe_float(h.get('pnl', 0))
         dp = safe_float(h.get('day_pnl', 0))
+        tag, resolved_tc = derive_holding_tag(name, layer, data=data, mkt=mkt, existing_tag=existing_tag)
         item = {
             "n": name, "mv": round(mv, 2), "pnl": round(pnl, 2),
-            "dp": round(dp, 2), "tag": tag, "tc": tc,
-            "src": "map" if name in ANCHOR_MAP else ("group" if group else "kw")
+            "dp": round(dp, 2), "tag": tag, "tc": resolved_tc or tc,
+            "profile": derive_take_profit_profile(name, layer),
+            "type": "cash" if layer == "cash" else "fund",
+            "layer": layer,
+            "src": "map" if name in ANCHOR_MAP else ("explicit" if h.get('layer') or h.get('anchor_layer') else ("group" if group else "kw"))
         }
         if layer == 'bedrock':
             bedrock.append(item)
@@ -136,18 +631,40 @@ def process_holdings(raw_holdings, stocks):
         elif layer == 'cash':
             cash.append(item)
 
-    # Add stock holdings to bedrock
+    # Add stock holdings dynamically by their own layer or group
     for s in stocks:
         price = s.get('price', 0)
         shares = s.get('shares', 0)
-        mv = shares * price
+        mv = s.get('mv') if s.get('mv') is not None else shares * price
+        if mv <= 0:
+            continue
         pnl = safe_float(s.get('pnl', 0))
         dp = safe_float(s.get('day_pnl', 0))
-        bedrock.append({
-            "n": s.get('name', '515180'), "mv": round(mv, 2),
+        name = s.get('name') or s.get('code') or '未命名股票'
+        layer_info = resolve_layer(name, s.get('group', ''), s)
+        layer = layer_info[0] if layer_info else 'bedrock'
+        tag, resolved_tc = derive_holding_tag(name, layer, data=data, mkt=mkt)
+        item = {
+            "n": name, "mv": round(mv, 2),
             "pnl": round(pnl, 2), "dp": round(dp, 2),
-            "tag": "永远不卖", "tc": "tag-b", "st": 1, "src": "stock"
-        })
+            "tag": tag or derive_take_profit_profile(name, layer),
+            "tc": resolved_tc or TAG_CLASS_BY_LAYER.get(layer, 'tag-b'),
+            "st": 1,
+            "profile": derive_take_profit_profile(name, layer),
+            "type": "stock",
+            "layer": layer,
+            "src": "stock"
+        }
+        if layer == 'bedrock':
+            bedrock.append(item)
+        elif layer == 'core':
+            core.append(item)
+        elif layer == 'sat':
+            sat.append(item)
+        elif layer == 'cash':
+            cash.append(item)
+        else:
+            bedrock.append(item)
 
     return bedrock, core, sat, cash, dropped
 
@@ -158,9 +675,10 @@ def compute_totals(bedrock, core, sat, cash):
     core_mv = sum(i['mv'] for i in core)
     sat_mv = sum(i['mv'] for i in sat)
     cash_mv = sum(i['mv'] for i in cash)
-    fund_mv_total = bedrock_mv + core_mv + sat_mv
+    all_items = bedrock + core + sat + cash
+    stock_mv = sum(i['mv'] for i in all_items if i.get('st') or i.get('type') == 'stock')
+    fund_mv_total = sum(i['mv'] for i in all_items if i.get('type', 'fund') == 'fund')
     total = bedrock_mv + core_mv + sat_mv + cash_mv
-    stock_mv = sum(i['mv'] for i in bedrock if i.get('st'))
     total_pnl = sum(i['pnl'] for i in bedrock + core + sat + cash)
     return {
         "bedrock_mv": bedrock_mv, "core_mv": core_mv, "sat_mv": sat_mv,
@@ -169,15 +687,82 @@ def compute_totals(bedrock, core, sat, cash):
     }
 
 
-def generate_rules(sat_holdings, data, mkt, totals):
+def compute_holding_counts(bedrock, core, sat, cash):
+    """Compute dynamic holding counts across layers and instrument types."""
+    layers = {'bedrock': bedrock, 'core': core, 'sat': sat, 'cash': cash}
+    by_layer = {layer: 0 for layer in layers}
+    counts = {'active': 0, 'fund': 0, 'stock': 0, 'cash': 0, 'non_cash': 0, 'total': 0}
+    for layer, items in layers.items():
+        for item in items:
+            mv = safe_float(item.get('mv', 0), 0)
+            if mv <= 0:
+                continue
+            by_layer[layer] += 1
+            counts['active'] += 1
+            counts['total'] += 1
+            if layer == 'cash' or item.get('type') == 'cash':
+                counts['cash'] += 1
+            elif item.get('st') or item.get('type') == 'stock':
+                counts['stock'] += 1
+            else:
+                counts['fund'] += 1
+    counts['non_cash'] = counts['active'] - counts['cash']
+    for layer in ('bedrock', 'core', 'sat'):
+        counts[layer] = by_layer[layer]
+    by_type = {'fund': counts['fund'], 'stock': counts['stock'], 'cash': counts['cash']}
+    parts = []
+    if counts['fund']:
+        parts.append(f"{counts['fund']}只基金")
+    if counts['stock']:
+        parts.append(f"{counts['stock']}只股票")
+    if counts['cash']:
+        parts.append(f"{counts['cash']}项现金")
+    counts['layers'] = by_layer
+    counts['by_layer'] = by_layer
+    counts['by_type'] = by_type
+    counts['active_label'] = ' + '.join(parts) if parts else '暂无持仓'
+    return counts
+
+
+def build_layer_rows(totals, holding_counts=None):
+    """Build render-ready layer rows from current totals and dynamic counts."""
+    total = totals.get('total', 0) or 0
+    mv_by_layer = {
+        'bedrock': totals.get('bedrock_mv', 0),
+        'core': totals.get('core_mv', 0),
+        'sat': totals.get('sat_mv', 0),
+        'cash': totals.get('cash_mv', 0),
+    }
+    holding_counts = holding_counts or {}
+    by_layer = holding_counts.get('by_layer', holding_counts.get('layers', {}))
+    rows = []
+    for layer in LAYER_ORDER:
+        meta = LAYER_META[layer]
+        mv = mv_by_layer.get(layer, 0) or 0
+        rows.append({
+            'key': layer,
+            'k': meta['k'],
+            'icon': meta['icon'],
+            'label': meta['label'],
+            'cls': meta['cls'],
+            'target': meta['target'],
+            'mv': round(mv, 2),
+            'pct': round(mv / total * 100, 1) if total else 0,
+            'count': by_layer.get(layer, 0),
+        })
+    return rows
+
+
+def generate_rules(sat_holdings, data, mkt, totals, drawdown_state=None, ops_state=None):
     """Generate rule checks from data (NOT hardcoded)."""
     rules = []
     mkt_note = mkt.get('note', '')
     txns = data.get('transactions', [])
     pa = data.get('pending_actions', [])
 
-    # Count August operations (unified helper)
-    aug_ops_count, violation_count = monthly_ops_summary(data)
+    # Count monthly operations (unified helper)
+    if ops_state is None:
+        ops_state = compute_ops_state(data)
 
     # Stop-loss checks for satellite
     for item in sat_holdings:
@@ -187,13 +772,15 @@ def generate_rules(sat_holdings, data, mkt, totals):
 
     # DDX rule
     if 'DDX' in mkt_note or '半导体' in mkt_note:
-        if 'DDX连3日为正' in mkt_note or 'DDX转正' in mkt_note or 'DDX连' in mkt_note:
-            snippet = mkt_note[mkt_note.find('DDX'):][:40] if 'DDX' in mkt_note else '详见行情'
-            rules.append({"lv": "rg", "t": f"半导体 DDX 已确认转正（{snippet}）"})
-        elif 'DDX转负' in mkt_note:
+        ddx_negative = 'DDX转负' in mkt_note or 'DDX为负' in mkt_note or ('DDX连续' in mkt_note and '为负' in mkt_note)
+        ddx_positive = 'DDX转正' in mkt_note or (('DDX连' in mkt_note or 'DDX连续' in mkt_note) and '为正' in mkt_note)
+        if ddx_negative:
             rules.append({"lv": "rr", "t": "半导体 DDX 转负 → 补仓暂停，等待 DDX 连2日为正"})
+        elif ddx_positive:
+            snippet = mkt_note[mkt_note.find('DDX'):][:40] if 'DDX' in mkt_note else '详见行情'
+            rules.append({"lv": "rg", "t": f"半导体 DDX 已确认转正（{snippet}）；仅恢复观察，不覆盖浮亏不加仓"})
         else:
-            rules.append({"lv": "ra", "t": "半导体 DDX 状态待确认，关注8/10周一"})
+            rules.append({"lv": "ra", "t": "半导体 DDX 状态待确认，关注下个交易日"})
     else:
         rules.append({"lv": "ra", "t": "半导体 DDX 数据待更新"})
 
@@ -201,18 +788,20 @@ def generate_rules(sat_holdings, data, mkt, totals):
     rules.append({"lv": "rr", "t": "纳指ETF溢价率 ~10-12% → 不建仓，等待溢价率 <= 3%"})
 
     # 创新药时间止损
+    ref_date = data_reference_date(data)
     for pa_item in pa:
         if '创新药' in str(pa_item) and '8/20' in str(pa_item):
-            remaining = (date(2026, 8, 20) - date.today()).days
-            rules.append({"lv": "ra", "t": f"创新药时间止损倒计时：8月20日截止（剩{remaining}天）"})
+            remaining = (date(2026, 8, 20) - ref_date).days
+            rules.append({"lv": "ra", "t": f"创新药时间止损倒计时：8月20日截止（按数据日剩{remaining}天）"})
             break
     else:
         rules.append({"lv": "ra", "t": "创新药时间止损倒计时：8月20日截止"})
 
-    # 回撤（基准来自规则手册 v3.3：高点 ¥39,510，可被 _meta.peak_assets 覆盖）
-    peak_ref = safe_float(data.get('_meta', {}).get('peak_assets', 39510), 39510)
-    dd_pct = (totals['total'] - peak_ref) / peak_ref * 100
-    safe_cushion = totals['total'] - 31313
+    # 回撤
+    if drawdown_state is None:
+        drawdown_state = compute_drawdown_state(data, totals)
+    dd_pct = drawdown_state['dd_pct']
+    safe_cushion = drawdown_state['safe_cushion']
 
     if dd_pct <= -15:
         rules.append({"lv": "rr", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -15% 线！核心增长减 1/3"})
@@ -221,23 +810,33 @@ def generate_rules(sat_holdings, data, mkt, totals):
     elif dd_pct <= -5:
         rules.append({"lv": "ra", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -5% 线！卫星仓位减半"})
     else:
-        rules.append({"lv": "rg", "t": f"总资产距 -5% 回撤线 ¥31,313 还有 ¥{safe_cushion:,.0f} 安全垫"})
+        rules.append({"lv": "rg", "t": f"总资产距 -5% 回撤线 ¥{drawdown_state['lines']['minus5']:,.0f} 还有 ¥{safe_cushion:,.0f} 安全垫"})
 
     # 操作计数 (from unified helper)
-    max_ops = data.get('_meta', {}).get('max_monthly_ops', 4)
+    violations = ops_state.get('violations', 0)
+    if violations:
+        discipline = f'{violations}次违规！'
+    elif ops_state.get('is_over_limit'):
+        discipline = '超出额度 · 禁止新买入'
+    elif ops_state.get('is_at_limit'):
+        discipline = '额度已满 · 禁止新买入'
+    else:
+        discipline = '零违规 · 纪律满分'
+    ops_lv = "rr" if ops_state.get('is_over_limit') or violations else ("ra" if ops_state.get('is_at_limit') else "rg")
     rules.append({
-        "lv": "rg" if violation_count == 0 else "rr",
-        "t": f"8月操作 {aug_ops_count}/{max_ops} 笔 · {'零违规 · 纪律满分' if violation_count == 0 else f'{violation_count}次违规！'}"
+        "lv": ops_lv,
+        "t": f"{ops_state['label']}操作 {ops_state['count']}/{ops_state['max']} 笔 · {discipline}"
     })
 
     return rules
 
 
-def generate_risk_matrix(data, mkt_note, totals):
+def generate_risk_matrix(data, mkt_note, totals, ops_state=None):
     """Generate dynamic risk matrix from data."""
     risks = []
     raw = data.get('holdings_summary', [])
-    aug_ops_count, violation_count = monthly_ops_summary(data)
+    if ops_state is None:
+        ops_state = compute_ops_state(data)
     kc = data.get('market', {}).get('kc', {})
 
     # DDX
@@ -263,11 +862,11 @@ def generate_risk_matrix(data, mkt_note, totals):
         risks.append({"l": "green", "n": "科创50上涨", "d": f"科创50 {kc_change_str}", "c": "g"})
 
     # 创新药
-    remaining_days = (date(2026, 8, 20) - date.today()).days
+    remaining_days = (date(2026, 8, 20) - data_reference_date(data)).days
     if remaining_days <= 5:
-        risks.append({"l": "red", "n": "创新药时间紧迫", "d": f"距8/20仅{remaining_days}天", "c": "r"})
+        risks.append({"l": "red", "n": "创新药时间紧迫", "d": f"按数据日距8/20仅{remaining_days}天", "c": "r"})
     else:
-        risks.append({"l": "amber", "n": "创新药时间压力", "d": f"距8/20剩{remaining_days}天", "c": "a"})
+        risks.append({"l": "amber", "n": "创新药时间压力", "d": f"按数据日距8/20剩{remaining_days}天", "c": "a"})
 
     # 黄金
     gold_h = next((h for h in raw if '黄金' in str(h.get('name', '')) and h.get('mv', 0) > 0), None)
@@ -292,10 +891,10 @@ def generate_risk_matrix(data, mkt_note, totals):
                   "n": "市场成交量", "d": vol_str, "c": "g" if '3' in vol_str else "a"})
 
     # 纪律
-    if violation_count == 0:
-        risks.append({"l": "green", "n": "纪律执行满分", "d": f"8月{aug_ops_count}笔零违规", "c": "g"})
+    if ops_state.get('violations', 0) == 0:
+        risks.append({"l": "green", "n": "纪律执行满分", "d": f"{ops_state['label']}{ops_state['count']}笔零违规", "c": "g"})
     else:
-        risks.append({"l": "red", "n": "存在违规操作", "d": f"{violation_count}次违规", "c": "r"})
+        risks.append({"l": "red", "n": "存在违规操作", "d": f"{ops_state.get('violations', 0)}次违规", "c": "r"})
 
     return risks
 
@@ -383,26 +982,36 @@ def process_all(data):
     # Holdings (P1-1 智能分类)
     raw = data.get('holdings_summary', [])
     stocks = data.get('stock_holdings', [])
-    bedrock, core, sat, cash, dropped = process_holdings(raw, stocks)
+    mkt = data.get('market', {})
+    bedrock, core, sat, cash, dropped = process_holdings(raw, stocks, data=data, mkt=mkt)
     for d in dropped:
         warnings.append(f"持仓无法归类，已跳过: {d}")
 
-    # Totals
+    # Totals and dynamic holding contract
     totals = compute_totals(bedrock, core, sat, cash)
+    holding_counts = compute_holding_counts(bedrock, core, sat, cash)
+    layers = build_layer_rows(totals, holding_counts)
 
-    # Market
+    # Shared state
     mkt = data.get('market', {})
-    kc = mkt.get('kc', {})
-
-    # Rules
-    rules = generate_rules(sat, data, mkt, totals)
-
-    # Risk matrix
     mkt_note = mkt.get('note', '')
-    risks = generate_risk_matrix(data, mkt_note, totals)
+    ops_state = compute_ops_state(data)
+    drawdown_state = compute_drawdown_state(data, totals)
+    rules = generate_rules(sat, data, mkt, totals, drawdown_state=drawdown_state, ops_state=ops_state)
+    risks = generate_risk_matrix(data, mkt_note, totals, ops_state)
+    risk_state = compute_risk_state(rules, risks, drawdown_state, ops_state, mkt)
+    freeze_state = compute_freeze_state(data, ops_state, risk_state, mkt, totals)
+    opportunity_scores = compute_opportunity_scores(data, ops_state, risk_state, freeze_state, totals)
+    clock_state = compute_clock_state(data)
+    factor_clusters = compute_factor_clusters(data, totals)
+    portfolio_state = derive_portfolio_state(
+        totals['total'], totals['cash_mv'], drawdown_state['dd_pct'], mkt_note,
+        ops_state['count'], ops_state['max'], ops_state['violations']
+    )
 
     # DCA list
     dca_list = [str(d) for d in data.get('dca_running', [])]
+    pending_actions = normalize_pending_actions(data.get('pending_actions', []))
 
     # Daily summaries
     ds_out = prepare_daily_summaries(data)
@@ -410,17 +1019,11 @@ def process_all(data):
     # Chart data
     chart_out = prepare_chart_data(data)
 
-    # Monthly ops summary (single source for HTML KPI)
-    aug_ops_count, violation_count = monthly_ops_summary(data)
-    max_ops = data.get('_meta', {}).get('max_monthly_ops', 4)
-
-    # Drawdown baseline (single source)
-    peak = safe_float(data.get('_meta', {}).get('peak_assets', 39510), 39510)
-    dd_pct = (totals['total'] - peak) / peak * 100 if peak else 0
-
     # Build result
+    today = generate_today_conclusion(rules, pending_actions)
     result = {
         "time": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        "source_update_date": data.get('update_date') or data.get('update_time', ''),
         "total": round(totals['total'], 2),
         "fundMv": round(totals['fund_mv_total'], 2),
         "cashMv": round(totals['cash_mv'], 2),
@@ -430,24 +1033,95 @@ def process_all(data):
         "core_mv": round(totals['core_mv']),
         "sat_mv": round(totals['sat_mv']),
         "cash_mv": round(totals['cash_mv']),
-        "peak_assets": peak,
-        "dd_pct": round(dd_pct, 1),
-        "aug_ops": aug_ops_count,
-        "aug_ops_max": max_ops,
-        "violations": violation_count,
+        "peak_assets": drawdown_state['peak_assets'],
+        "peak_note": drawdown_state['peak_note'],
+        "dd_pct": drawdown_state['dd_pct'],
+        "aug_ops": ops_state['count'],
+        "aug_ops_max": ops_state['max'],
+        "violations": ops_state['violations'],
         "mkt": mkt,
         "dca": dca_list,
         "bedrock": bedrock,
         "core": core,
         "sat": sat,
         "cash": cash,
+        "holding_counts": holding_counts,
+        "layers": layers,
+        "layer_order": LAYER_ORDER,
+        "layer_meta": LAYER_META,
         "rules": rules,
         "wl": data.get('watchlist', []),
-        "pa": data.get('pending_actions', []),
+        "pa": pending_actions,
         "risks": risks,
-        "today": generate_today_conclusion(rules, data.get('pending_actions', [])),
+        "today": today,
         "ds": ds_out,
         "chart": chart_out,
+        "drawdown_state": drawdown_state,
+        "ops_state": ops_state,
+        "risk_state": risk_state,
+        "freeze_state": freeze_state,
+        "opportunity_scores": opportunity_scores,
+        "clock_state": clock_state,
+        "factor_clusters": factor_clusters,
+        "portfolio_state": portfolio_state,
+        "state": {
+            "ops": ops_state,
+            "drawdown": drawdown_state,
+            "risk": risk_state,
+            "freeze": freeze_state,
+            "opportunities": opportunity_scores,
+            "clocks": clock_state,
+            "factor_clusters": factor_clusters,
+            "portfolio": portfolio_state,
+            "holding_counts": holding_counts,
+            "layers": layers,
+        },
         "_warnings": warnings,
     }
     return result
+
+
+def build_snapshot(embed):
+    """Build snapshot JSON from the processed embed."""
+    state = embed.get('state', {})
+    snapshot = {
+        "update_time": embed.get('time', ''),
+        "source_update_date": embed.get('source_update_date', ''),
+        "total_assets": embed.get('total', 0),
+        "fund_mv": embed.get('fundMv', 0),
+        "stock_mv": embed.get('stockMv', 0),
+        "cash_mv": embed.get('cashMv', 0),
+        "total_pnl": embed.get('totalPnl', 0),
+        "holding_counts": embed.get('holding_counts', {}),
+        "layers": embed.get('layers', []),
+        "layer_order": embed.get('layer_order', []),
+        "layer_meta": embed.get('layer_meta', {}),
+        "peak_assets": embed.get('peak_assets', 0),
+        "dd_pct": embed.get('dd_pct', 0),
+        "layer_summary": {
+            "bedrock": {"mv": embed.get('bedrock_mv', 0), "pct": round(embed.get('bedrock_mv', 0) / embed.get('total', 1) * 100, 1) if embed.get('total', 0) > 0 else 0},
+            "core": {"mv": embed.get('core_mv', 0), "pct": round(embed.get('core_mv', 0) / embed.get('total', 1) * 100, 1) if embed.get('total', 0) > 0 else 0},
+            "sat": {"mv": embed.get('sat_mv', 0), "pct": round(embed.get('sat_mv', 0) / embed.get('total', 1) * 100, 1) if embed.get('total', 0) > 0 else 0},
+            "cash": {"mv": embed.get('cash_mv', 0), "pct": round(embed.get('cash_mv', 0) / embed.get('total', 1) * 100, 1) if embed.get('total', 0) > 0 else 0},
+        },
+        "dca_running": embed.get('dca', []),
+        "watchlist": embed.get('wl', []),
+        "pending_actions": embed.get('pa', []),
+        "rule_checks": embed.get('rules', []),
+        "risk_matrix": embed.get('risks', []),
+        "today_conclusion": embed.get('today', {}),
+        "drawdown_state": embed.get('drawdown_state', {}),
+        "ops_state": embed.get('ops_state', {}),
+        "risk_state": embed.get('risk_state', {}),
+        "freeze_state": embed.get('freeze_state', {}),
+        "opportunity_scores": embed.get('opportunity_scores', []),
+        "clock_state": embed.get('clock_state', {}),
+        "factor_clusters": embed.get('factor_clusters', {}),
+        "chart_data": embed.get('chart', []),
+        "state": state,
+        "aug_ops": embed.get('aug_ops', 0),
+        "aug_ops_max": embed.get('aug_ops_max', 0),
+        "violations": embed.get('violations', 0),
+        "portfolio_state": embed.get('portfolio_state', {}),
+    }
+    return snapshot

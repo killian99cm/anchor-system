@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>⚓ Anchor · 基金投资纪律体系 v3.3</title>
-<meta name="description" content="109笔实盘迭代。四层金字塔体系。少亏指南，不是赚钱秘籍。">
+<meta name="description" content="四层金字塔投资纪律体系。示例数据演示，少亏指南，不是赚钱秘籍。">
 <style>
 :root{
   --bg:#02070f; --bg2:#060d1a; --bg3:#0a1226; --bg4:#0d1630;
@@ -113,6 +113,7 @@ body::before{
 .hcard.bed .hhead{color:var(--accent); background:rgba(77,138,240,0.03)}
 .hcard.core .hhead{color:var(--green); background:rgba(0,214,158,0.02)}
 .hcard.sat .hhead{color:var(--amber); background:rgba(240,168,48,0.02)}
+.hcard.cash .hhead{color:var(--text2); background:rgba(115,128,153,0.02)}
 .hcard .hbody{padding:4px 0}
 .hitem{display:flex; justify-content:space-between; align-items:center; padding:7px 20px; font-size:12px; border-bottom:1px solid rgba(255,255,255,0.006)}
 .hitem:last-child{border:none}
@@ -245,7 +246,7 @@ body::before{
 
 <!-- HERO -->
 <section class="hero" id="top">
-  <div class="badge">⚓ 109笔实盘交易 · 13个月数据 · v3.3 持续迭代</div>
+  <div class="badge">⚓ 示例交易复盘 · 脱敏数据 · v3.3 持续迭代</div>
   <h1><em>A</em>nc<i>hor</i></h1>
   <div class="tag">四层金字塔 · 基金投资纪律体系</div>
   <div class="hero-kpi" id="heroKpi"></div>
@@ -265,8 +266,8 @@ body::before{
 
 <!-- HOLDINGS -->
 <section class="sec" id="holdings">
-  <div class="sec-label">Portfolio · 当前配置</div>
-  <h2>实盘<em>持仓</em></h2>
+  <div class="sec-label">Portfolio · 示例配置</div>
+  <h2>示例<em>持仓</em></h2>
   <p class="lead" id="holdingsLead"></p>
   <div class="hgrid" id="holdingsGrid"></div>
 </section>
@@ -275,7 +276,7 @@ body::before{
 <section class="sec" id="compare">
   <div class="sec-label">Evidence · 效果验证</div>
   <h2>使用 Anchor <em>前 vs 后</em></h2>
-  <p class="lead">7月16日建立体系。不是赚钱——是亏得更慢了。日均亏损从 -¥86 降到 -¥66。</p>
+  <p class="lead">建立体系后，目标不是追求暴利，而是减少冲动交易、限制回撤、让每次操作可复盘。</p>
   <div class="cmp-wrap">
     <table class="cmp-table"><thead><tr><th>维度</th><th>使用前 (7/1-15)</th><th>使用后 (7/16-31)</th><th>变化</th></tr></thead><tbody id="cmpBody"></tbody></table>
   </div>
@@ -284,8 +285,8 @@ body::before{
 <!-- MONTHLY PNL -->
 <section class="sec">
   <div class="sec-label">History · 历史数据</div>
-  <h2>13个月<em>盈亏走势</em></h2>
-  <p class="lead">2025年8月-2026年7月。红=亏损月，绿=盈利月。7个月盈利，6个月亏损。</p>
+  <h2>示例<em>盈亏走势</em></h2>
+  <p class="lead">以下为脱敏样本走势，只展示体系记录方法，不代表真实收益。</p>
   <div class="mchart" id="monthlyChart"></div>
   <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--text3)" id="monthlySum"></div>
 </section>
@@ -294,7 +295,7 @@ body::before{
 <section class="sec" id="rules">
   <div class="sec-label">Rules · 核心规则</div>
   <h2>四条<em>铁律</em></h2>
-  <p class="lead">每一条规则背后都有真实亏损案例，是 ¥2,343 学费换来的纪律，不是理论推导。</p>
+  <p class="lead">每一条规则背后都对应可复盘的风险案例，是纪律约束，不是理论口号。</p>
   <div class="rgrid" id="rulesGrid"></div>
 </section>
 
@@ -302,7 +303,7 @@ body::before{
 <section class="sec" id="forbidden">
   <div class="sec-label">Guardrails · 永久禁令</div>
   <h2>六条<em>禁用操作</em></h2>
-  <p class="lead">每一条禁令都对应一段真实亏损。这些不是建议，是底线。</p>
+  <p class="lead">每一条禁令都对应常见错误操作。这些不是建议，是底线。</p>
   <div class="fgrid" id="forbiddenGrid"></div>
 </section>
 
@@ -318,7 +319,7 @@ body::before{
 <section class="sec">
   <div class="sec-label">Governance · 保护机制</div>
   <h2>规则<em>永不轻易修改</em></h2>
-  <p class="lead">每一条优化必须通过三问评估。三道全过才吸收——这是 109 笔交易迭代出的自我约束。</p>
+  <p class="lead">每一条优化必须通过三问评估。三道全过才吸收——这是多次样本复盘沉淀出的自我约束。</p>
   <div class="flow">
     <div class="fstep"><div class="fsn">Q1</div><div class="fst">能阻止哪段<br>历史亏损?</div></div>
     <div class="arrow">→</div>
@@ -348,8 +349,8 @@ body::before{
 
 <!-- CTA -->
 <section class="cta-sec">
-  <h2>¥2,343 学费换来的规则</h2>
-  <p>109笔交易 · 28只清仓基金 · 13个月数据 · 开源 · 免费 · 永不收费</p>
+  <h2>用复盘成本换来的规则</h2>
+  <p>多笔样本交易 · 多只清仓样本 · 多月记录 · 开源 · 免费 · 永不收费</p>
   <div class="btns">
     <a href="https://github.com/killian99cm/anchor-system" class="btn btn-p" target="_blank">GitHub 仓库 ↗</a>
     <a href="../06-dashboard/portfolio_analysis.html" class="btn btn-s">实时看板 →</a>
@@ -366,22 +367,125 @@ body::before{
 <script>
 // ===== EMBEDDED DATA =====
 var D={
-  "update": "2026-08-07",
-  "total_assets": 33261,
-  "total_pnl": 932,
-  "fund_mv": 24561,
-  "stock_mv": 5668,
-  "cash_mv": 3032,
-  "hero": [
+  "update": "2026-08-06",
+  "total_assets": 0,
+  "total_pnl": 0,
+  "fund_mv": 0,
+  "stock_mv": 0,
+  "cash_mv": 0,
+  "holding_counts": {
+    "active": 4,
+    "total": 4,
+    "fund": 3,
+    "stock": 0,
+    "cash": 1,
+    "by_layer": {
+      "bedrock": 1,
+      "core": 1,
+      "sat": 1,
+      "cash": 1
+    },
+    "layers": {
+      "bedrock": 1,
+      "core": 1,
+      "sat": 1,
+      "cash": 1
+    },
+    "by_type": {
+      "fund": 3,
+      "stock": 0,
+      "cash": 1
+    },
+    "active_label": "3只基金 + 1项现金"
+  },
+  "layers": [
     {
-      "v": "33,261",
-      "c": "var(--accent)",
-      "l": "总资产 ¥"
+      "key": "bedrock",
+      "icon": "🛡️",
+      "label": "压舱石",
+      "cls": "bed",
+      "target": 45,
+      "mv": 0,
+      "pct": 0,
+      "count": 1
     },
     {
-      "v": "87.5%",
+      "key": "core",
+      "icon": "🚀",
+      "label": "核心增长",
+      "cls": "core",
+      "target": 20,
+      "mv": 0,
+      "pct": 0,
+      "count": 1
+    },
+    {
+      "key": "sat",
+      "icon": "🔥",
+      "label": "卫星进攻",
+      "cls": "sat",
+      "target": 20,
+      "mv": 0,
+      "pct": 0,
+      "count": 1
+    },
+    {
+      "key": "cash",
+      "icon": "💰",
+      "label": "现金预备",
+      "cls": "cash",
+      "target": 15,
+      "mv": 0,
+      "pct": 0,
+      "count": 1
+    }
+  ],
+  "layer_order": [
+    "bedrock",
+    "core",
+    "sat",
+    "cash"
+  ],
+  "layer_meta": {
+    "bedrock": {
+      "icon": "🛡️",
+      "label": "压舱石",
+      "cls": "bed",
+      "target": 45,
+      "fallback": "示例债券基金 + 示例红利ETF"
+    },
+    "core": {
+      "icon": "🚀",
+      "label": "核心增长",
+      "cls": "core",
+      "target": 20,
+      "fallback": "示例宽基指数基金"
+    },
+    "sat": {
+      "icon": "🔥",
+      "label": "卫星进攻",
+      "cls": "sat",
+      "target": 20,
+      "fallback": "示例行业ETF"
+    },
+    "cash": {
+      "icon": "💰",
+      "label": "现金预备",
+      "cls": "cash",
+      "target": 15,
+      "fallback": "现金预备"
+    }
+  },
+  "hero": [
+    {
+      "v": "0",
+      "c": "var(--accent)",
+      "l": "示例总资产 ¥"
+    },
+    {
+      "v": "4层",
       "c": "var(--green)",
-      "l": "卫星胜率"
+      "l": "资产金字塔"
     },
     {
       "v": "96",
@@ -391,180 +495,268 @@ var D={
     {
       "v": "0",
       "c": "#fff",
-      "l": "违规操作"
+      "l": "示例违规"
     }
   ],
   "kpi": [
     {
-      "v": "-2,343",
-      "c": "var(--red)",
-      "l": "七月真实盈亏",
-      "s": "科创50月跌 -17% · 组合跑赢大盘"
-    },
-    {
-      "v": "5 次",
-      "c": "var(--amber)",
-      "l": "浮亏不加仓 · 拦下",
-      "s": "每次拦住的第二天半导体都在跌"
-    },
-    {
-      "v": "7 笔",
+      "v": "≤4笔",
       "c": "var(--green)",
-      "l": "月操作 · 从 80→",
-      "s": "降低 91% · 连续数月零违规"
+      "l": "月操作上限",
+      "s": "买入≤2 + 卖出≤2，降低过度交易"
     },
     {
-      "v": "+513",
+      "v": "72h",
+      "c": "var(--amber)",
+      "l": "卖出冻结",
+      "s": "清仓资金先冷却，再决定是否重开"
+    },
+    {
+      "v": "-8%",
+      "c": "var(--red)",
+      "l": "单仓止损",
+      "s": "卫星仓先保命，再谈收益"
+    },
+    {
+      "v": "动态",
       "c": "var(--accent)",
-      "l": "清仓少亏",
-      "s": "反弹日五只清仓 vs 持有到今天"
+      "l": "持仓数量",
+      "s": "随市场与规则调整，由数据自动计算"
     }
   ],
+  "copy": {
+    "meta_description": "四层金字塔投资纪律体系。示例数据演示，少亏指南，不是赚钱秘籍。",
+    "badge": "⚓ 示例交易复盘 · 脱敏数据 · v3.3 持续迭代",
+    "portfolio_label": "Portfolio · 示例配置",
+    "portfolio_title": "示例持仓",
+    "evidence_lead": "建立体系后，目标不是追求暴利，而是减少冲动交易、限制回撤、让每次操作可复盘。",
+    "history_title": "示例盈亏走势",
+    "history_lead": "以下为脱敏样本走势，只展示体系记录方法，不代表真实收益。",
+    "rules_lead": "每一条规则背后都对应可复盘的风险案例，是纪律约束，不是理论口号。",
+    "forbidden_lead": "每一条禁令都对应常见错误操作。这些不是建议，是底线。",
+    "cta_title": "用复盘成本换来的规则",
+    "cta_text": "多笔样本交易 · 多只清仓样本 · 多月记录 · 开源 · 免费 · 永不收费",
+    "monthly_sum_prefix": "样本合计"
+  },
   "pyramid": [
     {
       "l": "bed",
       "icon": "🛡️",
       "name": "压舱石层 · 45%",
-      "assets": "鹏华债券C + 中银债券A + 515180红利ETF + 国泰黄金A",
-      "detail": "年化 3-6% · 年操作 0-1 次 · 最大回撤 <5%",
-      "rule": "永远不卖",
-      "mv": 12958
+      "assets": "示例压舱基金A",
+      "detail": "低波动资产 · 年操作 0-1 次 · 稳定组合地基",
+      "rule": "长期持有",
+      "mv": 0
     },
     {
       "l": "core",
       "icon": "🚀",
       "name": "核心增长层 · 20%",
-      "assets": "华泰纳指100 A + 示例指数基金纳指100 C + 示例指数基金通利A",
-      "detail": "年化 10-12% · 定投为主 · PE>35才减仓",
+      "assets": "示例核心基金A",
+      "detail": "宽基 / 核心资产 · 定投为主 · 估值约束",
       "rule": "定投为主",
-      "mv": 5875
+      "mv": 0
     },
     {
       "l": "sat",
       "icon": "🔥",
       "name": "卫星进攻层 · 20%",
-      "assets": "创新药C + 证券ETF C + 半导体C",
-      "detail": "年化 15-25% · 快进快出 · 单只≤3,000 · 同时≤4只",
+      "assets": "示例行业ETFA",
+      "detail": "高弹性仓位 · 单只限额 · 快速纠错",
       "rule": "-8% 止损",
-      "mv": 5728
+      "mv": 0
     },
     {
       "l": "cash",
       "icon": "💰",
       "name": "现金预备层 · 15%",
-      "assets": "余额宝",
-      "detail": "仅用于压舱石暴跌补仓 · 不参与卫星交易",
-      "rule": "暴跌才动",
-      "mv": 3032
+      "assets": "现金预备",
+      "detail": "等待极端机会 · 保留安全垫",
+      "rule": "纪律备用",
+      "mv": 0
     }
   ],
   "holdings": {
     "bedrock": [
       {
-        "n": "示例黄金基金",
-        "v": 1721.0,
-        "c": "r"
-      },
-      {
-        "n": "示例债券基金",
-        "v": 6589.0,
-        "c": "g"
-      },
-      {
-        "n": "示例债券基金B",
-        "v": 4647.0,
-        "c": "g"
-      },
-      {
-        "n": "515180 红利ETF",
-        "v": 5668,
-        "c": "g"
+        "n": "示例压舱基金A",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
       }
     ],
     "core": [
       {
-        "n": "示例指数基金通利混合A",
-        "v": 2316.0,
-        "c": "g"
-      },
-      {
-        "n": "示例指数基金纳指100 QDII C",
-        "v": 1324.0,
-        "c": "g"
-      },
-      {
-        "n": "华泰纳指100 ETF联接A",
-        "v": 2236.0,
-        "c": "g"
+        "n": "示例核心基金A",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
       }
     ],
     "sat": [
       {
-        "n": "创新药ETF联接C",
-        "v": 2411.0,
-        "c": "r"
-      },
-      {
-        "n": "半导体芯片ETF联接C",
-        "v": 1033.0,
-        "c": "r"
-      },
-      {
-        "n": "证券ETF联接C",
-        "v": 2284.0,
-        "c": "r"
+        "n": "示例行业ETFA",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
       }
     ],
     "cash": [
       {
-        "n": "余额宝",
-        "v": 3032.0,
-        "c": "g"
+        "n": "现金预备",
+        "v": 0,
+        "c": "g",
+        "type": "cash"
       }
     ]
-  }
-,
-"comparison": [
-    {"dim":"月交易笔数","before":"~80 笔/月","after":"7 笔/月","change":"-91%","cls":"improve"},
-    {"dim":"卫星胜率","before":"39% (历史清仓)","after":"87.5% (8中7)","change":"+124%","cls":"improve"},
-    {"dim":"违规操作","before":"频繁 (109笔/35天)","after":"0 次","change":"质变","cls":"improve"},
-    {"dim":"日均盈亏","before":"-¥86/天","after":"-¥66/天","change":"改善 23%","cls":"improve"},
-    {"dim":"基金转换","before":"2次 · 亏损 -¥892","after":"0 次","change":"永久禁用","cls":"improve"},
-    {"dim":"死扛亏损","before":"示例小盘基金 -¥506","after":"反弹日清 · 多赚 ¥513","change":"v3.3时间止损","cls":"improve"}
+  },
+  "comparison": [
+    {
+      "dim": "决策方式",
+      "before": "凭感觉追涨杀跌",
+      "after": "规则先行，状态机执行",
+      "change": "更稳定",
+      "cls": "improve"
+    },
+    {
+      "dim": "月交易笔数",
+      "before": "频繁操作",
+      "after": "≤4 笔/月",
+      "change": "大幅下降",
+      "cls": "improve"
+    },
+    {
+      "dim": "持仓管理",
+      "before": "名单和数量写死",
+      "after": "从数据动态生成",
+      "change": "可扩展",
+      "cls": "improve"
+    },
+    {
+      "dim": "公开数据",
+      "before": "可能混入真实持仓",
+      "after": "只发布示例 / 脱敏数据",
+      "change": "安全",
+      "cls": "improve"
+    }
   ],
-
   "monthly": [
-    {"m":"8月","v":20,"up":1},{"m":"9月","v":18,"up":1},
-    {"m":"10月","v":-16,"up":0},{"m":"11月","v":-28,"up":0},
-    {"m":"12月","v":22,"up":1},{"m":"1月","v":62,"up":1},
-    {"m":"2月","v":-18,"up":0},{"m":"3月","v":-100,"up":0},
-    {"m":"4月","v":100,"up":1},{"m":"5月","v":-16,"up":0},
-    {"m":"6月","v":22,"up":1},{"m":"7月","v":-96,"up":0}
+    {
+      "m": "1月",
+      "v": 60,
+      "up": 1
+    },
+    {
+      "m": "2月",
+      "v": -30,
+      "up": 0
+    },
+    {
+      "m": "3月",
+      "v": 80,
+      "up": 1
+    },
+    {
+      "m": "4月",
+      "v": 40,
+      "up": 1
+    },
+    {
+      "m": "5月",
+      "v": -20,
+      "up": 0
+    },
+    {
+      "m": "6月",
+      "v": 50,
+      "up": 1
+    },
+    {
+      "m": "7月",
+      "v": -10,
+      "up": 0
+    },
+    {
+      "m": "8月",
+      "v": 30,
+      "up": 1
+    }
   ],
-
   "rules": [
-    {"n":"01","icon":"🛑","title":"浮亏不加仓","cost":"示例小盘基金 -506 · 光伏 -310","desc":"卫星仓只要浮亏，一分钱不加。7月拦住5次——7/21 DDX反转、7/24 试探、7/27 确认、7/28 抄底、7/30 跌透。每次拦住的第二天都在跌。单月省 ¥300-500。"},
-    {"n":"02","icon":"🔒","title":"卖出冻结72小时","cost":"两次转换 -892","desc":"清仓资金余额宝放满3天。红利→示例小盘基金、卫星→诺安——都是当天冲动。72小时冷却后80%的情绪化交易被过滤。"},
-    {"n":"03","icon":"📉","title":"-8% 无条件止损","cost":"诺安 -415 · 示例小盘基金 -506","desc":"恐慌日豁免1天（大盘 -3% 或板块 -5%），次日继续跌就砍。反弹日清仓，五只多赚 +513。v3.3新增时间止损：持有>30天+跑输大盘≥5%→强制卖出。"},
-    {"n":"04","icon":"🪜","title":"阶梯止盈+留底仓","cost":"卖飞 +75%、+69%、+57%","desc":"+10%卖1/3，+20%再卖1/3，留100份底仓。涨了跟着赚（不再踏空），跌了忽略不计（不再心疼）。彻底解决「卖飞焦虑」。"}
+    {
+      "n": "01",
+      "icon": "🛑",
+      "title": "浮亏不加仓",
+      "cost": "避免越跌越买",
+      "desc": "卫星仓没有浮盈时，不把下跌误判为机会。"
+    },
+    {
+      "n": "02",
+      "icon": "🔒",
+      "title": "卖出冻结72小时",
+      "cost": "过滤冲动交易",
+      "desc": "卖出后的资金先进入现金层，至少冷却三天。"
+    },
+    {
+      "n": "03",
+      "icon": "📉",
+      "title": "-8% 止损",
+      "cost": "限制单仓风险",
+      "desc": "单笔错误不能拖垮整个组合。"
+    },
+    {
+      "n": "04",
+      "icon": "📊",
+      "title": "组合回撤线",
+      "cost": "系统级防御",
+      "desc": "-5%、-10%、-15% 对应不同减仓动作。"
+    }
   ],
-
   "forbidden": [
-    {"n":"01","act":"主动基金转换","cost":"-¥892","alt":"替代: 清仓→冻结72h→再买"},
-    {"n":"02","act":"亏损卫星仓补仓","cost":"-¥506","alt":"替代: 浮亏不加仓"},
-    {"n":"03","act":"卖出当天买新标的","cost":"两次转换","alt":"替代: 冻结72h"},
-    {"n":"04","act":"产能过剩行业基金","cost":"-¥310","alt":"替代: 不进候选池"},
-    {"n":"05","act":"卫星品种日定投","cost":"3只被清仓","alt":"替代: 定投仅核心层"},
-    {"n":"06","act":"FOMO追涨","cost":"多次","alt":"替代: 风口3天确认"}
+    {
+      "n": "01",
+      "act": "浮亏补仓",
+      "cost": "扩大错误",
+      "alt": "等浮盈或重新评估"
+    },
+    {
+      "n": "02",
+      "act": "当天换标的",
+      "cost": "情绪交易",
+      "alt": "72h 冷却"
+    },
+    {
+      "n": "03",
+      "act": "无预案买入",
+      "cost": "无法复盘",
+      "alt": "先写止损和目标"
+    }
   ],
-
   "evo": [
-    {"v":"v1.0","s":55,"c":"var(--red)","d":"十条铁律\n从0到1"},
-    {"v":"v2.0","s":68,"c":"var(--amber)","d":"风口+淘汰\n首次系统化"},
-    {"v":"v3.0","s":78,"c":"var(--amber)","d":"三层金字塔\n结构质变"},
-    {"v":"v3.1","s":92,"c":"var(--green)","d":"恐慌豁免\n不再自相矛盾"},
-    {"v":"v3.2","s":94,"c":"var(--green)","d":"风险平价\n量化回撤"},
-    {"v":"v3.3","s":96,"c":"var(--accent)","d":"时间止损\n14评吸收7"}
+    {
+      "v": "v3.0",
+      "s": 80,
+      "c": "var(--amber)",
+      "d": "四层结构\n基础纪律"
+    },
+    {
+      "v": "v3.1",
+      "s": 88,
+      "c": "var(--green)",
+      "d": "负面清单\n交易约束"
+    },
+    {
+      "v": "v3.2",
+      "s": 94,
+      "c": "var(--green)",
+      "d": "风险平价\n量化回撤"
+    },
+    {
+      "v": "v3.3",
+      "s": 96,
+      "c": "var(--accent)",
+      "d": "状态机\n动态持仓"
+    }
   ]
 };
 
@@ -595,30 +787,29 @@ function fp(v){return v>=0?"+"+fm(Math.round(v)):fm(Math.round(v))}
 (function(){
   var cls=["p1","p2","p3","p4"], h="";
   D.pyramid.forEach(function(p,i){
-    h+='<div class="pyr-row '+cls[i]+'"><div class="bar"></div><div class="body"><div class="info"><div class="name">'+p.icon+' '+p.name+'</div><div class="assets">'+p.assets+'</div><div class="detail">'+p.detail+'</div></div><div class="rule"><span class="pct">'+p.rule+'</span><span class="sub">¥'+fm(p.mv)+' · '+(p.mv/D.total_assets*100).toFixed(0)+'%</span></div></div></div>';
+    var pct=D.total_assets>0?(p.mv/D.total_assets*100).toFixed(0):0;
+    h+='<div class="pyr-row '+cls[i]+'"><div class="bar"></div><div class="body"><div class="info"><div class="name">'+p.icon+' '+p.name+'</div><div class="assets">'+p.assets+'</div><div class="detail">'+p.detail+'</div></div><div class="rule"><span class="pct">'+p.rule+'</span><span class="sub">¥'+fm(p.mv)+' · '+pct+'%</span></div></div></div>';
   });
   document.getElementById("pyramidViz").innerHTML=h;
 })();
 
 // Holdings
 (function(){
-  document.getElementById("holdingsLead").textContent='截至 '+D.update+' · 总资产 ¥'+fm(D.total_assets)+' · 盈亏 '+fp(D.total_pnl)+' · 10只基金 + 1只股票 + 余额宝';
-  var layers=[
-    {key:"bedrock",label:"🛡️ 压舱石",mv:18626,pct:57,cls:"bed"},
-    {key:"core",label:"🚀 核心增长",mv:5875,pct:18,cls:"core"},
-    {key:"sat",label:"🔥 卫星进攻",mv:5428,pct:16,cls:"sat"}
-  ];
+  var hc=D.holding_counts||{};
+  document.getElementById("holdingsLead").textContent=(D.copy&&D.copy.portfolio_title?D.copy.portfolio_title+' · ':'')+'截至 '+D.update+' · 总资产 ¥'+fm(D.total_assets)+' · 盈亏 '+fp(D.total_pnl)+' · '+(hc.active_label||'暂无持仓');
+  var layers=D.layers||[];
   var h="";
   layers.forEach(function(lyr){
-    var items=D.holdings[lyr.key]||[];
-    h+='<div class="hcard '+lyr.cls+'"><div class="hhead"><span class="hht">'+lyr.label+'</span><span style="font-family:JetBrains Mono,monospace;font-size:10px;opacity:0.6">¥'+fm(lyr.mv)+' · '+lyr.pct+'%</span></div><div class="hbody">';
+    var items=(D.holdings||{})[lyr.key]||[];
+    var pct=D.total_assets>0?(lyr.mv/D.total_assets*100).toFixed(0):0;
+    h+='<div class="hcard '+lyr.cls+'"><div class="hhead"><span class="hht">'+lyr.icon+' '+lyr.label+'</span><span style="font-family:JetBrains Mono,monospace;font-size:10px;opacity:0.6">¥'+fm(lyr.mv)+' · '+pct+'% · '+(lyr.count||items.length)+'项</span></div><div class="hbody">';
     items.forEach(function(it){
       var cls2=it.c==="g"?"htag-p":"htag-d";
       h+='<div class="hitem"><span class="hn">'+it.n+'</span><span class="htag '+cls2+'">'+(it.c==="g"?"盈":"亏")+'</span><span class="hw" style="color:'+(it.c==="g"?"var(--green)":"var(--red)")+'">¥'+fm(it.v)+'</span></div>';
     });
+    if(!items.length)h+='<div class="hitem"><span class="hn">暂无</span><span class="hw" style="color:var(--text2)">¥0</span></div>';
     h+='</div></div>';
   });
-  h+='<div class="hcard" style="border-color:rgba(115,128,153,0.1)"><div class="hhead" style="color:var(--text2);background:rgba(115,128,153,0.02)"><span class="hht">💰 现金预备</span><span style="font-family:JetBrains Mono,monospace;font-size:10px;opacity:0.6">¥'+fm(D.cash_mv)+' · 9%</span></div><div class="hbody"><div class="hitem"><span class="hn">余额宝</span><span class="hw" style="color:var(--text2)">¥'+fm(D.cash_mv)+'</span></div></div></div>';
   document.getElementById("holdingsGrid").innerHTML=h;
 })();
 
@@ -640,7 +831,7 @@ function fp(v){return v>=0?"+"+fm(Math.round(v)):fm(Math.round(v))}
     sum+=m.v; if(m.up)up++;
   });
   document.getElementById("monthlyChart").innerHTML=h;
-  document.getElementById("monthlySum").textContent='13个月合计: '+(sum>=0?'+':'')+sum+' · 月均 '+(sum/13).toFixed(0)+' · 盈利月 '+up+'/12';
+  document.getElementById("monthlySum").textContent='样本合计: '+(sum>=0?'+':'')+sum+' · 月均 '+(sum/Math.max(D.monthly.length,1)).toFixed(0)+' · 盈利月 '+up+'/'+D.monthly.length;
 })();
 
 // Rules

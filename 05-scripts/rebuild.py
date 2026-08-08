@@ -29,7 +29,7 @@ SNAPSHOT_PATH = os.path.join(DESKTOP, "portfolio_snapshot.json")
 SNAPSHOT_PATH2 = os.path.join(ANCHOR_DATA, "portfolio_snapshot.json")
 
 # ===== IMPORT DATA PROCESSOR =====
-from data_processor import process_all, fp, fc, validate_data
+from data_processor import process_all, fp, fc, validate_data, build_snapshot
 
 # ===== LOAD & PROCESS DATA =====
 try:
@@ -49,26 +49,7 @@ for w in embed.get('_warnings', []):
     log.warning(w)
 
 # ===== SNAPSHOT =====
-totals = {k: embed[k] for k in ['total', 'fundMv', 'stockMv', 'cashMv', 'totalPnl']}
-snapshot = {
-    "update_time": embed['time'],
-    "total_assets": embed['total'],
-    "fund_mv": embed['fundMv'],
-    "stock_mv": embed['stockMv'],
-    "cash_mv": embed['cashMv'],
-    "total_pnl": embed['totalPnl'],
-    "layer_summary": {
-        "bedrock": {"mv": embed['bedrock_mv'], "pct": round(embed['bedrock_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
-        "core": {"mv": embed['core_mv'], "pct": round(embed['core_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
-        "sat": {"mv": embed['sat_mv'], "pct": round(embed['sat_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
-        "cash": {"mv": embed['cash_mv'], "pct": round(embed['cash_mv']/embed['total']*100,1) if embed['total'] > 0 else 0},
-    },
-    "dca_running": embed['dca'],
-    "watchlist": embed['wl'],
-    "pending_actions": embed['pa'],
-    "rule_checks": embed['rules'],
-    "chart_data": embed['chart'],
-}
+snapshot = build_snapshot(embed)
 
 # ===== PREMIUM HTML =====
 html = f'''<!DOCTYPE html>
@@ -343,13 +324,14 @@ function rate(pnl,mv){{if(!mv||mv===pnl)return 0;return pnl/(mv-pnl)*100}}
 }})();
 
 (function(){{
-  var h="";
+  var h="", hc=D.holding_counts||{{}}, activeLabel=hc.active_label||((hc.active||0)+'只活跃持仓');
   h+='<div class="kpi"><div class="kl">Total Assets</div><div class="kv" style="color:var(--accent)">'+(D.total/10000).toFixed(2)+'<span class="ku">万</span></div><div class="ks">基金 '+(D.fundMv/10000).toFixed(1)+'万 · 股票 '+(D.stockMv/10000).toFixed(1)+'万 · 现金 '+(D.cashMv/10000).toFixed(2)+'万</div></div>';
-  h+='<div class="kpi"><div class="kl">Hold PnL</div><div class="kv '+fc(D.totalPnl)+'">'+(D.totalPnl>=0?"+":"")+fm(Math.round(D.totalPnl))+'</div><div class="ks">10只活跃持仓 · 持仓盈亏</div></div>';
+  h+='<div class="kpi"><div class="kl">Hold PnL</div><div class="kv '+fc(D.totalPnl)+'">'+(D.totalPnl>=0?"+":"")+fm(Math.round(D.totalPnl))+'</div><div class="ks">'+activeLabel+' · 持仓盈亏</div></div>';
   h+='<div class="kpi"><div class="kl">SSE · 上证</div><div class="kv" style="color:var(--amber)">'+D.mkt.sh.close+'</div><div class="ks '+fc(String(D.mkt.sh.change).indexOf("+")===0)+'">'+D.mkt.sh.change+' · '+D.mkt.date+' '+D.mkt.day+'</div></div>';
   h+='<div class="kpi"><div class="kl">STAR 50</div><div class="kv '+fc(String(D.mkt.kc.change).indexOf("+")===0)+'">'+D.mkt.kc.close+'</div><div class="ks">'+D.mkt.kc.change+' · 定投: '+(D.dca||[]).join(" · ")+'</div></div>';
   var vo=D.violations||0, vt=(vo===0?'零违规 · 满分':vo+'次违规！');
-  h+='<div class="kpi"><div class="kl">August Ops</div><div class="kv '+(D.aug_ops>0?'': '')+'" style="color:'+(vo===0?'var(--green)':'var(--red)')+'">'+D.aug_ops+'<span class="ku">/'+D.aug_ops_max+'</span></div><div class="ks">'+vt+'</div></div>';
+  var opsLabel=(D.ops_state&&D.ops_state.label)||'本月', opsColor=(vo===0?(D.ops_state&&D.ops_state.is_at_limit?'var(--amber)':'var(--green)'):'var(--red)');
+  h+='<div class="kpi"><div class="kl">'+opsLabel+' Ops</div><div class="kv '+(D.aug_ops>0?'': '')+'" style="color:'+opsColor+'">'+D.aug_ops+'<span class="ku">/'+D.aug_ops_max+'</span></div><div class="ks">'+vt+(D.ops_state&&D.ops_state.is_at_limit?' · 额度已满':'')+'</div></div>';
   document.getElementById("kpi").innerHTML=h;
 }})();
 
@@ -369,35 +351,26 @@ function rate(pnl,mv){{if(!mv||mv===pnl)return 0;return pnl/(mv-pnl)*100}}
 }})();
 
 (function(){{
-  var lyrs=[
-    {{k:"bed",icon:"🛡️",label:"压舱石",mv:{embed['bedrock_mv']},tgt:45}},
-    {{k:"core",icon:"🚀",label:"核心增长",mv:{embed['core_mv']},tgt:20}},
-    {{k:"sat",icon:"🔥",label:"卫星进攻",mv:{embed['sat_mv']},tgt:20}},
-    {{k:"csh",icon:"💰",label:"现金预备",mv:{embed['cash_mv']},tgt:15}}
-  ];
+  var lyrs=D.layers||[];
   var h='<h3>四层金字塔</h3>';
   lyrs.forEach(function(l){{
     var pct=D.total>0?(l.mv/D.total*100).toFixed(0):0;
-    h+='<div class="pyr-layer '+l.k+'"><div class="pv">'+l.icon+' '+pct+'%</div><div class="pl">'+l.label+'</div><div class="pb">目标 '+l.tgt+'% · ¥'+(l.mv/10000).toFixed(2)+'万</div></div>';
+    h+='<div class="pyr-layer '+l.k+'"><div class="pv">'+l.icon+' '+pct+'%</div><div class="pl">'+l.label+'</div><div class="pb">目标 '+l.target+'% · ¥'+(l.mv/10000).toFixed(2)+'万 · '+(l.count||0)+'项</div></div>';
   }});
   document.getElementById("pyramid").innerHTML=h;
 }})();
 
 (function(){{
-  var layers=[
-    {{items:D.bedrock,cls:"b0",label:"🛡️ 压舱石层"}},
-    {{items:D.core,cls:"b1",label:"🚀 核心增长层"}},
-    {{items:D.sat,cls:"b2",label:"🔥 卫星进攻层"}},
-    {{items:D.cash,cls:"b3",label:"💰 现金预备层"}}
-  ];
+  var layerItems={{bedrock:D.bedrock,core:D.core,sat:D.sat,cash:D.cash}};
+  var layers=D.layers||[];
   var h="";
   layers.forEach(function(lyr){{
-    var items=lyr.items||[];
+    var items=layerItems[lyr.key]||[];
     var mv=items.reduce(function(s,i){{return s+(i.mv||0);}},0);
-    h+='<div style="border-bottom:1px solid rgba(255,255,255,0.01)"><div class="hp-head '+lyr.cls+'">'+lyr.label+'<span class="hs">¥'+fm(mv)+' · '+(D.total>0?(mv/D.total*100).toFixed(0):0)+'%</span></div>';
+    h+='<div style="border-bottom:1px solid rgba(255,255,255,0.01)"><div class="hp-head '+lyr.cls+'">'+lyr.icon+' '+lyr.label+'层<span class="hs">¥'+fm(mv)+' · '+(D.total>0?(mv/D.total*100).toFixed(0):0)+'% · '+(lyr.count||items.length)+'项</span></div>';
     items.forEach(function(i){{
-      var r=rate(i.pnl,i.mv);
-      h+='<div class="hr"><span class="c1">'+(i.n||"?")+(i.tag?' <span class="tag '+i.tc+'">'+i.tag+'</span>':'')+'</span><span class="c2">'+(i.mv/10000).toFixed(2)+'万</span><span class="c3 '+fc(i.pnl)+'">'+fp(i.pnl)+'</span><span class="c4 '+fc(r)+'">'+(r>=0?"+":"")+r.toFixed(1)+'%</span><span class="c5 '+fc(i.dp)+'">'+fp(i.dp)+'</span></div>';
+      var r=rate(i.pnl,i.mv), profile=i.profile?' <span style="color:var(--text3);font-size:8px">'+i.profile+'</span>':'';
+      h+='<div class="hr"><span class="c1">'+(i.n||"?")+(i.tag?' <span class="tag '+i.tc+'">'+i.tag+'</span>':'')+profile+'</span><span class="c2">'+(i.mv/10000).toFixed(2)+'万</span><span class="c3 '+fc(i.pnl)+'">'+fp(i.pnl)+'</span><span class="c4 '+fc(r)+'">'+(r>=0?"+":"")+r.toFixed(1)+'%</span><span class="c5 '+fc(i.dp)+'">'+fp(i.dp)+'</span></div>';
     }});
     h+='</div>';
   }});
@@ -513,7 +486,7 @@ for sp in [SNAPSHOT_PATH, SNAPSHOT_PATH2]:
     log.info(f"Snapshot    -> {sp}")
 
 log.info(f"Total: CNY {embed['total']:,.0f} | Bedrock: {embed['bedrock_mv']/embed['total']*100:.0f}% | Core: {embed['core_mv']/embed['total']*100:.0f}% | Sat: {embed['sat_mv']/embed['total']*100:.0f}% | Cash: {embed['cash_mv']/embed['total']*100:.0f}%")
-log.info(f"PnL: {fp(embed['totalPnl'])} | Holdings: {len(embed['bedrock'])+len(embed['core'])+len(embed['sat'])+len(embed['cash'])} active")
+log.info(f"PnL: {fp(embed['totalPnl'])} | Holdings: {embed.get('holding_counts', {}).get('active_label', str(embed.get('holding_counts', {}).get('active', 0)) + ' active')}")
 
 # Data freshness check
 today = date.today()

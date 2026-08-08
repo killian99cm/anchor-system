@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import subprocess
+import tempfile
 from pathlib import Path
 
 DESKTOP = Path(r"C:\Users\lenovo\Desktop")
@@ -19,6 +20,7 @@ SCRIPTS = ANCHOR / "05-scripts"
 PY = r"C:\Users\lenovo\AppData\Local\Programs\Python\Python313\python"
 PUBLIC_DATA_PATH = ANCHOR / "06-dashboard" / "portfolio_data_example.json"
 PUBLIC_HTML_PATH = ANCHOR / "08-website" / "anchor-pro.html"
+EXAMPLE_HTML_PATH = ANCHOR / "06-dashboard" / "portfolio_analysis_example.html"
 
 PASS, FAIL = 0, 0
 
@@ -47,6 +49,35 @@ def read_html_embed(path):
     if not match:
         raise ValueError(f"未找到 {path.name} 中的 var D 数据块")
     return html, json.loads(match.group(1))
+
+
+def check_inline_script_syntax(path):
+    html = path.read_text(encoding="utf-8")
+    match = re.search(r"<script>([\s\S]*)</script>", html)
+    if not match:
+        return False, "no inline script"
+    script = match.group(1)
+    with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as tmp:
+        tmp.write("new Function(" + json.dumps(script) + ");\n")
+        script_path = tmp.name
+    try:
+        result = subprocess.run(
+            [r"D:/node.exe", script_path],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=60,
+        )
+    finally:
+        try:
+            Path(script_path).unlink()
+        except OSError:
+            pass
+    if result.returncode == 0:
+        return True, ""
+    detail = (result.stderr or result.stdout).strip().splitlines()[-1] if (result.stderr or result.stdout) else "script syntax error"
+    return False, detail
 
 
 def contains_token(text, token):
@@ -150,6 +181,8 @@ def main():
     if html_path.exists() and data:
         html, embed = read_html_embed(html_path)
         check("HTML 大小 > 20KB", len(html) > 20000, f"({len(html)} bytes)")
+        script_ok, script_detail = check_inline_script_syntax(html_path)
+        check("HTML 内嵌脚本语法正确", script_ok, script_detail)
         check("HTML 含峰值数据", "peak_assets" in html)
         check("HTML 含今日结论", '"today"' in html)
         check("HTML 含操作计数", "aug_ops" in html)
@@ -212,6 +245,8 @@ def main():
     if PUBLIC_HTML_PATH.exists() and PUBLIC_DATA_PATH.exists():
         public_data = json.loads(PUBLIC_DATA_PATH.read_text(encoding='utf-8'))
         public_html, public_embed = read_html_embed(PUBLIC_HTML_PATH)
+        public_script_ok, public_script_detail = check_inline_script_syntax(PUBLIC_HTML_PATH)
+        check("公开页内嵌脚本语法正确", public_script_ok, public_script_detail)
         private_tokens = private_tokens_from_data(data, embed)
         check("公开页无私有标记", not any(contains_token(public_html, token) for token in private_tokens), "检测到私有持仓或基准标记")
         check("公开页现金名称脱敏", '余额宝' not in public_html, "现金名称仍暴露为余额宝")
@@ -228,6 +263,17 @@ def main():
         check("公开页不写死持仓数量", '10只基金 + 1只股票 + 余额宝' not in public_html and '10只活跃持仓' not in public_html)
         check("公开页不写死层级市值", '18626' not in public_html and '5875' not in public_html and '5428' not in public_html)
         check("公开页无实盘历史文案", not any(contains_token(public_html, token) for token in ['109笔实盘交易', '109笔交易', '28只清仓基金', '13个月数据', '¥2,343', '实盘持仓']))
+
+    print("\n[6b] GitHub Pages 示例首页")
+    check("示例首页存在", EXAMPLE_HTML_PATH.exists())
+    if EXAMPLE_HTML_PATH.exists() and PUBLIC_DATA_PATH.exists():
+        example_html, example_embed = read_html_embed(EXAMPLE_HTML_PATH)
+        example_script_ok, example_script_detail = check_inline_script_syntax(EXAMPLE_HTML_PATH)
+        check("示例首页内嵌脚本语法正确", example_script_ok, example_script_detail)
+        check("示例首页使用示例资产", example_embed.get('total_assets', -1) == public_data.get('total_assets', -2))
+        check("示例首页含动态合同", '"holding_counts"' in example_html and '"layers"' in example_html)
+        check("示例首页含新视觉结构", 'ANCHOR COMMAND CENTER' in example_html and 'Portfolio map' in example_html and 'Sample performance' in example_html)
+        check("示例首页无私有标记", not any(contains_token(example_html, token) for token in private_tokens), "检测到私有持仓或基准标记")
 
     # 7. 运行核心测试
     print("\n[7] 核心计算测试 test_calculations.py")

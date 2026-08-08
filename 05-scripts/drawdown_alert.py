@@ -8,7 +8,7 @@ Anchor 回撤预警器 (短板3)
     python drawdown_alert.py                # 正常检查
     python drawdown_alert.py --json         # JSON 输出（供外部程序）
     python drawdown_alert.py --check        # 返回码 2=触发红线 1=黄线 0=安全
-退出码: 0 安全 / 1 黄线(>=5%但<10%) / 2 红线(>=10%) / 3 数据缺失
+退出码: 0 安全 / 1 黄线(-5%但未到-10%) / 2 红线(-10%或更深) / 3 数据缺失
 """
 import json
 import sys
@@ -22,10 +22,7 @@ if hasattr(sys.stdout, 'reconfigure'):
 DESKTOP = Path(r"C:\Users\lenovo\Desktop")
 DATA_PATH = DESKTOP / "portfolio_data.json"
 
-# 回撤线定义（百分比绝对值）
-LINES = [(5, "🟡 卫星仓位减半，不开新仓"),
-         (10, "🔴 卫星全部清仓，只留压舱石+核心增长"),
-         (15, "🔴🔴 核心增长也减1/3，持有现金")]
+from data_processor import process_all
 
 
 def load():
@@ -34,36 +31,33 @@ def load():
 
 
 def main():
-    data = load()
-    total = data.get('total_assets', 0)
-    peak = data.get('_meta', {}).get('peak_assets', 0)
-    peak_note = data.get('_meta', {}).get('peak_note', '')
-
-    if not total or not peak:
-        print("❌ 数据缺失：total_assets 或 peak_assets 为空")
+    try:
+        data = load()
+        embed = process_all(data)
+    except Exception as e:
+        print(f"❌ 数据缺失或无法计算：{e}")
         sys.exit(3)
 
-    dd_pct = (total - peak) / peak * 100
-    dd_abs = abs(dd_pct)
+    total = embed.get('total', 0)
+    state = embed.get('drawdown_state', {})
+    peak = state.get('peak_assets', 0)
+    peak_note = state.get('peak_note', '')
+    dd_pct = state.get('dd_pct', 0)
+    level = state.get('dd_level', 'safe')
+    line = state.get('triggered_line')
+    action = state.get('action')
+    lines = state.get('lines', {})
+    cushion = state.get('safe_cushion', 0)
 
-    # 判定级别
-    level = "safe"
-    triggered_line = None
-    for pct, action in LINES:
-        if dd_abs >= pct:
-            level = "red" if pct >= 10 else "amber"
-            triggered_line = (pct, action)
-            break
-
-    # 输出
     if '--json' in sys.argv:
         out = {
             "total": round(total, 2),
             "peak": round(peak, 2),
             "dd_pct": round(dd_pct, 2),
             "level": level,
-            "triggered": triggered_line,
-            "safe_cushion": round(total - peak * 0.95, 2),
+            "triggered": [line, action] if line else None,
+            "safe_cushion": round(cushion, 2),
+            "lines": lines,
         }
         print(json.dumps(out, ensure_ascii=False, indent=2))
     else:
@@ -76,18 +70,16 @@ def main():
         print(f"  回撤幅度:   {sign}{dd_pct:.2f}%")
         print("-" * 50)
         if level == "safe":
-            cushion = total - peak * 0.95
             print(f"  ✅ 安全区：距 -5% 线还有 ¥{cushion:,.0f}")
-            print(f"     -5% 线: ¥{peak*0.95:,.0f} | -10%: ¥{peak*0.90:,.0f} | -15%: ¥{peak*0.85:,.0f}")
+            print(f"     -5% 线: ¥{lines.get('minus5', peak*0.95):,.0f} | -10%: ¥{lines.get('minus10', peak*0.90):,.0f} | -15%: ¥{lines.get('minus15', peak*0.85):,.0f}")
         elif level == "amber":
-            print(f"  🟡 触发 {triggered_line[0]}% 回撤线！")
-            print(f"     行动: {triggered_line[1]}")
+            print(f"  🟡 触发 {line}% 回撤线！")
+            print(f"     行动: {action}")
         else:
-            print(f"  🔴 触发 {triggered_line[0]}% 回撤线！")
-            print(f"     行动: {triggered_line[1]}")
+            print(f"  🔴 触发 {line}% 回撤线！")
+            print(f"     行动: {action}")
             print("     ⚠️ 请立即按规则执行减仓！")
 
-    # 退出码
     if '--check' in sys.argv:
         sys.exit(2 if level == "red" else (1 if level == "amber" else 0))
     sys.exit(0)

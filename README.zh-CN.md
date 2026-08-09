@@ -1,5 +1,7 @@
 # Anchor
 
+![CI](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml/badge.svg)
+
 Anchor 是一套面向个人投资者的**规则驱动投资管理系统**。
 
 它把个人投资流程变成一套可重复执行的工作流：

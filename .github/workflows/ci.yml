@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Python 语法检查
+        run: python -m compileall -q 05-scripts
+
+      - name: 核心计算测试（34 项；真实数据测试自动跳过）
+        run: python 05-scripts/test_calculations.py
+
+      - name: 公开页生成（示例数据契约 + 隐私扫描）
+        run: python 05-scripts/gen_anchor_pro.py
+
+      - name: 公开页无漂移（生成器输出必须与提交一致）
+        run: git diff --exit-code
+
+      - name: 公开页数据块契约检查
+        run: |
+          grep -q "var D" 08-website/anchor-pro.html
+          grep -q "var D" 06-dashboard/portfolio_analysis_example.html
+          grep -q "_example" 06-dashboard/portfolio_data_example.json

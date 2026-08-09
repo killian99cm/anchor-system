@@ -5,6 +5,7 @@ Anchor v3.3 — 数据处理器
 独立于渲染层，可单独测试
 """
 import json
+import re
 from datetime import date, datetime, timedelta
 
 
@@ -66,6 +67,38 @@ def data_reference_date(data, fallback=None):
 
 DEFAULT_CASH_FLOOR = 0.10
 DEFAULT_MONTHLY_OPS = 4
+
+# 创新药时间止损截止日 —— 单一事实源（规则手册 v3.3：8/20，实际日期优先从数据解析）
+TIME_STOP_DEADLINE = date(2026, 8, 20)
+
+
+def time_stop_deadline_from_data(data):
+    """从 pending_actions 的时间止损条目解析截止日（'8/20' / '2026-08-20'）。
+    只扫描含"时间止损/创新药"的条目，取其中最晚日期（如 '7/21试探→8/20满30天' 取 8/20）。"""
+    ref = data_reference_date(data)
+    candidates = [TIME_STOP_DEADLINE]
+    for item in data.get('pending_actions', []):
+        txt = str(item)
+        if '时间止损' not in txt and '创新药' not in txt:
+            continue
+        for m in re.finditer(r'(\d{4})-(\d{1,2})-(\d{1,2})', txt):
+            try:
+                candidates.append(date(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+            except ValueError:
+                pass
+        for m in re.finditer(r'(\d{1,2})/(\d{1,2})', txt):
+            try:
+                d = date(ref.year, int(m.group(1)), int(m.group(2)))
+            except ValueError:
+                continue
+            if d >= ref:
+                candidates.append(d)
+    return max(candidates)
+
+
+def time_stop_remaining(data):
+    """时间止损剩余天数（按数据参考日），过期后钳制为 0，不显示负数。"""
+    return max((time_stop_deadline_from_data(data) - data_reference_date(data)).days, 0)
 
 
 def get_peak_assets(data):
@@ -176,7 +209,7 @@ def derive_holding_tag(name, layer, data=None, mkt=None, existing_tag=''):
         return existing_tag or derive_take_profit_profile(name, layer), tc
     if layer == 'sat':
         if '创新药' in name:
-            remaining = (date(2026, 8, 20) - data_reference_date(data)).days
+            remaining = time_stop_remaining(data)
             return f'{remaining}天倒计时', 'tag-a' if remaining > 5 else 'tag-r'
         if '半导体' in name or '芯片' in name:
             if 'DDX转负' in text or 'DDX为负' in text:
@@ -554,8 +587,9 @@ GROUP_TO_LAYER = {
 # 兜底：未知 group 时按关键词判断
 KEYWORD_TO_LAYER = [
     ("债券", "bedrock"), ("黄金", "bedrock"), ("红利", "bedrock"), ("红利ETF", "bedrock"),
-    ("QDII", "core"), ("混合", "core"), ("纳指", "core"),
+    ("QDII", "core"), ("混合", "core"), ("纳指", "core"), ("纳斯达克", "core"),
     ("半导体", "sat"), ("创新药", "sat"), ("证券", "sat"), ("芯片", "sat"),
+    ("现金", "cash"), ("货币", "cash"),
 ]
 
 
@@ -605,7 +639,8 @@ def process_holdings(raw_holdings, stocks, data=None, mkt=None):
         tag, resolved_tc = derive_holding_tag(name, layer, data=data, mkt=mkt, existing_tag=existing_tag)
         item = {
             "n": name, "mv": round(mv, 2), "pnl": round(pnl, 2),
-            "dp": round(dp, 2), "tag": tag, "tc": resolved_tc or tc,
+            "dp": round(dp, 2), "rt": round(rate(pnl, mv), 2),
+            "tag": tag, "tc": resolved_tc or tc,
             "profile": derive_take_profit_profile(name, layer),
             "type": "cash" if layer == "cash" else "fund",
             "layer": layer,
@@ -635,7 +670,7 @@ def process_holdings(raw_holdings, stocks, data=None, mkt=None):
         tag, resolved_tc = derive_holding_tag(name, layer, data=data, mkt=mkt)
         item = {
             "n": name, "mv": round(mv, 2),
-            "pnl": round(pnl, 2), "dp": round(dp, 2),
+            "pnl": round(pnl, 2), "dp": round(dp, 2), "rt": round(rate(pnl, mv), 2),
             "tag": tag or derive_take_profit_profile(name, layer),
             "tc": resolved_tc or TAG_CLASS_BY_LAYER.get(layer, 'tag-b'),
             "st": 1,
@@ -773,18 +808,19 @@ def generate_rules(sat_holdings, data, mkt, totals, drawdown_state=None, ops_sta
     else:
         rules.append({"lv": "ra", "t": "半导体 DDX 数据待更新"})
 
-    # 纳指溢价
-    rules.append({"lv": "rr", "t": "纳指ETF溢价率 ~10-12% → 不建仓，等待溢价率 <= 3%"})
-
-    # 创新药时间止损
-    ref_date = data_reference_date(data)
-    for pa_item in pa:
-        if '创新药' in str(pa_item) and '8/20' in str(pa_item):
-            remaining = (date(2026, 8, 20) - ref_date).days
-            rules.append({"lv": "ra", "t": f"创新药时间止损倒计时：8月20日截止（按数据日剩{remaining}天）"})
-            break
+    # 纳指溢价（从行情备注推导；无数据时显示待确认，不写死数值）
+    if '溢价' in mkt_note:
+        if '高溢价' in mkt_note or '10-12' in mkt_note:
+            premium_lv, premium_t = "rr", "纳指ETF溢价率偏高 → 不建仓，等待溢价率 <= 3%"
+        else:
+            premium_lv, premium_t = "rg", "纳指ETF溢价率已回落 → 可评估建仓"
     else:
-        rules.append({"lv": "ra", "t": "创新药时间止损倒计时：8月20日截止"})
+        premium_lv, premium_t = "ra", "纳指ETF溢价率待确认（≤3% 才建仓）"
+    rules.append({"lv": premium_lv, "t": premium_t})
+
+    # 创新药时间止损（截止日从数据解析，剩余天数钳制为 0）
+    remaining = time_stop_remaining(data)
+    rules.append({"lv": "ra", "t": f"创新药时间止损倒计时：按数据日剩{remaining}天（截止日见规则手册）"})
 
     # 回撤
     if drawdown_state is None:
@@ -834,10 +870,16 @@ def generate_risk_matrix(data, mkt_note, totals, ops_state=None):
     elif 'DDX' in mkt_note and ('为正' in mkt_note or '转正' in mkt_note):
         risks.append({"l": "green", "n": "半导体DDX为正", "d": "主力净流入确认", "c": "g"})
     else:
-        risks.append({"l": "amber", "n": "半导体DDX待确认", "d": "关注8/10周一", "c": "a"})
+        risks.append({"l": "amber", "n": "半导体DDX待确认", "d": "关注下个交易日", "c": "a"})
 
-    # 纳指溢价
-    risks.append({"l": "red", "n": "纳指ETF高溢价", "d": "溢价率~10-12%", "c": "r"})
+    # 纳指溢价（从行情备注推导）
+    if '溢价' in mkt_note:
+        if '高溢价' in mkt_note or '10-12' in mkt_note:
+            risks.append({"l": "red", "n": "纳指ETF高溢价", "d": "溢价率偏高，不建仓", "c": "r"})
+        else:
+            risks.append({"l": "green", "n": "纳指ETF溢价可控", "d": "可评估建仓", "c": "g"})
+    else:
+        risks.append({"l": "amber", "n": "纳指ETF溢价待确认", "d": "需行情备注更新", "c": "a"})
 
     # 科创50
     kc_change_str = str(kc.get('change', '0'))
@@ -851,11 +893,11 @@ def generate_risk_matrix(data, mkt_note, totals, ops_state=None):
         risks.append({"l": "green", "n": "科创50上涨", "d": f"科创50 {kc_change_str}", "c": "g"})
 
     # 创新药
-    remaining_days = (date(2026, 8, 20) - data_reference_date(data)).days
+    remaining_days = time_stop_remaining(data)
     if remaining_days <= 5:
-        risks.append({"l": "red", "n": "创新药时间紧迫", "d": f"按数据日距8/20仅{remaining_days}天", "c": "r"})
+        risks.append({"l": "red", "n": "创新药时间紧迫", "d": f"按数据日仅剩{remaining_days}天", "c": "r"})
     else:
-        risks.append({"l": "amber", "n": "创新药时间压力", "d": f"按数据日距8/20剩{remaining_days}天", "c": "a"})
+        risks.append({"l": "amber", "n": "创新药时间压力", "d": f"按数据日剩{remaining_days}天", "c": "a"})
 
     # 黄金
     gold_h = next((h for h in raw if '黄金' in str(h.get('name', '')) and h.get('mv', 0) > 0), None)
@@ -871,13 +913,20 @@ def generate_risk_matrix(data, mkt_note, totals, ops_state=None):
     if bond_items and all(h.get('day_pnl', 0) >= -1 for h in bond_items):
         risks.append({"l": "green", "n": "固收稳定产出", "d": "债券正收益", "c": "g"})
 
-    # 成交量
+    # 成交量（解析"万亿"数字与 3 万亿阈值比较；无数据时输出待确认）
+    vol_match = None
     vol_str = '--'
     if '万亿' in mkt_note:
-        idx = mkt_note.find('万亿')
-        vol_str = mkt_note[max(0, idx-5):idx+2]
-    risks.append({"l": "green" if '3' in vol_str else "amber",
-                  "n": "市场成交量", "d": vol_str, "c": "g" if '3' in vol_str else "a"})
+        m = re.search(r'(\d+(?:\.\d+)?)\s*万亿', mkt_note)
+        if m:
+            vol_match = float(m.group(1))
+            vol_str = f"{vol_match:g}万亿"
+    if vol_match is None:
+        risks.append({"l": "amber", "n": "市场成交量", "d": "待确认", "c": "a"})
+    else:
+        vol_ok = vol_match >= 3
+        risks.append({"l": "green" if vol_ok else "amber", "n": "市场成交量",
+                      "d": f"{vol_str} · {'放量' if vol_ok else '常态'}", "c": "g" if vol_ok else "a"})
 
     # 纪律
     if ops_state.get('violations', 0) == 0:

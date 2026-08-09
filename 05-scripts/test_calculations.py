@@ -7,6 +7,7 @@ Anchor v3.3 核心计算测试
 import copy
 import json
 import os
+import re
 import sys
 import unittest
 from datetime import date
@@ -14,6 +15,7 @@ from datetime import date
 # ===== 被测逻辑：从 data_processor import 权威实现（单一事实源） =====
 # data_processor.py 是本文件所在目录
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import paths
 from data_processor import fp, rate, safe_float, monthly_ops_summary, get_peak_assets, drawdown_status, process_all, build_snapshot
 
 # 测试辅助函数（data_processor 未提供，纯测试用）
@@ -178,15 +180,23 @@ class TestMonthlyOps(unittest.TestCase):
         self.assertEqual(count, 0)
 
     def test_real_data_consistency(self):
-        """真实数据：8/7 应计 1 笔操作且零违规"""
-        data_path = r"C:\Users\lenovo\Desktop\portfolio_data.json"
+        """真实数据：monthly_ops_summary 与数据参考月交易数口径一致（不耦合具体月份）"""
+        data_path = paths.DATA_PATH
         if not os.path.exists(data_path):
             self.skipTest("portfolio_data.json not found")
         with open(data_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
-        count, viol = monthly_ops_summary(data, year=2026, month=8)
-        self.assertEqual(count, 1, f"8月应1笔操作，实际{count}")
-        self.assertEqual(viol, 0)
+        m = re.search(r'(\d{4})-(\d{1,2})', str(data.get('update_date') or data.get('update_time') or ''))
+        if not m:
+            self.skipTest("update_date 缺失，无法确定参考月")
+        year, month = int(m.group(1)), int(m.group(2))
+        count, viol = monthly_ops_summary(data, year=year, month=month)
+        prefixes = (f"{year}-{month:02d}", f"{month}/", f"{month:02d}/")
+        manual = sum(1 for t in data.get('transactions', []) if str(t.get('date', '')).startswith(prefixes))
+        self.assertEqual(count, manual,
+                         f"{year}-{month:02d} monthly_ops_summary={count} 但 transactions 实际 {manual} 笔")
+        self.assertEqual(viol, sum(1 for t in data.get('transactions', [])
+                                   if '违规' in str(t.get('note', '')) and str(t.get('date', '')).startswith(prefixes)))
 
 
 class TestRealPortfolioData(unittest.TestCase):
@@ -194,7 +204,7 @@ class TestRealPortfolioData(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        data_path = r"C:\Users\lenovo\Desktop\portfolio_data.json"
+        data_path = paths.DATA_PATH
         if not os.path.exists(data_path):
             raise unittest.SkipTest("portfolio_data.json not found")
         with open(data_path, 'r', encoding='utf-8') as f:

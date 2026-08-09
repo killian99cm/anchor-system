@@ -13,6 +13,8 @@ import re
 import sys
 from pathlib import Path
 
+from data_processor import GROUP_TO_LAYER, KEYWORD_TO_LAYER
+
 # 路径必须与运行位置无关（CI 在 Linux runner 上运行，不能依赖 Windows 绝对路径）
 ANCHOR = Path(__file__).resolve().parent.parent
 PUBLIC_DATA_PATH = ANCHOR / "06-dashboard" / "portfolio_data_example.json"
@@ -28,19 +30,31 @@ LAYER_META = {
     "sat": {"icon": "🔥", "label": "卫星进攻", "cls": "sat", "target": 20, "fallback": "示例行业ETF"},
     "cash": {"icon": "💰", "label": "现金预备", "cls": "cash", "target": 15, "fallback": "现金预备"},
 }
-GROUP_TO_LAYER = {
-    "全局固收": "bedrock",
-    "核心增长": "core",
-    "全局QDII": "core",
-    "进攻组合": "sat",
-    "现金预备": "cash",
-}
-KEYWORD_TO_LAYER = [
-    ("债券", "bedrock"), ("黄金", "bedrock"), ("红利", "bedrock"),
-    ("QDII", "core"), ("纳指", "core"), ("纳斯达克", "core"), ("混合", "core"),
-    ("半导体", "sat"), ("芯片", "sat"), ("创新药", "sat"), ("证券", "sat"),
-    ("现金", "cash"), ("货币", "cash"),
-]
+
+def numeric_token_forms(value):
+    """多形态数字 token：整型、±1、千分位、小数原始形态，防止格式化漏报。"""
+    forms = set()
+    iv = int(round(value))
+    for v in (iv - 1, iv, iv + 1):
+        forms.add(str(v))
+        forms.add(f"{v:,}")
+    if float(value) != iv:
+        forms.add(f"{float(value):.2f}")
+    return forms
+
+
+def _name_tokens(section_items):
+    """从名称/代码提取 token，并抽取名称内嵌的 6 位基金/股票代码。"""
+    tokens = set()
+    for item in section_items:
+        for key in ("name", "code"):
+            value = str(item.get(key, "")).strip()
+            if value:
+                tokens.add(value)
+                tokens.update(re.findall(r"\b\d{6}\b", value))
+    return tokens
+
+
 def private_tokens_from_local_portfolio():
     """Collect private leak markers from local private portfolio data if present."""
     local_path = DESKTOP / "portfolio_data.json"
@@ -52,15 +66,11 @@ def private_tokens_from_local_portfolio():
         return []
     tokens = set()
     for section in ("holdings_summary", "stock_holdings"):
-        for item in data.get(section, []):
-            for key in ("name", "code"):
-                value = str(item.get(key, "")).strip()
-                if value:
-                    tokens.add(value)
+        tokens.update(_name_tokens(data.get(section, [])))
     for key in ("total_assets", "fund_account", "stock_account", "yuebao", "total_hold_pnl_est"):
         value = data.get(key)
         if isinstance(value, (int, float)) and value:
-            tokens.add(str(int(round(value))))
+            tokens.update(numeric_token_forms(value))
     return sorted(tokens, key=len, reverse=True)
 
 EXAMPLE_NAME_BY_LAYER = {
@@ -166,10 +176,11 @@ def sensitive_tokens_from_input(data):
                 value = str(item.get(key, "")).strip()
                 if value and not value.startswith("示例") and value != "现金预备":
                     tokens.add(value)
+                    tokens.update(re.findall(r"\b\d{6}\b", value))
     for key in ("total_assets", "fund_account", "stock_account", "yuebao", "total_hold_pnl_est"):
         value = data.get(key)
         if isinstance(value, (int, float)) and value:
-            tokens.add(str(int(round(value))))
+            tokens.update(numeric_token_forms(value))
     return sorted(tokens, key=len, reverse=True)
 
 
@@ -185,7 +196,8 @@ def contains_sensitive_token(text, token):
 
 
 def leaked_tokens(text, data):
-    tokens = private_tokens_from_local_portfolio()
+    """按敏感 token 全集扫描（示例输入 + 本地私有数据并集，含空白压缩变体）。"""
+    tokens = sensitive_tokens_from_input(data)
     return [token for token in tokens if contains_sensitive_token(text, token)]
 
 
@@ -346,7 +358,7 @@ def json_block(data):
             {"v": "v3.3", "s": 96, "c": "var(--accent)", "d": "状态机\n动态持仓"},
         ],
     }
-    block = "var D=" + json.dumps(public, ensure_ascii=False, indent=2)
+    block = "var D=" + json.dumps(public, ensure_ascii=False, indent=2).replace("</", "<\\/")
     leaked = leaked_tokens(block, data)
     if leaked:
         raise SystemExit(f"[ERROR] 公开数据块包含私有标记：{', '.join(leaked[:5])}")
@@ -392,7 +404,7 @@ def main():
     }
     for old, new in replacements.items():
         new_html = new_html.replace(old, new)
-    leaked = [token for token in sensitive_tokens_from_input(data) if token in new_html]
+    leaked = leaked_tokens(new_html, data)
     if leaked:
         raise SystemExit(f"[ERROR] 公开HTML包含私有标记：{', '.join(leaked[:5])}")
     PRO_HTML.write_text(new_html, encoding="utf-8")

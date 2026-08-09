@@ -13,11 +13,13 @@ import re
 import sys
 from pathlib import Path
 
-DESKTOP = Path(r"C:\Users\lenovo\Desktop")
-ANCHOR = DESKTOP / "Anchor"
+# 路径必须与运行位置无关（CI 在 Linux runner 上运行，不能依赖 Windows 绝对路径）
+ANCHOR = Path(__file__).resolve().parent.parent
 PUBLIC_DATA_PATH = ANCHOR / "06-dashboard" / "portfolio_data_example.json"
 PRO_HTML = ANCHOR / "08-website" / "anchor-pro.html"
 EXAMPLE_HTML = ANCHOR / "06-dashboard" / "portfolio_analysis_example.html"
+# 仅用于本地私有 token 扫描（CI 上该文件不存在 → 自动返回空列表）
+DESKTOP = Path.home() / "Desktop"
 
 LAYER_ORDER = ["bedrock", "core", "sat", "cash"]
 LAYER_META = {

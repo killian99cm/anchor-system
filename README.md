@@ -1,5 +1,7 @@
 # Anchor
 
+![CI](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml/badge.svg)
+
 Anchor is a rules-driven personal investment management system for individual investors.
 
 It turns a personal portfolio process into a repeatable workflow:

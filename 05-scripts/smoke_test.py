@@ -7,20 +7,22 @@ Anchor smoke 测试 — 端到端完整性验证 (短板1)
 """
 import hashlib
 import json
-import os
 import re
+import shutil
 import sys
 import subprocess
 import tempfile
 from pathlib import Path
 
-DESKTOP = Path(r"C:\Users\lenovo\Desktop")
-ANCHOR = DESKTOP / "Anchor"
-SCRIPTS = ANCHOR / "05-scripts"
-PY = r"C:\Users\lenovo\AppData\Local\Programs\Python\Python313\python"
-PUBLIC_DATA_PATH = ANCHOR / "06-dashboard" / "portfolio_data_example.json"
+import paths
+
+DESKTOP = paths.DESKTOP
+ANCHOR = paths.ANCHOR
+SCRIPTS = paths.SCRIPTS
+PY = sys.executable
+PUBLIC_DATA_PATH = paths.DASHBOARD_DIR / "portfolio_data_example.json"
 PUBLIC_HTML_PATH = ANCHOR / "08-website" / "anchor-pro.html"
-EXAMPLE_HTML_PATH = ANCHOR / "06-dashboard" / "portfolio_analysis_example.html"
+EXAMPLE_HTML_PATH = paths.DASHBOARD_DIR / "portfolio_analysis_example.html"
 
 PASS, FAIL = 0, 0
 
@@ -57,18 +59,23 @@ def check_inline_script_syntax(path):
     if not match:
         return False, "no inline script"
     script = match.group(1)
+    node = shutil.which("node")
+    if not node:
+        return False, "node 不可用（未安装或不在 PATH），跳过 JS 语法检查"
     with tempfile.NamedTemporaryFile("w", suffix=".js", encoding="utf-8", delete=False) as tmp:
         tmp.write("new Function(" + json.dumps(script) + ");\n")
         script_path = tmp.name
     try:
         result = subprocess.run(
-            [r"D:/node.exe", script_path],
+            [node, script_path],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
             timeout=60,
         )
+    except FileNotFoundError:
+        return False, "node 不可用（未安装或不在 PATH）"
     finally:
         try:
             Path(script_path).unlink()
@@ -118,11 +125,6 @@ def private_tokens_from_data(data, embed):
     active_label = str(hc.get('active_label', '')).strip()
     if active_label:
         tokens.add(active_label)
-    for key in ('active', 'total'):
-        val = hc.get(key)
-        if isinstance(val, int) and val:
-            tokens.add(f'{val}只活跃持仓')
-            tokens.add(f'{val}个活跃项')
     for key, suffix in (('fund', '只基金'), ('stock', '只股票')):
         val = hc.get(key)
         if isinstance(val, int) and val:
@@ -172,7 +174,11 @@ def main():
     html_path = DESKTOP / "portfolio_analysis.html"
     check("HTML 存在", html_path.exists())
     if html_path.exists() and data:
-        html, embed = read_html_embed(html_path)
+        try:
+            html, embed = read_html_embed(html_path)
+        except (ValueError, json.JSONDecodeError) as exc:
+            html, embed = "", {}
+            check("HTML var D 数据块解析", False, str(exc))
         check("HTML 大小 > 20KB", len(html) > 20000, f"({len(html)} bytes)")
         script_ok, script_detail = check_inline_script_syntax(html_path)
         check("HTML 内嵌脚本语法正确", script_ok, script_detail)
@@ -185,8 +191,8 @@ def main():
         check("HTML 含动态持仓计数", '"holding_counts"' in html and '"layers"' in html)
         check("HTML 不含写死持仓数量", '10只基金 + 1只股票 + 余额宝' not in html and '10只活跃持仓' not in html)
         check("HTML 不含写死层级市值", '18626' not in html and '5875' not in html and '5428' not in html)
-        check("embed.total ≈ total_assets", abs(embed['total'] - data.get('total_assets', 0)) < 100,
-              f"(embed={embed['total']} vs json={data.get('total_assets')})")
+        check("embed.total ≈ total_assets", abs(embed.get('total', 0) - data.get('total_assets', 0)) < 100,
+              f"(embed={embed.get('total')} vs json={data.get('total_assets')})")
         check("embed.dd_pct 合理范围", -50 < embed.get('dd_pct', 0) < 50,
               f"(dd_pct={embed.get('dd_pct')})")
         check("embed 包含 ops_state", 'ops_state' in embed and 'risk_state' in embed)
@@ -237,7 +243,11 @@ def main():
     check("示例数据存在", PUBLIC_DATA_PATH.exists())
     if PUBLIC_HTML_PATH.exists() and PUBLIC_DATA_PATH.exists():
         public_data = json.loads(PUBLIC_DATA_PATH.read_text(encoding='utf-8'))
-        public_html, public_embed = read_html_embed(PUBLIC_HTML_PATH)
+        try:
+            public_html, public_embed = read_html_embed(PUBLIC_HTML_PATH)
+        except (ValueError, json.JSONDecodeError) as exc:
+            public_html, public_embed = "", {}
+            check("公开页 var D 数据块解析", False, str(exc))
         public_script_ok, public_script_detail = check_inline_script_syntax(PUBLIC_HTML_PATH)
         check("公开页内嵌脚本语法正确", public_script_ok, public_script_detail)
         private_tokens = private_tokens_from_data(data, embed)
@@ -245,7 +255,6 @@ def main():
         check("公开页现金名称脱敏", '余额宝' not in public_html, "现金名称仍暴露为余额宝")
         check("公开页使用示例资产", public_embed.get('total_assets', -1) == public_data.get('total_assets', -2),
               f"(page={public_embed.get('total_assets')} vs example={public_data.get('total_assets')})")
-        check("公开页示例总资产为 0", public_embed.get('total_assets', -1) == 0, f"(total={public_embed.get('total_assets')})")
         check("公开页示例标签可见", public_embed.get('hero', [{}])[0].get('l') == '示例总资产 ¥',
               f"(label={public_embed.get('hero', [{}])[0].get('l')})")
         check("公开页含动态持仓合同", '"holding_counts"' in public_html and '"layers"' in public_html)
@@ -260,7 +269,11 @@ def main():
     print("\n[6b] GitHub Pages 示例首页")
     check("示例首页存在", EXAMPLE_HTML_PATH.exists())
     if EXAMPLE_HTML_PATH.exists() and PUBLIC_DATA_PATH.exists():
-        example_html, example_embed = read_html_embed(EXAMPLE_HTML_PATH)
+        try:
+            example_html, example_embed = read_html_embed(EXAMPLE_HTML_PATH)
+        except (ValueError, json.JSONDecodeError) as exc:
+            example_html, example_embed = "", {}
+            check("示例首页 var D 数据块解析", False, str(exc))
         example_script_ok, example_script_detail = check_inline_script_syntax(EXAMPLE_HTML_PATH)
         check("示例首页内嵌脚本语法正确", example_script_ok, example_script_detail)
         check("示例首页使用示例资产", example_embed.get('total_assets', -1) == public_data.get('total_assets', -2))

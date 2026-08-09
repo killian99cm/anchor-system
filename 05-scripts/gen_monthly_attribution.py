@@ -15,9 +15,10 @@ import os
 import sys
 from datetime import date
 
-DESKTOP = r"C:\Users\lenovo\Desktop"
-DATA_PATH = os.path.join(DESKTOP, "portfolio_data.json")
-KB_DIR = os.path.join(DESKTOP, "Anchor", "04-reviews")
+import paths
+
+DATA_PATH = paths.DATA_PATH
+KB_DIR = paths.REVIEWS_DIR
 
 
 def load_data():
@@ -26,8 +27,8 @@ def load_data():
 
 
 def month_txns(data, year, month):
-    """本月的所有交易记录。"""
-    prefixes = [f"{year}-{month:02d}", f"{month}/"]
+    """本月的所有交易记录（与 data_processor.monthly_ops_summary 口径一致，支持 '8/' 与 '08/'）。"""
+    prefixes = [f"{year}-{month:02d}", f"{month}/", f"{month:02d}/"]
     out = []
     for t in data.get('transactions', []):
         d = str(t.get('date', ''))

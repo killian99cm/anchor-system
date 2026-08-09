@@ -9,6 +9,8 @@ import os
 import shutil
 from datetime import date, datetime
 
+import paths
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -19,15 +21,15 @@ logging.basicConfig(
 )
 log = logging.getLogger("rebuild")
 
-DESKTOP = r"C:\Users\lenovo\Desktop"
-ANCHOR_DATA = r"C:\Users\lenovo\Desktop\Anchor\06-dashboard"
-DATA_PATH = os.path.join(DESKTOP, "portfolio_data.json")
-HTML_PATH = os.path.join(DESKTOP, "portfolio_analysis.html")
-HTML_PATH2 = os.path.join(ANCHOR_DATA, "portfolio_analysis.html")
-SNAPSHOT_PATH = os.path.join(DESKTOP, "portfolio_snapshot.json")
-SNAPSHOT_PATH2 = os.path.join(ANCHOR_DATA, "portfolio_snapshot.json")
+DESKTOP = paths.DESKTOP
+ANCHOR_DATA = paths.DASHBOARD_DIR
+DATA_PATH = paths.DATA_PATH
+HTML_PATH = paths.HTML_PATH
+HTML_PATH2 = paths.DASHBOARD_DIR / "portfolio_analysis.html"
+SNAPSHOT_PATH = paths.SNAPSHOT_PATH
+SNAPSHOT_PATH2 = paths.DASHBOARD_DIR / "portfolio_snapshot.json"
 
-from data_processor import build_snapshot, fc, fp, process_all
+from data_processor import build_snapshot, fp, process_all
 
 try:
     with open(DATA_PATH, "r", encoding="utf-8") as f:
@@ -84,7 +86,6 @@ function add(parent,tag,cls,text){var n=node(tag,cls,text);parent.appendChild(n)
 function svgNode(tag,attrs){var n=document.createElementNS("http://www.w3.org/2000/svg",tag);Object.keys(attrs||{}).forEach(function(k){n.setAttribute(k,attrs[k])});return n}
 function money(v){return Number(v||0).toLocaleString("en-US",{maximumFractionDigits:0})}
 function signed(v){var n=Number(v||0);return (n>=0?"+":"")+money(n)}
-function rate(pnl,mv){var n=Number(mv||0),p=Number(pnl||0);return !n||n===p?0:p/(n-p)*100}
 function tone(layer){return {bedrock:"var(--blue)",core:"var(--green)",sat:"var(--amber)",cash:"var(--dim)"}[layer]||"var(--blue)"}
 function levelClass(level){return level==="red"?"action":level==="amber"?"watch":"safe"}
 function levelIcon(level){return level==="red"?"🔴":level==="amber"?"🟡":"🟢"}
@@ -93,7 +94,7 @@ updateClock();setInterval(updateClock,1000);document.getElementById("updateLabel
 
 (function(){var state=D.risk_state||{},today=D.today||{},freeze=D.freeze_state||{},level=state.level||"green",decision=document.getElementById("decision");decision.className="decision "+levelClass(level);document.getElementById("headerStatus").className="status "+levelClass(level);document.getElementById("headerStatus").textContent=state.label||"安全";document.getElementById("decisionIcon").textContent=today.ic||levelIcon(level);document.getElementById("decisionTag").textContent=today.tag||state.label||"安全";document.getElementById("decisionTitle").textContent=level==="red"?"今天先处理红灯，再考虑新动作":level==="amber"?"今天以观察和等待为主":"今天没有必须执行的交易";var reasons=(state.reasons||[]).concat(freeze.reasons||[]);document.getElementById("decisionText").textContent=(today.tx||[]).map(function(x){return x.t||""}).filter(Boolean).join(" · ")||reasons.join(" · ")||"全部规则通过，保持当前计划。"+(freeze.frozen?" 当前存在冻结条件。":"")})();
 
-(function(){var root=document.getElementById("kpi"),ops=D.ops_state||{},dd=D.drawdown_state||{},hc=D.holding_counts||{},cashRatio=D.portfolio_state?Number(D.portfolio_state.cash_ratio||0)*100:(D.total?Number(D.cashMv||0)/Number(D.total)*100:0),items=[
+(function(){var root=document.getElementById("kpi"),ops=D.ops_state||{},dd=D.drawdown_state||{},hc=D.holding_counts||{},cashRatio=Number(D.portfolio_state?D.portfolio_state.cash_ratio:0)*100,items=[
   ["Total assets","¥"+money(D.total),"基金 ¥"+money(D.fundMv)+" · 股票 ¥"+money(D.stockMv),"var(--blue)"],
   ["Hold PnL",signed(D.totalPnl),hc.active_label||"持仓动态计算",Number(D.totalPnl||0)>=0?"var(--green)":"var(--red)"],
   ["Drawdown",(Number(dd.dd_pct||D.dd_pct||0)>=0?"+":"")+Number(dd.dd_pct||D.dd_pct||0).toFixed(1)+"%","高点 ¥"+money(dd.peak_assets||D.peak_assets),levelClass(dd.dd_level)==="safe"?"var(--green)":"var(--amber)"],
@@ -104,7 +105,7 @@ updateClock();setInterval(updateClock,1000);document.getElementById("updateLabel
 
 (function(){var box=document.getElementById("allocation"),rows=D.layers||[];rows.forEach(function(l){var row=node("div","allocation-row"),m=add(row,"div","allocation-label",l.label),track=add(row,"div","meter"),fill=add(track,"div","meter-fill");fill.style.setProperty("--tone",tone(l.key));fill.style.width=Math.min(Number(l.pct||0),100)+"%";add(row,"div","allocation-value",Number(l.pct||0).toFixed(1)+"% / "+l.target+"%");box.appendChild(row)});var state=D.portfolio_state||{},freeze=D.freeze_state||{};document.getElementById("allocationNote").textContent="现金安全垫 "+(Number(state.cash_ratio||0)*100).toFixed(1)+"% · "+(freeze.frozen?"当前冻结："+(freeze.reasons||[]).join("、"):"当前未触发全局冻结")})();
 
-(function(){var current="all",sort="mv",root=document.getElementById("holdings"),layers=D.layers||[],items=[];layers.forEach(function(l){(D[l.key]||[]).forEach(function(item){items.push(Object.assign({},item,{layer:l.key,layerLabel:l.label}))})});function render(){root.textContent="";var visible=items.filter(function(i){return current==="all"||i.layer===current});visible.sort(function(a,b){if(sort==="name")return String(a.n).localeCompare(String(b.n),"zh");if(sort==="pnl")return Number(b.pnl||0)-Number(a.pnl||0);if(sort==="rate")return rate(b.pnl,b.mv)-rate(a.pnl,a.mv);return Number(b.mv||0)-Number(a.mv||0)});visible.forEach(function(i){var row=node("div","holding-row"),name=add(row,"span","holding-name",i.n||"未命名");if(i.tag)add(name,"span","holding-tag "+(i.tc||"tag-a"),i.tag);add(row,"span","num",i.layerLabel);add(row,"span","num","¥"+money(i.mv));add(row,"span","num "+(Number(i.pnl||0)>=0?"positive":"negative"),signed(i.pnl));add(row,"span","num "+(rate(i.pnl,i.mv)>=0?"positive":"negative"),(rate(i.pnl,i.mv)>=0?"+":"")+rate(i.pnl,i.mv).toFixed(1)+"%");add(row,"span","num optional "+(Number(i.dp||0)>=0?"positive":"negative"),signed(i.dp));root.appendChild(row)});document.getElementById("holdingCount").textContent=visible.length+" 项"}document.querySelectorAll("#holdingFilters [data-layer]").forEach(function(btn){btn.addEventListener("click",function(){current=btn.dataset.layer;document.querySelectorAll("#holdingFilters [data-layer]").forEach(function(b){b.classList.toggle("active",b===btn)});render()})});document.getElementById("holdingSort").addEventListener("change",function(){sort=this.value;render()});document.getElementById("holdingSummary").textContent=(D.holding_counts||{}).active_label||"动态持仓";render()})();
+(function(){var current="all",sort="mv",root=document.getElementById("holdings"),layers=D.layers||[],items=[];layers.forEach(function(l){(D[l.key]||[]).forEach(function(item){items.push(Object.assign({},item,{layer:l.key,layerLabel:l.label}))})});function render(){root.textContent="";var visible=items.filter(function(i){return current==="all"||i.layer===current});visible.sort(function(a,b){if(sort==="name")return String(a.n).localeCompare(String(b.n),"zh");if(sort==="pnl")return Number(b.pnl||0)-Number(a.pnl||0);if(sort==="rate")return Number(b.rt||0)-Number(a.rt||0);return Number(b.mv||0)-Number(a.mv||0)});visible.forEach(function(i){var row=node("div","holding-row"),name=add(row,"span","holding-name",i.n||"未命名");if(i.tag)add(name,"span","holding-tag "+(i.tc||"tag-a"),i.tag);add(row,"span","num",i.layerLabel);add(row,"span","num","¥"+money(i.mv));add(row,"span","num "+(Number(i.pnl||0)>=0?"positive":"negative"),signed(i.pnl));add(row,"span","num "+(Number(i.rt||0)>=0?"positive":"negative"),(Number(i.rt||0)>=0?"+":"")+Number(i.rt||0).toFixed(1)+"%");add(row,"span","num optional "+(Number(i.dp||0)>=0?"positive":"negative"),signed(i.dp));root.appendChild(row)});document.getElementById("holdingCount").textContent=visible.length+" 项"}document.querySelectorAll("#holdingFilters [data-layer]").forEach(function(btn){btn.addEventListener("click",function(){current=btn.dataset.layer;document.querySelectorAll("#holdingFilters [data-layer]").forEach(function(b){b.classList.toggle("active",b===btn)});render()})});document.getElementById("holdingSort").addEventListener("change",function(){sort=this.value;render()});document.getElementById("holdingSummary").textContent=(D.holding_counts||{}).active_label||"动态持仓";render()})();
 
 (function(){var root=document.getElementById("rules"),rules=D.rules||[],dd=D.drawdown_state||{};rules.forEach(function(r){var row=node("div","rule-row"),dot=add(row,"span","dot "+levelClass(r.lv==="rr"?"red":r.lv==="ra"?"amber":"green"));add(row,"span","muted",r.t||"");row.insertBefore(dot,row.firstChild);root.appendChild(row)});var extra=add(root,"div","rule-row");add(extra,"span","dot watch");add(extra,"span","muted","回撤线 · -5% "+money(dd.lines&&dd.lines.minus5)+" / -10% "+money(dd.lines&&dd.lines.minus10)+" / -15% "+money(dd.lines&&dd.lines.minus15))})();
 
@@ -124,7 +125,8 @@ function renderTrendCard(root,data,key,label,color,formatter){var card=node("art
 </body>
 </html>'''
 
-html = html.replace("__DATA__", json.dumps(embed, ensure_ascii=False))
+# 转义 `</` 防止 JSON 内容逃逸出 <script> 上下文（数据可能来自外部源）
+html = html.replace("__DATA__", json.dumps(embed, ensure_ascii=False).replace("</", "<\\/"))
 os.makedirs(ANCHOR_DATA, exist_ok=True)
 data_json_dest = os.path.join(ANCHOR_DATA, "portfolio_data.json")
 if os.path.abspath(DATA_PATH) != os.path.abspath(data_json_dest):

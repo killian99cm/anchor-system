@@ -19,8 +19,9 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 
-DESKTOP = Path(r"C:\Users\lenovo\Desktop")
-DATA_PATH = DESKTOP / "portfolio_data.json"
+import paths
+DESKTOP = paths.DESKTOP
+DATA_PATH = paths.DATA_PATH
 
 from data_processor import process_all
 

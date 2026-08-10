@@ -46,3 +46,12 @@ setup.py
 # mx_cache text files
 05-scripts/mx_cache/*.txt
 05-scripts/mx_cache/*_description.txt
+05-scripts/anchor_to_astrbot.py
+05-scripts/archive_conversations.py
+05-scripts/setup_archive_task.py
+
+# AstrBot 同步状态
+05-scripts/.astrbot_sync_state.json
+05-scripts/astrbot_sync.log
+# 噪声审计数据
+06-dashboard/noise/

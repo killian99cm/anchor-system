@@ -55,3 +55,13 @@ setup.py
 05-scripts/astrbot_sync.log
 # 噪声审计数据
 06-dashboard/noise/
+
+# Python
+__pycache__/
+*.pyc
+
+# API 缓存
+05-scripts/mx_cache/
+
+# 技能临时文件
+.superpowers/

@@ -557,10 +557,24 @@ def compute_ops_state(data, today=None):
     }
 
 
+def is_manual_operation(t):
+    """判断是否为计入月操作限额的手动操作。
+    定投（自动扣款）与出入金（转入/转出/入金/赎回到账）不计入月限额，
+    与交易备注「智能定投自动扣款（非手动操作，不计入月限额）」及 gen_monthly_attribution 分类口径一致。"""
+    op = str(t.get('op', ''))
+    note = str(t.get('note', ''))
+    if any(k in op for k in ('定投', '转入', '转出', '入金', '出金', '赎回到账')):
+        return False
+    if '自动扣款' in note or '非手动' in note:
+        return False
+    return True
+
+
 def monthly_ops_summary(data, year=None, month=None):
-    """Count operations for a given month. Returns (count, violation_count).
+    """Count manual operations for a given month. Returns (count, violation_count).
     Single source of truth — used by rules, risk matrix, and HTML KPI.
-    Handles both '2026-08-07' and '8/7' date formats."""
+    Handles both '2026-08-07' and '8/7' date formats.
+    定投/出入金（非手动操作）不计入月操作限额。"""
     if year is None or month is None:
         year, month, _ = current_ops_period(data)
     txns = data.get('transactions', [])
@@ -572,8 +586,9 @@ def monthly_ops_summary(data, year=None, month=None):
         d = str(t.get('date', ''))
         if d.startswith(prefix_iso) or d.startswith(prefix_short) or d.startswith(prefix_short_z):
             month_txns.append(t)
-    violation_count = sum(1 for t in month_txns if '违规' in str(t.get('note', '')))
-    return len(month_txns), violation_count
+    manual_txns = [t for t in month_txns if is_manual_operation(t)]
+    violation_count = sum(1 for t in manual_txns if '违规' in str(t.get('note', '')))
+    return len(manual_txns), violation_count
 
 
 # group 字段 → 层级（来自 portfolio_data.json，新基金自动归类）

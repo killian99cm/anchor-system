@@ -53,6 +53,10 @@ setup.py
 # AstrBot 同步状态
 05-scripts/.astrbot_sync_state.json
 05-scripts/astrbot_sync.log
+# 实时同步监听（本地私有工具 + 运行状态）
+05-scripts/watch_sync.py
+05-scripts/.watch_sync_state.json
+05-scripts/.watch_sync.lock
 # 噪声审计数据
 06-dashboard/noise/
 

@@ -16,7 +16,7 @@ from datetime import date
 # data_processor.py 是本文件所在目录
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
-from data_processor import fp, rate, safe_float, monthly_ops_summary, get_peak_assets, drawdown_status, process_all, build_snapshot
+from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot
 
 # 测试辅助函数（data_processor 未提供，纯测试用）
 def calc_layer_ratios(bedrock_mv, core_mv, sat_mv, cash_mv):
@@ -179,8 +179,21 @@ class TestMonthlyOps(unittest.TestCase):
         count, viol = monthly_ops_summary({"transactions": []}, year=2026, month=8)
         self.assertEqual(count, 0)
 
+    def test_dca_not_counted(self):
+        """定投/出入金不计入月操作限额（与交易备注口径一致）"""
+        data = {"transactions": [
+            {"date": "2026-08-07", "op": "加仓", "amount": 300},
+            {"date": "2026-08-10", "op": "定投", "amount": 135,
+             "note": "智能定投自动扣款（非手动操作，不计入月限额）"},
+            {"date": "2026-08-12", "op": "余额宝转出", "amount": 500},
+            {"date": "2026-08-13", "op": "赎回到账", "amount": 1000},
+        ]}
+        count, viol = monthly_ops_summary(data, year=2026, month=8)
+        self.assertEqual(count, 1)
+        self.assertEqual(viol, 0)
+
     def test_real_data_consistency(self):
-        """真实数据：monthly_ops_summary 与数据参考月交易数口径一致（不耦合具体月份）"""
+        """真实数据：monthly_ops_summary 与数据参考月手动操作数口径一致（不耦合具体月份）"""
         data_path = paths.DATA_PATH
         if not os.path.exists(data_path):
             self.skipTest("portfolio_data.json not found")
@@ -192,9 +205,10 @@ class TestMonthlyOps(unittest.TestCase):
         year, month = int(m.group(1)), int(m.group(2))
         count, viol = monthly_ops_summary(data, year=year, month=month)
         prefixes = (f"{year}-{month:02d}", f"{month}/", f"{month:02d}/")
-        manual = sum(1 for t in data.get('transactions', []) if str(t.get('date', '')).startswith(prefixes))
+        manual = sum(1 for t in data.get('transactions', [])
+                     if str(t.get('date', '')).startswith(prefixes) and is_manual_operation(t))
         self.assertEqual(count, manual,
-                         f"{year}-{month:02d} monthly_ops_summary={count} 但 transactions 实际 {manual} 笔")
+                         f"{year}-{month:02d} monthly_ops_summary={count} 但手动交易实际 {manual} 笔")
         self.assertEqual(viol, sum(1 for t in data.get('transactions', [])
                                    if '违规' in str(t.get('note', '')) and str(t.get('date', '')).startswith(prefixes)))
 

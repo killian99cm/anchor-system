@@ -110,35 +110,38 @@ class TestLayerRatios(unittest.TestCase):
         self.assertEqual(ratios["bedrock"], 0)
 
     def test_real_world_data(self):
-        """Simulate actual portfolio: bed=18822, core=6183, sat=5681, cash=3032"""
-        ratios = calc_layer_ratios(18822, 6183, 5681, 3032)
+        """Simulate actual portfolio (8/14): bed=18809, core=6120, sat=5790, cash=4838"""
+        ratios = calc_layer_ratios(18809, 6120, 5790, 4838)
         total = ratios["total"]
-        self.assertGreater(total, 33000)
-        self.assertLess(total, 34000)
-        # Bedrock should be largest (~56%)
+        self.assertGreater(total, 35000)
+        self.assertLess(total, 36000)
+        # Bedrock should be largest (~53%)
         self.assertGreater(ratios["bedrock"], 50)
 
 
 class TestDrawdownCheck(unittest.TestCase):
+    # 回撤基准（8/15 上移后）：¥35,655（8/10 本周最高点）
+    PEAK = 35655
+
     def test_above_peak(self):
-        level, pct = check_drawdown_level(36000, 32961)
+        level, pct = check_drawdown_level(36000, self.PEAK)
         self.assertEqual(level, "safe")
         self.assertGreaterEqual(pct, 0)
 
     def test_warn(self):
-        level, pct = check_drawdown_level(31000, 32961)
+        level, pct = check_drawdown_level(33500, self.PEAK)
         self.assertEqual(level, "warn")
         self.assertLessEqual(pct, -5)
         self.assertGreater(pct, -10)
 
     def test_critical_10(self):
-        level, pct = check_drawdown_level(29000, 32961)
+        level, pct = check_drawdown_level(32000, self.PEAK)
         self.assertEqual(level, "critical-10")
         self.assertLessEqual(pct, -10)
         self.assertGreater(pct, -15)
 
     def test_critical_15(self):
-        level, pct = check_drawdown_level(27000, 32961)
+        level, pct = check_drawdown_level(29000, self.PEAK)
         self.assertEqual(level, "critical-15")
         self.assertLessEqual(pct, -15)
 

@@ -3,8 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚓ Anchor · 投资纪律操作系统 v3.3</title>
-<meta name="description" content="Anchor 四层金字塔投资纪律操作系统。公开页面仅使用脱敏示例数据。">
+<title>⚓ Anchor · 投资纪律操作系统 v3.5</title>
+<meta name="description" content="Anchor 四层金字塔投资纪律操作系统。规则驱动、数据验证、公开页面仅使用脱敏示例数据。">
+<meta name="keywords" content="投资纪律,四层金字塔,资产配置,规则驱动,个人投资,回撤控制,噪声审计">
+<meta property="og:type" content="website">
+<meta property="og:title" content="⚓ Anchor · 投资纪律操作系统">
+<meta property="og:description" content="四层金字塔投资纪律系统：规则前置、状态机执行、噪声审计、实时同步。公开页仅示例数据。">
+<meta property="og:url" content="https://killian99cm.github.io/anchor-system/anchor-pro.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9A%93%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Anchor Investment OS","applicationCategory":"FinanceApplication","operatingSystem":"Any","description":"四层金字塔投资纪律操作系统：规则驱动、数据验证、脱敏公开。","url":"https://github.com/killian99cm/anchor-system","license":"MIT"}</script>
 <style>
 :root{
   --bg:#02070f;--surface:#071120;--surface-2:#0b1729;--surface-3:#0f1e34;
@@ -29,17 +36,20 @@ button,a{font:inherit}button{cursor:pointer}
 .filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.filter-btn{border:1px solid var(--line);color:var(--muted);background:rgba(7,17,32,.7);border-radius:999px;padding:7px 13px;font-size:11px;transition:.2s}.filter-btn:hover,.filter-btn.active{color:#fff;border-color:var(--blue);background:var(--blue-soft)}.filter-status{margin-left:auto;color:var(--dim);font:10px var(--mono)}.holdings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.holding-card{border:1px solid var(--line-soft);border-radius:15px;background:rgba(7,17,32,.78);overflow:hidden;transition:.25s}.holding-card:hover{border-color:rgba(57,135,229,.48);box-shadow:0 12px 28px rgba(0,0,0,.18)}.holding-head{display:flex;align-items:center;justify-content:space-between;padding:15px 17px;border-bottom:1px solid var(--line-soft);background:rgba(255,255,255,.025)}.holding-head strong{font-size:12px}.holding-head span{font:10px var(--mono);color:var(--muted)}.holding-list{padding:4px 0}.holding-item{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 17px;border-bottom:1px solid rgba(154,188,225,.07);font-size:11px}.holding-item:last-child{border-bottom:0}.holding-name{color:#d9e6f7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.holding-type{font-size:9px;color:var(--muted);border:1px solid var(--line);padding:2px 6px;border-radius:999px}.holding-value{font:11px var(--mono);color:#fff}.empty{color:var(--dim);font-size:11px;padding:16px}
 .evidence-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.evidence-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.evidence-card{padding:18px;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.evidence-card .ec-label{color:var(--dim);font:10px var(--mono);letter-spacing:.7px}.evidence-card .ec-before{font-size:12px;color:var(--red);margin-top:10px}.evidence-card .ec-arrow{color:var(--dim);margin:6px 0}.evidence-card .ec-after{font-size:13px;color:var(--green-bright);font-weight:700}.evidence-card .ec-change{font-size:10px;color:var(--muted);margin-top:9px}.table-wrap{border:1px solid var(--line-soft);border-radius:15px;overflow:auto;background:rgba(7,17,32,.78)}table{width:100%;border-collapse:collapse;min-width:560px}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--line-soft);font-size:11px}th{background:rgba(255,255,255,.035);font:10px var(--mono);letter-spacing:.7px;color:var(--dim)}td{color:var(--muted)}tr:last-child td{border-bottom:0}tr:hover td{background:rgba(57,135,229,.04)}.good{color:var(--green-bright);font-weight:700}.bad{color:var(--red);font-weight:700}
 .performance{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:16px}.chart-card,.chart-summary{padding:22px;border:1px solid var(--line-soft);border-radius:16px;background:rgba(7,17,32,.78)}.chart-card{position:relative}.chart-axis{height:1px;background:var(--line);margin:5px 0 20px}.bar-chart{height:210px;display:flex;align-items:end;gap:9px;padding:16px 10px 0;border-bottom:1px solid var(--line);background:repeating-linear-gradient(0deg,transparent 0,transparent 51px,rgba(145,164,189,.09) 52px)}.bar-col{height:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;gap:7px;min-width:20px}.bar-value{font:10px var(--mono);color:var(--muted);white-space:nowrap}.bar-mark{width:min(30px,72%);height:var(--bar-height);min-height:3px;border-radius:4px 4px 1px 1px;background:var(--bar-color);transition:.2s;cursor:pointer}.bar-mark:hover,.bar-mark:focus{filter:brightness(1.28);transform:scaleX(1.12)}.bar-label{font:10px var(--mono);color:var(--dim)}.chart-legend{display:flex;gap:16px;align-items:center;font-size:10px;color:var(--muted);margin-bottom:10px}.legend-key{display:inline-flex;align-items:center;gap:6px}.legend-key i{width:9px;height:9px;border-radius:3px;background:var(--key);display:inline-block}.chart-foot{display:flex;justify-content:space-between;gap:12px;color:var(--dim);font:10px var(--mono);margin-top:14px}.chart-summary h3{font-size:13px;margin-bottom:14px}.summary-stat{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)}.summary-stat:last-child{border:0}.summary-stat span{font-size:11px;color:var(--muted)}.summary-stat strong{font:700 18px var(--mono);color:#fff}.chart-tooltip{position:fixed;z-index:50;display:none;pointer-events:none;min-width:125px;padding:10px 12px;border:1px solid rgba(57,135,229,.55);border-radius:9px;background:#071120;box-shadow:0 14px 35px rgba(0,0,0,.35);font-size:11px;color:#fff}.chart-tooltip small{display:block;color:var(--muted);margin-bottom:3px}
-.rules-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.rule-card{position:relative;min-height:190px;padding:21px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(145deg,rgba(13,30,51,.85),rgba(7,17,32,.78));overflow:hidden;transition:.25s}.rule-card:hover{transform:translateY(-4px);border-color:rgba(57,135,229,.5)}.rule-index{font:700 36px var(--mono);color:rgba(255,255,255,.08);position:absolute;right:13px;top:9px}.rule-icon{font-size:22px;margin-bottom:15px}.rule-card h3{font-size:14px;margin-bottom:7px}.rule-cost{font-size:10px;color:var(--red);margin-bottom:12px}.rule-desc{font-size:11px;color:var(--muted);line-height:1.7}.forbidden-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.forbidden-card{padding:21px;border:1px solid rgba(230,103,103,.25);border-radius:15px;background:linear-gradient(145deg,rgba(62,22,34,.44),rgba(7,17,32,.8));transition:.25s}.forbidden-card:hover{transform:translateY(-3px);border-color:rgba(230,103,103,.62)}.forbidden-index{font:700 28px var(--mono);color:rgba(230,103,103,.35)}.forbidden-action{font-size:14px;font-weight:800;color:#fff;margin:9px 0 5px}.forbidden-cost{font-size:11px;color:var(--red)}.forbidden-alt{font-size:11px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid rgba(230,103,103,.15)}
-.timeline{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--line);position:relative}.timeline:before{content:"";position:absolute;top:-4px;left:0;right:0;height:7px;background:linear-gradient(90deg,var(--amber),var(--green-bright),var(--blue));border-radius:99px;opacity:.55}.timeline-item{position:relative;padding:26px 15px 0;border-right:1px solid var(--line-soft)}.timeline-item:last-child{border-right:0}.timeline-item:before{content:"";position:absolute;top:-8px;left:15px;width:14px;height:14px;border:3px solid var(--bg);border-radius:50%;background:var(--tone);box-shadow:0 0 0 1px var(--tone)}.timeline-version{font:700 13px var(--mono);color:#fff}.timeline-score{font:700 35px var(--mono);color:var(--tone);letter-spacing:-2px;margin:10px 0 4px}.timeline-desc{white-space:pre-line;color:var(--muted);font-size:11px;line-height:1.6}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px}.flow-step{padding:18px;text-align:center;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.flow-step b{display:block;color:var(--blue);font:700 20px var(--mono);margin-bottom:8px}.flow-step span{font-size:11px;color:var(--muted)}
-.data-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}.data-item{padding:15px 10px;text-align:center;border:1px solid var(--line-soft);border-radius:12px;background:rgba(7,17,32,.75);font-size:10px;color:var(--muted)}.data-item strong{display:block;color:#fff;font-size:12px;margin-bottom:5px}.cta{padding:90px 0 100px;text-align:center}.cta h2{font-size:clamp(30px,5vw,58px);letter-spacing:-3px;margin-bottom:13px}.cta p{max-width:560px;margin:0 auto 28px;color:var(--muted);font-size:13px}.footer{border-top:1px solid var(--line-soft);padding:26px 28px 34px;text-align:center;color:var(--dim);font:10px var(--mono);line-height:2}.reveal{opacity:1;transform:translateY(18px);transition:opacity .7s,transform .7s}.reveal.in{transform:none}
+.rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}.rule-card{position:relative;min-height:190px;padding:21px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(145deg,rgba(13,30,51,.85),rgba(7,17,32,.78));overflow:hidden;transition:.25s}.rule-card:hover{transform:translateY(-4px);border-color:rgba(57,135,229,.5)}.rule-index{font:700 36px var(--mono);color:rgba(255,255,255,.08);position:absolute;right:13px;top:9px}.rule-icon{font-size:22px;margin-bottom:15px}.rule-card h3{font-size:14px;margin-bottom:7px}.rule-cost{font-size:10px;color:var(--red);margin-bottom:12px}.rule-desc{font-size:11px;color:var(--muted);line-height:1.7}.forbidden-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.forbidden-card{padding:21px;border:1px solid rgba(230,103,103,.25);border-radius:15px;background:linear-gradient(145deg,rgba(62,22,34,.44),rgba(7,17,32,.8));transition:.25s}.forbidden-card:hover{transform:translateY(-3px);border-color:rgba(230,103,103,.62)}.forbidden-index{font:700 28px var(--mono);color:rgba(230,103,103,.35)}.forbidden-action{font-size:14px;font-weight:800;color:#fff;margin:9px 0 5px}.forbidden-cost{font-size:11px;color:var(--red)}.forbidden-alt{font-size:11px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid rgba(230,103,103,.15)}
+.timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-top:1px solid var(--line);position:relative}.timeline:before{content:"";position:absolute;top:-4px;left:0;right:0;height:7px;background:linear-gradient(90deg,var(--amber),var(--green-bright),var(--blue));border-radius:99px;opacity:.55}.timeline-item{position:relative;padding:26px 15px 0;border-right:1px solid var(--line-soft)}.timeline-item:last-child{border-right:0}.timeline-item:before{content:"";position:absolute;top:-8px;left:15px;width:14px;height:14px;border:3px solid var(--bg);border-radius:50%;background:var(--tone);box-shadow:0 0 0 1px var(--tone)}.timeline-version{font:700 13px var(--mono);color:#fff}.timeline-score{font:700 35px var(--mono);color:var(--tone);letter-spacing:-2px;margin:10px 0 4px}.timeline-desc{white-space:pre-line;color:var(--muted);font-size:11px;line-height:1.6}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px}.flow-step{padding:18px;text-align:center;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.flow-step b{display:block;color:var(--blue);font:700 20px var(--mono);margin-bottom:8px}.flow-step span{font-size:11px;color:var(--muted)}
+.data-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:9px}.data-item{padding:15px 10px;text-align:center;border:1px solid var(--line-soft);border-radius:12px;background:rgba(7,17,32,.75);font-size:10px;color:var(--muted)}.data-item strong{display:block;color:#fff;font-size:12px;margin-bottom:5px}
+.noise-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}.noise-card{position:relative;padding:21px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(145deg,rgba(15,34,58,.85),rgba(7,17,32,.78));overflow:hidden;transition:.25s}.noise-card:hover{transform:translateY(-4px);border-color:rgba(85,201,214,.5)}.noise-card .noise-index{font:700 30px var(--mono);color:rgba(85,201,214,.22);position:absolute;right:13px;top:8px}.noise-card h3{font-size:13px;margin-bottom:8px;color:#fff}.noise-card p{font-size:11px;color:var(--muted);line-height:1.7}
+.to-top{position:fixed;right:22px;bottom:22px;z-index:40;width:44px;height:44px;border:1px solid rgba(57,135,229,.5);border-radius:12px;background:rgba(7,17,32,.92);color:var(--blue);font-size:18px;opacity:0;transform:translateY(12px);pointer-events:none;transition:.3s;box-shadow:0 12px 30px rgba(0,0,0,.3)}.to-top.show{opacity:1;transform:none;pointer-events:auto}.to-top:hover{background:var(--blue-soft)}
+.noscript-note{max-width:1240px;margin:0 auto;padding:14px 28px;border:1px solid rgba(250,178,25,.3);background:rgba(250,178,25,.08);color:var(--amber);font-size:12px;text-align:center}.cta{padding:90px 0 100px;text-align:center}.cta h2{font-size:clamp(30px,5vw,58px);letter-spacing:-3px;margin-bottom:13px}.cta p{max-width:560px;margin:0 auto 28px;color:var(--muted);font-size:13px}.footer{border-top:1px solid var(--line-soft);padding:26px 28px 34px;text-align:center;color:var(--dim);font:10px var(--mono);line-height:2}.reveal{opacity:1;transform:translateY(18px);transition:opacity .7s,transform .7s}.reveal.in{transform:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes sweep{0%,28%{transform:translateX(-100%)}52%,100%{transform:translateX(100%)}}
-@media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.nav-links{display:none}}
-@media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow{grid-template-columns:1fr}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(2){border-right:0}.timeline-item:nth-child(3){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
+@media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.timeline{grid-template-columns:repeat(3,1fr)}.timeline-item:nth-child(3n){border-right:0}.timeline-item:nth-child(4){border-top:1px solid var(--line-soft);padding-top:25px}.nav-links{display:none}}
+@media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid{grid-template-columns:1fr}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(even){border-right:0}.timeline-item:nth-child(3),.timeline-item:nth-child(5){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 </style>
 </head>
 <body>
-<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v3.3</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#evolution">进化</a></div><span class="nav-demo">示例数据 · 公开页</span></div></nav>
+<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v3.5</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><span class="nav-demo">示例数据 · 公开页</span></div></nav>
 <main class="wrap">
 <section class="hero reveal" id="top"><div class="hero-copy"><div class="eyebrow">Investment operating system</div><h1><em>Anchor</em><br><i>不靠预测</i>，靠纪律</h1><div class="hero-title">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
 <section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row" id="kpiRow"></div></section>
@@ -47,14 +57,17 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="filter-row" id="layerFilters"><button class="filter-btn active" data-layer="all">全部层级</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心增长</button><button class="filter-btn" data-layer="sat">卫星进攻</button><button class="filter-btn" data-layer="cash">现金预备</button><span class="filter-status" id="filterStatus"></span></div><div class="holdings-grid" id="holdingsGrid"></div></section>
 <section class="section reveal" id="evidence"><div class="section-head"><div><div class="section-kicker">Evidence</div><h2>从“感觉”到<em>状态机</em></h2></div><p>公开示例保留原有前后对比栏目，同时用卡片和表格双通道呈现，文字不依赖颜色才能读懂。</p></div><div class="evidence-grid"><div class="evidence-cards" id="evidenceCards"></div><div class="table-wrap"><table><thead><tr><th>维度</th><th>使用前</th><th>使用后</th><th>变化</th></tr></thead><tbody id="cmpBody"></tbody></table></div></div></section>
 <section class="section reveal" id="performance"><div class="section-head"><div><div class="section-kicker">Sample performance</div><h2>示例<em>盈亏走势</em></h2></div><p>脱敏样本只用来演示记录方式。柱状图的数值直接可见，hover 只提供额外上下文。</p></div><div class="performance"><div class="chart-card"><div class="chart-legend"><span class="legend-key"><i style="--key:var(--green-bright)"></i>示例盈利月</span><span class="legend-key"><i style="--key:var(--red)"></i>示例亏损月</span></div><div class="bar-chart" id="monthlyChart"></div><div class="chart-foot"><span id="monthlySum"></span><span>柱状图 · 单一数值轴</span></div></div><div class="chart-summary"><h3>读图摘要</h3><div id="performanceSummary"></div></div></div></section>
-<section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>四条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid" id="rulesGrid"></div></section>
+<section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>六条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid" id="rulesGrid"></div></section>
 <section class="section reveal" id="forbidden"><div class="section-head"><div><div class="section-kicker">Guardrails</div><h2>永久<em>禁用操作</em></h2></div><p>底线比预测更可靠：明确不做什么，才能给真正重要的动作留下空间。</p></div><div class="forbidden-grid" id="forbiddenGrid"></div></section>
+<section class="section reveal" id="noise"><div class="section-head"><div><div class="section-kicker">Noise audit</div><h2>市场噪声，<em>量化审计</em></h2></div><p>信号是否有效，用数据说话：每次触发都被记录、归因、评分——假信号直接变成规则优化的素材，而不是"运气不好"。</p></div><div class="section-rule"></div><div class="noise-grid"><div class="noise-card"><div class="noise-index">01</div><h3>DDX 准确率</h3><p>主力资金信号触发后跟踪真实命中率；不准确就调整阈值，直到数据证明有效。</p></div><div class="noise-card"><div class="noise-index">02</div><h3>虚惊指数</h3><p>记录"差一点触发"的盘中干扰，衡量规则被市场噪声晃动的频率。</p></div><div class="noise-card"><div class="noise-index">03</div><h3>每周评分卡</h3><p>准确率 / 虚惊 / 盘中振幅 / 操作时机四项加权评分，高噪声一目了然。</p></div><div class="noise-card"><div class="noise-index">04</div><h3>三问优化</h3><p>能阻止哪段错误？与现有规则冲突吗？一个月内能验证吗？三问全过才吸收。</p></div></div></section>
 <section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="timeline" id="evoStrip"></div><div class="flow"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
-<section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div></div></section>
+<section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div><div class="data-item"><strong>06 · 实时同步</strong>保存即重建</div></div></section>
 <section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
 </main>
 <div class="chart-tooltip" id="chartTooltip"></div>
-<footer class="footer">⚓ Anchor Investment System v3.3 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
+<noscript><div class="noscript-note">本页面的数据面板需要 JavaScript 渲染；请启用 JS 查看完整内容。</div></noscript>
+<button class="to-top" id="toTop" aria-label="返回顶部">↑</button>
+<footer class="footer">⚓ Anchor Investment System v3.5 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
 <script>
 // ===== PUBLIC EXAMPLE DATA =====
 var D={
@@ -217,7 +230,7 @@ var D={
   ],
   "copy": {
     "meta_description": "四层金字塔投资纪律体系。示例数据演示，少亏指南，不是赚钱秘籍。",
-    "badge": "⚓ 示例交易复盘 · 脱敏数据 · v3.3 持续迭代",
+    "badge": "⚓ 示例交易复盘 · 脱敏数据 · v3.5 持续迭代",
     "portfolio_label": "Portfolio · 示例配置",
     "portfolio_title": "示例持仓",
     "evidence_lead": "建立体系后，目标不是追求暴利，而是减少冲动交易、限制回撤、让每次操作可复盘。",
@@ -391,16 +404,30 @@ var D={
     {
       "n": "03",
       "icon": "📉",
-      "title": "-8% 止损",
+      "title": "-8% 止损（含缓冲）",
       "cost": "限制单仓风险",
-      "desc": "单笔错误不能拖垮整个组合。"
+      "desc": "浮亏 -8% 触发，1 天缓冲 + 次日 14:30 板块确认再执行，避免恐慌割肉。"
     },
     {
       "n": "04",
       "icon": "📊",
       "title": "组合回撤线",
       "cost": "系统级防御",
-      "desc": "-5%、-10%、-15% 对应不同减仓动作。"
+      "desc": "-5%、-10%、-15% 对应不同减仓动作，基准随资产新高动态上移。"
+    },
+    {
+      "n": "05",
+      "icon": "⏱",
+      "title": "时间止损 30 天",
+      "cost": "拒绝无期限死扛",
+      "desc": "卫星持有超 30 天且跑输大盘 ≥5% → 强制卖出。"
+    },
+    {
+      "n": "06",
+      "icon": "🌐",
+      "title": "溢价率 ≤3% 建仓",
+      "cost": "避免溢价双杀",
+      "desc": "场内纳指建仓硬门槛，溢价过高不追，等净值回归。"
     }
   ],
   "forbidden": [
@@ -447,6 +474,18 @@ var D={
       "s": 96,
       "c": "var(--accent)",
       "d": "状态机\n动态持仓"
+    },
+    {
+      "v": "v3.4",
+      "s": 96,
+      "c": "var(--amber)",
+      "d": "噪声审计\n双报告制度"
+    },
+    {
+      "v": "v3.5",
+      "s": 96,
+      "c": "var(--cyan)",
+      "d": "实时同步\n自动化升级"
     }
   ]
 };
@@ -461,7 +500,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
   var box=document.getElementById("heroMetrics"), cards=[
-    ["LAYER MODEL","4 层","职责隔离"],["RULES","4 条","硬边界"],["HOLDINGS","动态","数据驱动"],["PUBLIC DATA","DEMO","已脱敏"]
+    ["LAYER MODEL","4 层","职责隔离"],["RULES","6 条","硬边界"],["HOLDINGS","动态","数据驱动"],["PUBLIC DATA","DEMO","已脱敏"]
   ];
   cards.forEach(function(c){var m=make("div","metric");append(m,"div","metric-label",c[0]);append(m,"div","metric-value",c[1]);append(m,"div","metric-sub",c[2]);box.appendChild(m)})
   document.getElementById("heroDate").textContent="示例更新时间 · "+(D.update||"未提供");
@@ -524,6 +563,20 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
   var sections=document.querySelectorAll(".reveal");if(!("IntersectionObserver" in window)){sections.forEach(function(s){s.classList.add("in")});return}var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{threshold:.08});sections.forEach(function(s){io.observe(s)})
+})();
+
+(function(){
+  var btn=document.getElementById("toTop");if(!btn)return;
+  function onScroll(){btn.classList.toggle("show",(window.scrollY||document.documentElement.scrollTop)>600)}
+  window.addEventListener("scroll",onScroll,{passive:true});onScroll();
+  btn.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"})});
+})();
+
+(function(){
+  var links=document.querySelectorAll(".nav-links a"),map={};links.forEach(function(a){var id=a.getAttribute("href").replace("#","");if(id)map[id]=a});
+  var ids=Object.keys(map);if(!ids.length||!("IntersectionObserver" in window))return;
+  var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){var a=map[e.target.id];if(a){links.forEach(function(x){x.style.color=""});a.style.color="#fff"}}})},{rootMargin:"-40% 0px -55% 0px"});
+  ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el)});
 })();
 </script>
 </body>

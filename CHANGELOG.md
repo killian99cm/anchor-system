@@ -5,6 +5,19 @@
 
 ---
 
+## v3.5.1 — 2026-08-15
+
+### 修复
+- 🔧 **回撤基准上移**：peak_assets ¥32,961 → **¥35,655**（8/10 本周最高点，用户确认）
+  - 旧基准过时 8 天：-5% 线需先跌 11.9% 才触发，回撤预警系统失效
+  - 新回撤线：-5% ¥33,872 / -10% ¥32,090 / -15% ¥30,307；8/14 总资产 ¥35,556 → 回撤 -0.3%，距 -5% 线缓冲 ¥1,684
+  - 同步：规则手册 v3.3 §4.1、体系总览、07-memory、test_calculations（基准相关测试）、会话检查点
+
+### 修改文件
+portfolio_data.json（_meta.peak_assets/peak_note）| 01-rules/投资规则手册_v3.3_正式版.md | ANCHOR_体系总览.md | 07-memory/project-investment-framework.md | 07-memory/project-anchor-strategy-direction.md | 07-memory/user-investor-profile.md | 00-system/会话检查点.md | 05-scripts/test_calculations.py | CHANGELOG.md
+
+---
+
 ## v3.5 — 2026-08-15
 
 ### 新增

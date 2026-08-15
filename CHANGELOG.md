@@ -5,6 +5,27 @@
 
 ---
 
+## v3.5 — 2026-08-15
+
+### 新增
+- 🆕 **实时数据同步（watch_sync.py）**：监听桌面 portfolio_data.json 变化 → 自动全量同步（看板 HTML/快照/Excel/06-dashboard 副本/公开示例页），彻底杜绝数据滞后
+  - 机制：sha256 变化检测 + 60s 稳定防抖 + 单实例锁 + watch_sync.log 日志 + .watch_sync_state.json 幂等状态
+  - 启动：登录自启（Startup 启动项 Anchor实时同步.vbs）+ 每日 21:40 兜底计划任务「Anchor每日兜底同步」
+  - 首次启动自动同步一次，保证开机即最新；同步失败下一轮自动重试
+- 🆕 8/14 收盘数据完整同步：总资产 ¥35,556，持有盈亏 +¥1,565，回撤 +7.9%（安全区）
+
+### 修复
+- 🔧 **月操作计数口径**：monthly_ops_summary 排除定投/出入金（非手动操作，与交易备注「不计入月限额」及 gen_monthly_attribution 分类一致），8 月操作恢复 1/4 正确口径（原误计 2/4）
+- 🔧 **每日快照目录**：sync_all.py 快照写入 04-reviews/daily/（对齐文件归类规则，原误写 04-reviews/ 根目录）
+
+### 新增文件
+05-scripts/watch_sync.py（本地私有工具，已 .gitignore）| 05-scripts/.watch_sync_state.json（已 .gitignore）
+
+### 修改文件
+portfolio_data.json（system_version v3.4→v3.5）| 05-scripts/data_processor.py（新增 is_manual_operation）| 05-scripts/test_calculations.py（35 项，含定投排除测试）| 05-scripts/sync_all.py | .gitignore | 00-system/数据更新协议.md | 00-system/会话检查点.md | CHANGELOG.md
+
+---
+
 ## v3.4 — 2026-08-10
 
 ### 新增

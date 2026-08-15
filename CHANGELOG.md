@@ -5,6 +5,25 @@
 
 ---
 
+## v3.5.2 — 2026-08-15
+
+### 新增
+- 🆕 **止损确认自动化**：daily_advice.py 14:30 推送新增「止损确认」自动判定——实时板块涨跌 vs 文案阈值（默认 0.5%）→ 输出【执行止损一半】/【延期一天】/【人工确认】，消除人工判断延迟（三场景实测通过）
+- 🆕 **噪声审计 v1.1**：noise_audit.py 新增盘中振幅比（--log-swing）、操作时机偏差（--log-timing）、规则命中台账（--log-rule）采集；每周评分卡改为真实数据评分（原为默认值）+ 台账汇总
+- 🆕 **规则命中台账**：noise/rule_hits.json + 7 月已文档化命中回填基线（7 条：浮亏不加仓/恐慌豁免/反弹清仓/风口确认/DDX/冻结/止损缓冲）
+- 🆕 **月度归因自动化补全**：gen_monthly_attribution.py 自动汇总规则台账（新增第七章）、操作计数改用 monthly_ops_summary（定投不计）、输出目录对齐 04-reviews/monthly/
+- 🆕 **8/20 时间止损执行预案**（00-system/8月20日时间止损执行预案.md）：规则优先级 + 判定流程 + 错了怎么办 + 记录要求
+- 🆕 **现金补仓条件量化提案** + **watchlist 左右侧逻辑统一** + **持仓收敛路径** + **示例指数基金通利定位**（规则手册 §1.4/§5.1）
+- 🆕 **优化时间表**（00-system/优化时间表.md）：8/20 → 8/31 → 9月 → 10月验证项排期与续优化条件
+
+### 修复
+- 🔧 **数据口径统一**：total_hold_pnl_est 改为引擎按用户逐项数据求和（+1,565 → +1,441.23），_meta.pnl_total_note 记录口径，消除看板与 JSON 盈亏数字打架
+
+### 修改文件
+portfolio_data.json（total_hold_pnl_est + watchlist trigger）| 05-scripts/daily_advice.py | 05-scripts/noise_audit.py | 05-scripts/gen_monthly_attribution.py | 01-rules/投资规则手册_v3.3_正式版.md | 00-system/噪声审计框架.md（v1.1）| 00-system/每日建议推送说明.md | 00-system/8月20日时间止损执行预案.md（新增）| 00-system/优化时间表.md（新增）| 00-system/会话检查点.md | CHANGELOG.md
+
+---
+
 ## v3.5.1 — 2026-08-15
 
 ### 修复

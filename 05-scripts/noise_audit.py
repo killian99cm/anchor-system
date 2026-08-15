@@ -27,6 +27,9 @@ NOISE_DIR.mkdir(parents=True, exist_ok=True)
 DDX_FILE = NOISE_DIR / "ddx_daily.json"
 SIGNAL_FILE = NOISE_DIR / "signal_log.json"
 NEAR_MISS_FILE = NOISE_DIR / "near_miss.json"
+SWING_FILE = NOISE_DIR / "swing_daily.json"       # 盘中振幅（高/低/收盘涨跌）→ 振幅比
+TIMING_FILE = NOISE_DIR / "timing_daily.json"     # 操作时机偏差（补仓后次日涨跌）
+RULE_FILE = NOISE_DIR / "rule_hits.json"          # 全规则命中台账（触发/保护/误伤）
 
 
 def load_json(path: Path) -> list:
@@ -77,6 +80,62 @@ def log_near_miss(description: str) -> None:
     })
     save_json(NEAR_MISS_FILE, data)
     print(f"[虚惊] {description[:60]}")
+
+
+def _pct(val: str) -> float:
+    """解析百分比字符串（支持 '+1.42%' / '-0.5' / '1.29'）"""
+    try:
+        return float(str(val).rstrip("%").replace("+", ""))
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def log_swing(date: str, sector: str, high: str, low: str, close: str) -> None:
+    """记录盘中振幅：high/low/close 为涨跌幅百分比（如 +1.5 / -2.1 / +0.3）。
+    振幅比 = |high - low| / |close|（框架 2.3：>5x=高噪声，>10x=极高噪声）"""
+    h, l, c = _pct(high), _pct(low), _pct(close)
+    amp = abs(h - l)
+    ratio = amp / abs(c) if c != 0 else 0.0
+    data = load_json(SWING_FILE)
+    data = [d for d in data if not (d.get("date") == date and d.get("sector") == sector)]
+    data.append({
+        "date": date, "sector": sector,
+        "high": h, "low": l, "close": c,
+        "amplitude": round(amp, 2), "ratio": round(ratio, 2),
+    })
+    data.sort(key=lambda x: x["date"])
+    save_json(SWING_FILE, data)
+    print(f"[振幅] {date} {sector} high={h}% low={l}% close={c}% → 振幅比 {ratio:.2f}x")
+
+
+def log_timing(date: str, op: str, next_day_pct: str) -> None:
+    """记录操作时机偏差：操作（如补仓）后次日涨跌幅（%）。
+    次日大跌 = 时机偏差大 = 噪声；用于框架 2.4 操作时机偏差指标"""
+    nxt = _pct(next_day_pct)
+    data = load_json(TIMING_FILE)
+    data.append({"date": date, "op": op, "next_day_pct": round(nxt, 2)})
+    data.sort(key=lambda x: x["date"])
+    save_json(TIMING_FILE, data)
+    print(f"[时机] {date} {op} → 次日 {nxt:+.2f}%")
+
+
+def log_rule(rule: str, outcome: str, amount: float = 0, note: str = "") -> None:
+    """记录规则命中台账。outcome: protected(保护了钱)/missed(误伤或漏触发)/neutral(无影响)
+    amount: 保护金额（正数）或误伤金额（负数），单位 ¥"""
+    try:
+        amount = float(amount)
+    except (ValueError, TypeError):
+        amount = 0.0
+    data = load_json(RULE_FILE)
+    data.append({
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "rule": rule,
+        "outcome": outcome,
+        "amount": round(amount, 2),
+        "note": note[:120],
+    })
+    save_json(RULE_FILE, data)
+    print(f"[规则] {rule} → {outcome}（¥{amount:+,.0f}）{note}")
 
 
 # ---------- 审计分析 ----------
@@ -132,10 +191,13 @@ def audit_daily() -> dict:
 
 
 def audit_weekly() -> dict:
-    """每周噪声评分卡"""
+    """每周噪声评分卡（v1.1：振幅比/时机偏差改为真实数据 + 规则命中台账）"""
     ddx = load_json(DDX_FILE)
     signals = load_json(SIGNAL_FILE)
     near_misses = load_json(NEAR_MISS_FILE)
+    swings = load_json(SWING_FILE)
+    timings = load_json(TIMING_FILE)
+    rules = load_json(RULE_FILE)
 
     now = datetime.now()
     monday = now - timedelta(days=now.weekday())
@@ -155,12 +217,47 @@ def audit_weekly() -> dict:
     week_near_misses = [n for n in near_misses if n["date"] >= week_start]
     near_miss_index = len(week_near_misses) / max(trading_days, 1)
 
+    # 盘中振幅比（真实数据）：>5x 高噪声，>10x 极高噪声
+    week_swings = [s for s in swings if s["date"] >= week_start]
+    avg_ratio = (sum(s["ratio"] for s in week_swings) / len(week_swings)) if week_swings else None
+    if avg_ratio is None:
+        swing_score, swing_val = 10, "无数据"  # 数据缺失给中性分并标注
+    elif avg_ratio <= 2:
+        swing_score, swing_val = 20, f"{avg_ratio:.1f}x"
+    elif avg_ratio <= 5:
+        swing_score, swing_val = 12, f"{avg_ratio:.1f}x"
+    elif avg_ratio <= 10:
+        swing_score, swing_val = 6, f"{avg_ratio:.1f}x"
+    else:
+        swing_score, swing_val = 0, f"{avg_ratio:.1f}x"
+
+    # 操作时机偏差（真实数据）：补仓后次日涨跌，跌越多偏差越大
+    week_timings = [t for t in timings if t["date"] >= week_start]
+    avg_timing = (sum(abs(t["next_day_pct"]) for t in week_timings) / len(week_timings)) if week_timings else None
+    if avg_timing is None:
+        timing_score, timing_val = 15, "无数据"
+    elif avg_timing <= 1:
+        timing_score, timing_val = 25, f"{avg_timing:.2f}%"
+    elif avg_timing <= 2:
+        timing_score, timing_val = 15, f"{avg_timing:.2f}%"
+    elif avg_timing <= 3:
+        timing_score, timing_val = 8, f"{avg_timing:.2f}%"
+    else:
+        timing_score, timing_val = 0, f"{avg_timing:.2f}%"
+
+    # 规则命中台账（本周）
+    week_rules = [x for x in rules if x["date"] >= week_start]
+    rule_summary = {
+        "triggered": len(week_rules),
+        "protected": sum(1 for x in week_rules if x["outcome"] == "protected"),
+        "missed": sum(1 for x in week_rules if x["outcome"] == "missed"),
+        "protected_amount": round(sum(x["amount"] for x in week_rules if x["outcome"] == "protected" and x["amount"] > 0), 0),
+        "missed_amount": round(sum(-x["amount"] for x in week_rules if x["outcome"] == "missed" and x["amount"] < 0), 0),
+    }
+
     # 噪声综合评分
     accuracy_score = ddx_accuracy * 30
     near_miss_score = max(0, (1 - near_miss_index)) * 25
-    # 默认给满分，实际需要盘中振幅数据（从MX API获取较复杂，暂用默认值）
-    swing_score = 15  # 默认中等
-    timing_score = 20  # 默认中等
 
     total_score = accuracy_score + near_miss_score + swing_score + timing_score
 
@@ -177,13 +274,14 @@ def audit_weekly() -> dict:
         "scores": {
             "ddx_accuracy": {"value": f"{round(ddx_accuracy * 100)}%", "score": round(accuracy_score), "weight": 30},
             "near_miss_index": {"value": f"{near_miss_index:.2f}", "score": round(near_miss_score), "weight": 25},
-            "intraday_swing": {"value": "待采集", "score": swing_score, "weight": 20},
-            "timing_bias": {"value": "待评估", "score": timing_score, "weight": 25},
+            "intraday_swing": {"value": swing_val, "score": round(swing_score), "weight": 20},
+            "timing_bias": {"value": timing_val, "score": round(timing_score), "weight": 25},
         },
         "total_score": round(total_score),
         "noise_level": level,
         "false_alarms": false_count,
         "near_misses": len(week_near_misses),
+        "rule_ledger": rule_summary,
     }
 
 
@@ -209,6 +307,33 @@ def main() -> int:
         idx = sys.argv.index("--log-near-miss")
         desc = sys.argv[idx + 1] if len(sys.argv) > idx + 1 else "未描述"
         log_near_miss(desc)
+        return 0
+
+    if "--log-swing" in sys.argv:
+        idx = sys.argv.index("--log-swing")
+        date = sys.argv[idx + 1] if len(sys.argv) > idx + 1 else datetime.now().strftime("%Y-%m-%d")
+        sector = sys.argv[idx + 2] if len(sys.argv) > idx + 2 else "半导体"
+        high = sys.argv[idx + 3] if len(sys.argv) > idx + 3 else "0"
+        low = sys.argv[idx + 4] if len(sys.argv) > idx + 4 else "0"
+        close = sys.argv[idx + 5] if len(sys.argv) > idx + 5 else "0"
+        log_swing(date, sector, high, low, close)
+        return 0
+
+    if "--log-timing" in sys.argv:
+        idx = sys.argv.index("--log-timing")
+        date = sys.argv[idx + 1] if len(sys.argv) > idx + 1 else datetime.now().strftime("%Y-%m-%d")
+        op = sys.argv[idx + 2] if len(sys.argv) > idx + 2 else "操作"
+        nxt = sys.argv[idx + 3] if len(sys.argv) > idx + 3 else "0"
+        log_timing(date, op, nxt)
+        return 0
+
+    if "--log-rule" in sys.argv:
+        idx = sys.argv.index("--log-rule")
+        rule = sys.argv[idx + 1] if len(sys.argv) > idx + 1 else "未命名规则"
+        outcome = sys.argv[idx + 2] if len(sys.argv) > idx + 2 else "neutral"
+        amount = sys.argv[idx + 3] if len(sys.argv) > idx + 3 else "0"
+        note = sys.argv[idx + 4] if len(sys.argv) > idx + 4 else ""
+        log_rule(rule, outcome, amount, note)
         return 0
 
     if "--weekly" in sys.argv:

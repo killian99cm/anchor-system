@@ -287,6 +287,18 @@ def json_block(data):
                 "sat": "-8% 止损",
                 "cash": "纪律备用",
             }[layer],
+            "vol": {
+                "bedrock": "波动 ~2%",
+                "core": "波动 ~8%",
+                "sat": "波动 ~12%",
+                "cash": "波动 ~0%",
+            }[layer],
+            "freq": {
+                "bedrock": "操作 0-1 次/年",
+                "core": "定投为主 · 季度评估",
+                "sat": "≤4 笔/月 · 快进快出",
+                "cash": "暴跌时补仓",
+            }[layer],
             "mv": d["layer_mv"][layer],
         })
     public = {

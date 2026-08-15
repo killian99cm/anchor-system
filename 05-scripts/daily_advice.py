@@ -21,6 +21,7 @@ Anchor 每日 14:30 盘中建议推送（daily_advice.py）
 """
 import json
 import os
+import re
 import sys
 import time
 import urllib.error
@@ -176,6 +177,36 @@ def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
         if "时间止损" in text or "8/20" in text:
             upd = (a.get("updated") or "").replace("|", "／")[:60]
             sigs.append(f"⏰ {a.get('name')}｜最新：{upd}")
+    # 止损确认自动化（v3.5.2）：次日 14:30 板块方向确认 → 输出可执行指令
+    # 规则（从 pending_actions 文案解析阈值，默认 0.5%）：板块跌>阈值 → 执行止损一半；否则延期一天
+    for a in data.get("pending_actions", []):
+        text = (a.get("name") or "") + (a.get("action") or "")
+        if "止损确认" not in text and "止损执行" not in text:
+            continue
+        sector_kw = next((kw for kw in ("半导体", "创新药", "证券") if kw in text), None)
+        m_th = re.search(r"跌\s*[>≥]\s*(\d+(?:\.\d+)?)\s*%", text)
+        threshold = float(m_th.group(1)) if m_th else 0.5
+        decision = None
+        for r in quotes.get("sector", []):
+            if "涨跌" not in r["name"]:
+                continue
+            if sector_kw and sector_kw not in (r.get("entity") or ""):
+                continue
+            try:
+                pct = float(r["value"].rstrip("%"))
+            except ValueError:
+                continue
+            if pct <= -threshold:
+                decision = (f"🔴【执行】{sector_kw or '相关'}板块 {r['value']} 跌破 {threshold:.1f}% "
+                            f"→ 按规则执行止损一半（{text[:36]}…）")
+            else:
+                decision = (f"🟢【延期】{sector_kw or '相关'}板块 {r['value']} 未跌破 {threshold:.1f}% "
+                            f"→ 止损延期一天，明日 14:30 再确认")
+            break
+        if decision:
+            sigs.append(decision)
+        else:
+            sigs.append(f"🟡 {a.get('action') or '止损确认'}：板块行情未取到，以人工确认为准")
     # 纳指溢价率（实时）
     for r in quotes.get("premium", []):
         if "折溢价率" in r["name"] or "溢价" in r["name"]:

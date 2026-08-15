@@ -14,11 +14,25 @@ import json
 import os
 import sys
 from datetime import date
+from pathlib import Path
 
 import paths
+from data_processor import monthly_ops_summary
 
 DATA_PATH = paths.DATA_PATH
 KB_DIR = paths.REVIEWS_DIR
+RULE_LEDGER = Path(__file__).parent.parent / "06-dashboard" / "noise" / "rule_hits.json"
+
+
+def load_rule_ledger(month_prefix: str) -> list:
+    """加载规则命中台账（noise/rule_hits.json）并按月过滤，供归因自动汇总"""
+    if not RULE_LEDGER.exists():
+        return []
+    try:
+        data = json.loads(RULE_LEDGER.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+    return [x for x in data if str(x.get("date", "")).startswith(month_prefix)]
 
 
 def load_data():
@@ -76,6 +90,23 @@ def build_report(data, year, month):
     violations = [t for t in txns if '违规' in str(t.get('note',''))]
     viol_note = f"{len(violations)} 条疑似违规" if violations else "未检测到违规关键词（需人工确认）"
 
+    # 步骤7-辅助: 规则命中台账（noise/rule_hits.json 自动汇总）
+    ledger = load_rule_ledger(f"{year}-{month:02d}")
+    rule_stats = {}
+    for x in ledger:
+        r = str(x.get("rule", "?"))
+        s = rule_stats.setdefault(r, {"triggered": 0, "protected": 0, "missed": 0, "amount": 0.0})
+        s["triggered"] += 1
+        if x.get("outcome") == "protected":
+            s["protected"] += 1
+            s["amount"] += float(x.get("amount", 0) or 0)
+        elif x.get("outcome") == "missed":
+            s["missed"] += 1
+    rule_rows = "\n".join(
+        f"| {r} | {s['triggered']} 触发 / {s['protected']} 保护 / {s['missed']} 误伤 | 保护约 ¥{s['amount']:,.0f} |"
+        for r, s in sorted(rule_stats.items())
+    ) or "| （本月台账暂无记录，用 noise_audit.py --log-rule 记录） | -- | -- |"
+
     report = f"""# ⚓ Anchor 月度归因报告 — {year}年{month}月
 
 **报告日期**：{today.isoformat()}
@@ -128,12 +159,18 @@ def build_report(data, year, month):
 |------|------|
 | 浮亏加仓 | 【确认】 |
 | 72h 冻结 | 【确认】 |
-| 月操作 ≤4 | {len(txns)}/4 笔 |
+| 月操作 ≤4 | {monthly_ops_summary(data, year, month)[0]}/4 笔（手动操作，定投/出入金不计） |
 | DDX 负补仓 | 【确认】 |
 | 溢价>3% 建仓 | 【确认】 |
 | 自动扫描 | {viol_note} |
 
-## 七、规则评分（1-10）
+## 七、规则命中台账（自动，来自 noise/rule_hits.json）
+
+| 规则 | 本月命中 | 保护金额 |
+|------|------|------|
+{rule_rows}
+
+## 八、规则评分（1-10）
 
 | 规则 | 评分 | 备注 |
 |------|:--:|------|
@@ -144,7 +181,7 @@ def build_report(data, year, month):
 | DDX过滤器 | | |
 | 卖出冻结72h | | |
 
-## 八、规则修正提案（三问评审）
+## 九、规则修正提案（三问评审）
 
 每条新规则回答：
 1. 能阻止哪段历史亏损？
@@ -154,7 +191,7 @@ def build_report(data, year, month):
 
 - 【待填提案】
 
-## 九、版本与归档
+## 十、版本与归档
 
 - [ ] 更新规则手册版本号 + CHANGELOG
 - [ ] 更新体系总览 anchor-pro.html
@@ -180,10 +217,12 @@ def main():
     data = load_data()
     report = build_report(data, year, month)
 
-    os.makedirs(KB_DIR, exist_ok=True)
-    out_path = os.path.join(KB_DIR, f"月度归因_{year}年{month}月.md")
+    # 文件归类规则: 月度归因 → 04-reviews/monthly/
+    out_dir = os.path.join(KB_DIR, "monthly")
+    os.makedirs(out_dir, exist_ok=True)
+    out_path = os.path.join(out_dir, f"月度归因_{year}年{month}月.md")
     if os.path.exists(out_path):
-        out_path = os.path.join(KB_DIR, f"月度归因_{year}年{month}月_draft.md")
+        out_path = os.path.join(out_dir, f"月度归因_{year}年{month}月_draft.md")
         print(f"[WARN] 目标归因已存在，生成草稿: {out_path}")
     with open(out_path, 'w', encoding='utf-8') as f:
         f.write(report)

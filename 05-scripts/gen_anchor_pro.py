@@ -80,6 +80,14 @@ EXAMPLE_NAME_BY_LAYER = {
     "cash": "现金预备",
 }
 
+# 公开页示例品种分类名（与仓位计算器 anchor_calculator.html 建议配置一致，全部为通用脱敏名）
+CATEGORY_NAMES = {
+    "bedrock": ["示例债券基金A", "示例债券基金B", "示例红利ETF", "示例黄金ETF"],
+    "core": ["示例纳斯达克100", "示例混合基金"],
+    "sat": ["示例行业ETF A", "示例行业ETF B"],
+    "cash": ["现金预备"],
+}
+
 
 def load_public_data():
     """Load sanitized public example data only."""
@@ -158,12 +166,17 @@ def build_layer_rows(layer_mv, total, counts):
 
 
 def public_display_name(layer, item_type, index):
-    """Return generic public names; never trust input names for a public page."""
+    """Return generic public names; never trust input names for a public page.
+    分类名与仓位计算器建议配置一致（示例债券基金/红利ETF/黄金ETF/纳指/行业ETF）。"""
     if item_type == "cash" or layer == "cash":
         return "现金预备"
-    suffix = chr(ord("A") + index) if index < 26 else str(index + 1)
     if item_type == "stock":
+        suffix = chr(ord("A") + index) if index < 26 else str(index + 1)
         return f"示例股票{suffix}"
+    names = CATEGORY_NAMES.get(layer)
+    if names:
+        return names[index % len(names)]
+    suffix = chr(ord("A") + index) if index < 26 else str(index + 1)
     return f"{EXAMPLE_NAME_BY_LAYER.get(layer, '示例基金')}{suffix}"
 
 

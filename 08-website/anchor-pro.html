@@ -34,6 +34,7 @@ button,a{font:inherit}button{cursor:pointer}
 .kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.kpi{position:relative;padding:22px 20px;min-height:142px;border:1px solid var(--line-soft);border-radius:15px;background:rgba(7,17,32,.78);overflow:hidden;transition:.25s}.kpi:hover{transform:translateY(-4px);border-color:rgba(57,135,229,.55);box-shadow:0 14px 32px rgba(0,0,0,.22)}.kpi:after{content:"";position:absolute;top:0;left:0;width:72px;height:2px;background:var(--accent, var(--blue))}.kpi-label{font:10px var(--mono);letter-spacing:1.1px;color:var(--dim);text-transform:uppercase}.kpi-value{font:800 32px var(--mono);letter-spacing:-2px;margin:14px 0 6px;color:#fff}.kpi-desc{font-size:11px;color:var(--muted);line-height:1.5}.kpi-tip{position:absolute;right:16px;top:16px;color:var(--dim);font-size:13px}
 .arch-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px}.architecture{padding:26px;border:1px solid var(--line-soft);border-radius:18px;background:rgba(7,17,32,.78)}.architecture h3{font-size:13px;margin-bottom:20px;color:#fff}.pyramid-stack{display:flex;flex-direction:column;gap:6px;align-items:center;padding:6px 0}.pyr-row{position:relative;width:100%;display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:11px;border-left:3px solid var(--tone);background:linear-gradient(90deg,var(--tint),rgba(255,255,255,.018));transition:.3s;overflow:hidden}.pyr-row:hover{transform:scale(1.015);background:linear-gradient(90deg,rgba(255,255,255,.09),rgba(255,255,255,.02))}.pyr-row>*:not(.pyr-fill){position:relative;z-index:1}.pyr-fill{position:absolute;top:0;bottom:0;left:50%;transform:translateX(-50%);width:var(--pyr-w,100%);background:var(--tone);opacity:.16;transition:.3s;pointer-events:none}.pyr-icon{font-size:21px}.pyr-main{flex:1;min-width:0}.pyr-name{font-size:13px;font-weight:800;color:#fff}.pyr-detail{font-size:10px;color:var(--muted);margin-top:3px;line-height:1.55}.pyr-rule{text-align:right;flex:0 0 auto}.pyr-rule strong{display:block;color:var(--tone);font:800 19px var(--mono)}.pyr-rule span{display:block;color:var(--dim);font:9px var(--mono);margin-top:3px}.pyr-tip{margin-top:14px;padding:10px 12px;border:1px dashed rgba(145,164,189,.25);border-radius:9px;color:var(--dim);font-size:10px;line-height:1.7}.allocation{display:flex;flex-direction:column;gap:14px}.allocation-row{display:grid;grid-template-columns:96px 1fr 120px;gap:13px;align-items:center}.allocation-label{font-size:11px;color:var(--muted)}.meter{position:relative;height:9px;border-radius:99px;background:#14263c;overflow:visible}.meter-fill{height:100%;border-radius:99px;min-width:2px}.allocation-value{text-align:right;font:9px var(--mono);color:var(--dim);line-height:1.5}.allocation-value b{display:block;color:#fff;font-size:11px}.allocation-note{padding:15px;border:1px solid rgba(250,178,25,.22);border-radius:11px;background:rgba(250,178,25,.06);font-size:11px;color:var(--muted);line-height:1.7}
 .filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px}.filter-btn{border:1px solid var(--line);color:var(--muted);background:rgba(7,17,32,.7);border-radius:999px;padding:7px 13px;font-size:11px;transition:.2s}.filter-btn:hover,.filter-btn.active{color:#fff;border-color:var(--blue);background:var(--blue-soft)}.filter-status{margin-left:auto;color:var(--dim);font:10px var(--mono)}.holdings-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.holding-card{border:1px solid var(--line-soft);border-radius:15px;background:rgba(7,17,32,.78);overflow:hidden;transition:.25s}.holding-card:hover{border-color:rgba(57,135,229,.48);box-shadow:0 12px 28px rgba(0,0,0,.18)}.holding-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 17px;border-bottom:1px solid var(--line-soft);background:rgba(255,255,255,.025)}.holding-head strong{font-size:12px;color:#fff}.holding-head span{font:9px var(--mono);color:var(--muted);text-align:right;line-height:1.5}.holding-list{padding:4px 0}.holding-item{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;padding:11px 17px;border-bottom:1px solid rgba(154,188,225,.07);font-size:11px}.holding-item:last-child{border-bottom:0}.holding-name{color:#d9e6f7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.holding-type{font-size:9px;color:var(--muted);border:1px solid var(--line);padding:2px 6px;border-radius:999px;white-space:nowrap}.empty{color:var(--dim);font-size:11px;padding:16px}
+.calc-panel{margin-top:22px;padding:22px;border:1px solid var(--line-soft);border-radius:16px;background:rgba(7,17,32,.82)}.calc-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:16px}.calc-head h3{font-size:13px;color:#fff}.calc-head span{font:9px var(--mono);color:var(--dim)}.calc-controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}.calc-field{flex:1;min-width:150px}.calc-field label{display:block;font:9px var(--mono);color:var(--dim);letter-spacing:1.1px;margin-bottom:5px;text-transform:uppercase}.calc-field input,.calc-field select{width:100%;padding:9px 12px;background:var(--surface-3);border:1px solid var(--line);border-radius:9px;color:#fff;font:12px var(--mono)}.calc-field input:focus,.calc-field select:focus{outline:none;border-color:var(--blue)}.calc-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:16px}.calc-tab{padding:9px 6px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;text-align:center;cursor:pointer;font-size:10px;color:var(--muted);transition:.2s;line-height:1.5}.calc-tab:hover{border-color:var(--blue)}.calc-tab.active{background:var(--blue-soft);border-color:var(--blue);color:#fff;font-weight:700}.calc-pyramid{display:flex;flex-direction:column;align-items:center;gap:3px;margin:14px 0 18px}.calc-layer{text-align:center;padding:9px;border-radius:8px;font-weight:700;transition:.2s}.calc-layer .cl-name{font-size:9px;opacity:.75;letter-spacing:1px;font-weight:400}.calc-layer .cl-pct{font-size:16px;margin:1px 0}.calc-layer .cl-amt{font-size:10px;opacity:.8;font-weight:400}.calc-layer.bedrock{background:rgba(57,135,229,.12);color:var(--blue);width:100%}.calc-layer.core{background:rgba(54,211,156,.10);color:var(--green-bright);width:72%}.calc-layer.sat{background:rgba(250,178,25,.10);color:var(--amber);width:48%}.calc-layer.cash{background:rgba(145,164,189,.08);color:var(--dim);width:32%}.calc-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px}.calc-detail{background:var(--surface-2);border:1px solid var(--line);border-radius:11px;padding:12px 14px}.calc-detail h4{font:9px var(--mono);color:var(--dim);letter-spacing:1.2px;margin-bottom:7px;text-transform:uppercase}.calc-detail .cd-val{font:700 16px var(--mono);color:#fff}.calc-detail .cd-note{font-size:10px;color:var(--dim);margin-top:2px}.calc-detail .cd-row{display:flex;justify-content:space-between;padding:3px 0;font-size:10px;color:var(--muted)}.calc-detail .cd-row span:last-child{font-family:var(--mono);color:#fff}.calc-warn{margin-top:14px;padding:12px 15px;background:rgba(250,178,25,.06);border:1px solid rgba(250,178,25,.2);border-radius:10px;font-size:10px;color:var(--muted);line-height:1.8}.calc-warn b{color:#fff}
 .evidence-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.evidence-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.evidence-card{padding:18px;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.evidence-card .ec-label{color:var(--dim);font:10px var(--mono);letter-spacing:.7px}.evidence-card .ec-before{font-size:12px;color:var(--red);margin-top:10px}.evidence-card .ec-arrow{color:var(--dim);margin:6px 0}.evidence-card .ec-after{font-size:13px;color:var(--green-bright);font-weight:700}.evidence-card .ec-change{font-size:10px;color:var(--muted);margin-top:9px}.table-wrap{border:1px solid var(--line-soft);border-radius:15px;overflow:auto;background:rgba(7,17,32,.78)}table{width:100%;border-collapse:collapse;min-width:560px}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--line-soft);font-size:11px}th{background:rgba(255,255,255,.035);font:10px var(--mono);letter-spacing:.7px;color:var(--dim)}td{color:var(--muted)}tr:last-child td{border-bottom:0}tr:hover td{background:rgba(57,135,229,.04)}.good{color:var(--green-bright);font-weight:700}.bad{color:var(--red);font-weight:700}
 .performance{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:16px}.chart-card,.chart-summary{padding:22px;border:1px solid var(--line-soft);border-radius:16px;background:rgba(7,17,32,.78)}.chart-card{position:relative}.chart-axis{height:1px;background:var(--line);margin:5px 0 20px}.bar-chart{height:210px;display:flex;align-items:end;gap:9px;padding:16px 10px 0;border-bottom:1px solid var(--line);background:repeating-linear-gradient(0deg,transparent 0,transparent 51px,rgba(145,164,189,.09) 52px)}.bar-col{height:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;gap:7px;min-width:20px}.bar-value{font:10px var(--mono);color:var(--muted);white-space:nowrap}.bar-mark{width:min(30px,72%);height:var(--bar-height);min-height:3px;border-radius:4px 4px 1px 1px;background:var(--bar-color);transition:.2s;cursor:pointer}.bar-mark:hover,.bar-mark:focus{filter:brightness(1.28);transform:scaleX(1.12)}.bar-label{font:10px var(--mono);color:var(--dim)}.chart-legend{display:flex;gap:16px;align-items:center;font-size:10px;color:var(--muted);margin-bottom:10px}.legend-key{display:inline-flex;align-items:center;gap:6px}.legend-key i{width:9px;height:9px;border-radius:3px;background:var(--key);display:inline-block}.chart-foot{display:flex;justify-content:space-between;gap:12px;color:var(--dim);font:10px var(--mono);margin-top:14px}.chart-summary h3{font-size:13px;margin-bottom:14px}.summary-stat{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)}.summary-stat:last-child{border:0}.summary-stat span{font-size:11px;color:var(--muted)}.summary-stat strong{font:700 18px var(--mono);color:#fff}.chart-tooltip{position:fixed;z-index:50;display:none;pointer-events:none;min-width:125px;padding:10px 12px;border:1px solid rgba(57,135,229,.55);border-radius:9px;background:#071120;box-shadow:0 14px 35px rgba(0,0,0,.35);font-size:11px;color:#fff}.chart-tooltip small{display:block;color:var(--muted);margin-bottom:3px}
 .rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}.rule-card{position:relative;min-height:190px;padding:21px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(145deg,rgba(13,30,51,.85),rgba(7,17,32,.78));overflow:hidden;transition:.25s}.rule-card:hover{transform:translateY(-4px);border-color:rgba(57,135,229,.5)}.rule-index{font:700 36px var(--mono);color:rgba(255,255,255,.08);position:absolute;right:13px;top:9px}.rule-icon{font-size:22px;margin-bottom:15px}.rule-card h3{font-size:14px;margin-bottom:7px}.rule-cost{font-size:10px;color:var(--red);margin-bottom:12px}.rule-desc{font-size:11px;color:var(--muted);line-height:1.7}.forbidden-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.forbidden-card{padding:21px;border:1px solid rgba(230,103,103,.25);border-radius:15px;background:linear-gradient(145deg,rgba(62,22,34,.44),rgba(7,17,32,.8));transition:.25s}.forbidden-card:hover{transform:translateY(-3px);border-color:rgba(230,103,103,.62)}.forbidden-index{font:700 28px var(--mono);color:rgba(230,103,103,.35)}.forbidden-action{font-size:14px;font-weight:800;color:#fff;margin:9px 0 5px}.forbidden-cost{font-size:11px;color:var(--red)}.forbidden-alt{font-size:11px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid rgba(230,103,103,.15)}
@@ -44,7 +45,7 @@ button,a{font:inherit}button{cursor:pointer}
 .noscript-note{max-width:1240px;margin:0 auto;padding:14px 28px;border:1px solid rgba(250,178,25,.3);background:rgba(250,178,25,.08);color:var(--amber);font-size:12px;text-align:center}.cta{padding:90px 0 100px;text-align:center}.cta h2{font-size:clamp(30px,5vw,58px);letter-spacing:-3px;margin-bottom:13px}.cta p{max-width:560px;margin:0 auto 28px;color:var(--muted);font-size:13px}.footer{border-top:1px solid var(--line-soft);padding:26px 28px 34px;text-align:center;color:var(--dim);font:10px var(--mono);line-height:2}.reveal{opacity:1;transform:translateY(18px);transition:opacity .7s,transform .7s}.reveal.in{transform:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes sweep{0%,28%{transform:translateX(-100%)}52%,100%{transform:translateX(100%)}}
 @media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.timeline{grid-template-columns:repeat(3,1fr)}.timeline-item:nth-child(3n){border-right:0}.timeline-item:nth-child(4){border-top:1px solid var(--line-soft);padding-top:25px}.nav-links{display:none}}
-@media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid{grid-template-columns:1fr}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(even){border-right:0}.timeline-item:nth-child(3),.timeline-item:nth-child(5){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
+@media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid{grid-template-columns:1fr}.calc-tabs{grid-template-columns:repeat(2,1fr)}.calc-controls{flex-direction:column}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(even){border-right:0}.timeline-item:nth-child(3),.timeline-item:nth-child(5){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 </style>
 </head>
@@ -54,7 +55,21 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="hero reveal" id="top"><div class="hero-copy"><div class="eyebrow">Investment operating system</div><h1><em>Anchor</em><br><i>不靠预测</i>，靠纪律</h1><div class="hero-title">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
 <section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row" id="kpiRow"></div></section>
 <section class="section reveal in" id="architecture"><div class="section-head"><div><div class="section-kicker">Architecture</div><h2>四层<em>金字塔</em></h2></div><p>层级决定职责，职责决定动作。目标比例是组合的导航，不是静态名单。</p></div><div class="arch-grid"><div class="architecture"><h3>金字塔结构 · 宽度 = 目标配比</h3><div class="pyramid-stack" id="pyramidViz"></div><div class="pyr-tip">示例数据仅演示结构与目标配比；真实看板展示每层实际占比、偏离与按资产新高动态计算的回撤线。</div></div><div class="architecture"><h3>目标配比 · 风险平价</h3><div class="allocation" id="allocationViz"></div><div class="allocation-note">四层目标（风险平价）：压舱石 45% / 核心增长 20% / 卫星进攻 20% / 现金预备 15%。公开示例仅演示目标配比；真实看板展示实际占比、偏离与再平衡触发。</div></div></div></section>
-<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="filter-row" id="layerFilters"><button class="filter-btn active" data-layer="all">全部层级</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心增长</button><button class="filter-btn" data-layer="sat">卫星进攻</button><button class="filter-btn" data-layer="cash">现金预备</button><span class="filter-status" id="filterStatus"></span></div><div class="holdings-grid" id="holdingsGrid"></div></section>
+<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="filter-row" id="layerFilters"><button class="filter-btn active" data-layer="all">全部层级</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心增长</button><button class="filter-btn" data-layer="sat">卫星进攻</button><button class="filter-btn" data-layer="cash">现金预备</button><span class="filter-status" id="filterStatus"></span></div><div class="holdings-grid" id="holdingsGrid"></div>
+<div class="calc-panel">
+  <div class="calc-head"><h3>⚡ 互动试算 · 按总资产与风险偏好生成四层分配</h3><span>同款工具：05-scripts/anchor_calculator.html</span></div>
+  <div class="calc-controls">
+    <div class="calc-field"><label>总资产（元）</label><input type="number" id="calcTotal" value="50000" min="0"></div>
+    <div class="calc-field"><label>止损线</label><select id="calcSL"><option value="6">-6%</option><option value="8" selected>-8%</option><option value="10">-10%</option></select></div>
+  </div>
+  <div class="calc-tabs">
+    <div class="calc-tab" data-r="conservative">🛡️ 保守<br>回撤≤5%</div>
+    <div class="calc-tab active" data-r="balanced">⚖️ 平衡<br>回撤≤15%</div>
+    <div class="calc-tab" data-r="growth">📈 成长<br>回撤≤20%</div>
+    <div class="calc-tab" data-r="aggressive">🚀 进取<br>回撤≤25%</div>
+  </div>
+  <div class="calc-out" id="calcOut"></div>
+</div></section>
 <section class="section reveal" id="evidence"><div class="section-head"><div><div class="section-kicker">Evidence</div><h2>从“感觉”到<em>状态机</em></h2></div><p>公开示例保留原有前后对比栏目，同时用卡片和表格双通道呈现，文字不依赖颜色才能读懂。</p></div><div class="evidence-grid"><div class="evidence-cards" id="evidenceCards"></div><div class="table-wrap"><table><thead><tr><th>维度</th><th>使用前</th><th>使用后</th><th>变化</th></tr></thead><tbody id="cmpBody"></tbody></table></div></div></section>
 <section class="section reveal" id="performance"><div class="section-head"><div><div class="section-kicker">Sample performance</div><h2>示例<em>盈亏走势</em></h2></div><p>脱敏样本只用来演示记录方式。柱状图的数值直接可见，hover 只提供额外上下文。</p></div><div class="performance"><div class="chart-card"><div class="chart-legend"><span class="legend-key"><i style="--key:var(--red)"></i>示例盈利月</span><span class="legend-key"><i style="--key:var(--green-bright)"></i>示例亏损月</span></div><div class="bar-chart" id="monthlyChart"></div><div class="chart-foot"><span id="monthlySum"></span><span>柱状图 · 单一数值轴</span></div></div><div class="chart-summary"><h3>读图摘要</h3><div id="performanceSummary"></div></div></div></section>
 <section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>六条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid" id="rulesGrid"></div></section>
@@ -78,29 +93,29 @@ var D={
   "stock_mv": 0,
   "cash_mv": 0,
   "holding_counts": {
-    "active": 4,
-    "total": 4,
-    "fund": 3,
+    "active": 9,
+    "total": 9,
+    "fund": 8,
     "stock": 0,
     "cash": 1,
     "by_layer": {
-      "bedrock": 1,
-      "core": 1,
-      "sat": 1,
+      "bedrock": 4,
+      "core": 2,
+      "sat": 2,
       "cash": 1
     },
     "layers": {
-      "bedrock": 1,
-      "core": 1,
-      "sat": 1,
+      "bedrock": 4,
+      "core": 2,
+      "sat": 2,
       "cash": 1
     },
     "by_type": {
-      "fund": 3,
+      "fund": 8,
       "stock": 0,
       "cash": 1
     },
-    "active_label": "3只基金 + 1项现金"
+    "active_label": "8只基金 + 1项现金"
   },
   "layers": [
     {
@@ -111,7 +126,7 @@ var D={
       "target": 45,
       "mv": 0,
       "pct": 0,
-      "count": 1
+      "count": 4
     },
     {
       "key": "core",
@@ -121,7 +136,7 @@ var D={
       "target": 20,
       "mv": 0,
       "pct": 0,
-      "count": 1
+      "count": 2
     },
     {
       "key": "sat",
@@ -131,7 +146,7 @@ var D={
       "target": 20,
       "mv": 0,
       "pct": 0,
-      "count": 1
+      "count": 2
     },
     {
       "key": "cash",
@@ -247,7 +262,7 @@ var D={
       "l": "bed",
       "icon": "🛡️",
       "name": "压舱石层 · 45%",
-      "assets": "示例压舱基金A",
+      "assets": "示例债券基金A + 示例债券基金B + 示例红利ETF + 示例黄金ETF",
       "detail": "低波动资产 · 年操作 0-1 次 · 稳定组合地基",
       "rule": "长期持有",
       "vol": "波动 ~2%",
@@ -258,7 +273,7 @@ var D={
       "l": "core",
       "icon": "🚀",
       "name": "核心增长层 · 20%",
-      "assets": "示例核心基金A",
+      "assets": "示例纳斯达克100 + 示例混合基金",
       "detail": "宽基 / 核心资产 · 定投为主 · 估值约束",
       "rule": "定投为主",
       "vol": "波动 ~8%",
@@ -269,7 +284,7 @@ var D={
       "l": "sat",
       "icon": "🔥",
       "name": "卫星进攻层 · 20%",
-      "assets": "示例行业ETFA",
+      "assets": "示例行业ETF A + 示例行业ETF B",
       "detail": "高弹性仓位 · 单只限额 · 快速纠错",
       "rule": "-8% 止损",
       "vol": "波动 ~12%",
@@ -291,7 +306,25 @@ var D={
   "holdings": {
     "bedrock": [
       {
-        "n": "示例压舱基金A",
+        "n": "示例债券基金A",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例债券基金B",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例红利ETF",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例黄金ETF",
         "v": 0,
         "c": "g",
         "type": "fund"
@@ -299,7 +332,13 @@ var D={
     ],
     "core": [
       {
-        "n": "示例核心基金A",
+        "n": "示例纳斯达克100",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例混合基金",
         "v": 0,
         "c": "g",
         "type": "fund"
@@ -307,7 +346,13 @@ var D={
     ],
     "sat": [
       {
-        "n": "示例行业ETFA",
+        "n": "示例行业ETF A",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例行业ETF B",
         "v": 0,
         "c": "g",
         "type": "fund"
@@ -617,6 +662,34 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   var ids=Object.keys(map);if(!ids.length||!("IntersectionObserver" in window))return;
   var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){var a=map[e.target.id];if(a){links.forEach(function(x){x.style.color=""});a.style.color="#fff"}}})},{rootMargin:"-40% 0px -55% 0px"});
   ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el)});
+})();
+
+(function(){
+  // 互动仓位试算（与 05-scripts/anchor_calculator.html 同款逻辑，示例名脱敏）
+  var CFG={conservative:{b:70,c:15,s:0,h:15},balanced:{b:45,c:25,s:15,h:15},growth:{b:35,c:30,s:20,h:15},aggressive:{b:25,c:35,s:25,h:15}};
+  var FUNDS={b:[["示例债券基金A",0.4],["示例债券基金B",0.3],["示例红利ETF",0.2],["示例黄金ETF",0.1]],c:[["示例纳斯达克100",0.6],["示例混合基金",0.4]],s:[["示例行业ETF A",0.5],["示例行业ETF B",0.5]]};
+  var total=document.getElementById("calcTotal"),sl=document.getElementById("calcSL"),out=document.getElementById("calcOut");
+  if(!total||!sl||!out)return;
+  function fmt(n){return n.toLocaleString("zh-CN",{maximumFractionDigits:0})}
+  function R(){
+    var T=parseFloat(total.value)||0;
+    var act=document.querySelector(".calc-tab.active");var r=act?act.getAttribute("data-r"):"balanced";
+    var s=parseFloat(sl.value)||8,cfg=CFG[r]||CFG.balanced;
+    var L=[{n:"压舱石层",c:"bedrock",p:cfg.b,fs:FUNDS.b},{n:"核心增长层",c:"core",p:cfg.c,fs:FUNDS.c},{n:"卫星进攻层",c:"sat",p:cfg.s,fs:FUNDS.s},{n:"现金预备层",c:"cash",p:cfg.h,fs:[]}];
+    var h='<div class="calc-pyramid">';
+    L.forEach(function(l){var a=T*l.p/100;h+='<div class="calc-layer '+l.c+'"><div class="cl-name">'+l.n+'</div><div class="cl-pct">'+l.p+'%</div><div class="cl-amt">¥'+fmt(a)+'</div></div>'});
+    h+='</div><div class="calc-details">';
+    L.forEach(function(l){var a=T*l.p/100,sh="";l.fs.forEach(function(f){var fa=a*f[1];sh+='<div class="cd-row"><span>'+f[0]+'</span><span>¥'+fmt(fa)+'</span></div>'});
+      if(sh){h+='<div class="calc-detail"><h4>'+l.n+' · 建议配置</h4>'+sh+'</div>'}
+      else{h+='<div class="calc-detail"><h4>'+l.n+'</h4><div class="cd-val">¥'+fmt(a)+'</div><div class="cd-note">货币基金 · 仅暴跌时补仓压舱石</div></div>'}});
+    h+='</div>';
+    var ml=T*(cfg.s/100)*(s/100);
+    h+='<div class="calc-warn">⚡ <b>风控</b>：卫星单次最大亏损 <b>¥'+fmt(ml)+'</b>（止损-'+s+'%）<br>🔒 <b>纪律</b>：压舱石+核心 <b>'+(cfg.b+cfg.c)+'%</b> 永远不卖 · 卫星≤4只 · 月操作≤4笔<br>📐 <b>规则</b>：浮亏不加仓 · 卖出冻结72h · 每笔带预案</div>';
+    out.innerHTML=h;
+  }
+  total.addEventListener("input",R);sl.addEventListener("change",R);
+  document.querySelectorAll(".calc-tab").forEach(function(t){t.addEventListener("click",function(){document.querySelectorAll(".calc-tab").forEach(function(x){x.classList.remove("active")});t.classList.add("active");R()})});
+  R();
 })();
 </script>
 </body>

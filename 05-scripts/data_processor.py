@@ -637,7 +637,7 @@ GROUP_TO_LAYER = {
 }
 # 兜底：未知 group 时按关键词判断
 KEYWORD_TO_LAYER = [
-    ("债券", "bedrock"), ("黄金", "bedrock"), ("红利", "bedrock"), ("红利ETF", "bedrock"),
+    ("债券", "bedrock"), ("黄金", "bedrock"), ("红利ETF", "bedrock"), ("红利", "bedrock"),  # 8/17：长词优先
     ("QDII", "core"), ("混合", "core"), ("纳指", "core"), ("纳斯达克", "core"),
     ("半导体", "sat"), ("创新药", "sat"), ("证券", "sat"), ("芯片", "sat"),
     ("现金", "cash"), ("货币", "cash"),
@@ -717,8 +717,12 @@ def process_holdings(raw_holdings, stocks, data=None, mkt=None):
         dp = safe_float(s.get('day_pnl', 0))
         name = s.get('name') or s.get('code') or '未命名股票'
         layer_info = resolve_layer(name, s.get('group', ''), s)
-        layer = layer_info[0] if layer_info else 'bedrock'
-        tag, resolved_tc = derive_holding_tag(name, layer, data=data, mkt=mkt)
+        if not layer_info:
+            # 8/17 审计（M6）：与基金口径一致——无法归类则告警跳过，不静默塞入压舱石扭曲占比
+            dropped.append(name)
+            continue
+        layer, existing_tag, tc = layer_info
+        tag, resolved_tc = derive_holding_tag(name, layer, data=data, mkt=mkt, existing_tag=existing_tag)
         item = {
             "n": name, "mv": round(mv, 2),
             "pnl": round(pnl, 2), "dp": round(dp, 2), "rt": round(rate(pnl, mv), 2),
@@ -1015,9 +1019,9 @@ def prepare_chart_data(data):
     for c in data.get('chart_data', []):
         chart_out.append({
             "d": c.get('d', ''),
-            "sh": round(c.get('sh', 0)),
-            "st": round(c.get('star', 0)),
-            "pnl": round(safe_float(c.get('pnl', 0)), 0)
+            "sh": round(safe_float(c.get('sh', 0), 0)),   # 8/17 审计：防逗号字符串崩溃
+            "st": round(safe_float(c.get('star', 0), 0)),
+            "pnl": round(safe_float(c.get('pnl', 0), 0))
         })
     return chart_out
 

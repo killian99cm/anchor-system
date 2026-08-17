@@ -5,6 +5,27 @@
 
 ---
 
+## v3.5.3 — 2026-08-17
+
+### 修复（全面审查 8/17）
+- 🔴 **隐私泄漏**：WeChat 会话 ID 从公开代码/文档移除（05-scripts/daily_advice.py + 00-system/每日建议推送说明.md），改读环境变量 WECHAT_SESSION（setx 已配置）；历史提交仍含旧 ID，如需彻底清除需重写历史或轮换会话
+- 🔴 **失效 GitHub Action**：.github/workflows/anchor-daily.yml 引用的脚本已归档（gitignore 中不存在），每个工作日静默失败 → 已停用计划任务，保留手动触发；现行自动化 = Windows 计划任务（14:30 推送 / 21:30 知识库 / 21:40 兜底 / watch_sync 实时监听）
+- 🟠 **时间止损截止日解析加固**：改为语义解析（建仓日+30 天 ±7 容差 + 建仓日合理性守卫），防止 pending_actions 文本杂项日期（如 8/31 归因）劫持截止日；5 场景测试通过
+- 🟠 **watch_sync 失败退避**：同步失败后 5 分钟退避，防止 JSON 损坏时反复轰击 sync_all
+- 🟠 **Excel 语法错误**：gen_excel_skill.py 红盈绿亏改造引入的括号错误（私有脚本不在 CI 覆盖范围，此前漏网）已修复
+- 🟡 **私有看板版本标签**：v3.3 → v3.5（标题/徽标/页脚）
+- 🟡 **噪声台账回填**：8/12-8/17 DDX/信号/规则命中（来源：已存档复盘报告），DDX 准确率统计可继续
+
+### 新增
+- 🆕 **DDX 补仓窗口进 14:30 推送**：daily_advice.py 新增第 5 组查询（半导体 DDX + 超大单），结合台账连击天数直接输出「连 X 日为正 / 补仓条件满足」信号，无需翻复盘
+- 🆕 **smoke 新增全量编译检查**（7b）：本地 compileall 覆盖 gitignored 私有脚本（CI 覆盖不到），62 项
+- 🆕 **决策效率**：14:30 推送信号链 = 止损确认自动判定 + DDX 补仓窗口 + 回撤安全垫 + 溢价率 + 时间止损倒计时（全部实时/台账数据，无人工查询）
+
+### 修改文件
+05-scripts/daily_advice.py | 05-scripts/data_processor.py | 05-scripts/watch_sync.py | 05-scripts/rebuild.py | 05-scripts/smoke_test.py | 05-scripts/gen_excel_skill.py（本地）| .github/workflows/anchor-daily.yml | 00-system/每日建议推送说明.md | ANCHOR_体系总览.md | 06-dashboard/noise/*.json | 00-system/会话检查点.md | CHANGELOG.md
+
+---
+
 ## v3.5.2 — 2026-08-15
 
 ### 新增

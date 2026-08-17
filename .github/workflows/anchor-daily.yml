@@ -1,8 +1,10 @@
 name: Anchor Daily Report
 
+# ⚠️ 已停用（2026-08-17 审计）：本工作流引用的 05-scripts/归档/anchor_daily_report.py
+# 已于 v3.4 归档并加入 .gitignore（仓库中不存在），计划任务会静默失败。
+# 现行方案：Windows 计划任务「Anchor每日建议」（14:30 盘中推送）+「Anchor每日兜底同步」（21:40）
+# 如需恢复云日报，请重建脚本并重新提交；否则仅保留手动触发。
 on:
-  schedule:
-    - cron: '30 7 * * 1-5'  # 15:30 Beijing, Mon-Fri
   workflow_dispatch:
 
 jobs:

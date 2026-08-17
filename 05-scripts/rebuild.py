@@ -51,7 +51,7 @@ html = r'''<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Anchor v3.3 · 私有投资驾驶舱</title>
+<title>Anchor v3.5 · 私有投资驾驶舱</title>
 <style>
 :root{--bg:#02070f;--surface:#071120;--surface-2:#0b1729;--surface-3:#0f1e34;--line:#18304d;--line-soft:rgba(154,188,225,.14);--text:#edf4ff;--muted:#91a4bd;--dim:#536a85;--blue:#3987e5;--blue-soft:rgba(57,135,229,.14);--green:#36d39c;--amber:#fab219;--red:#e66767;--purple:#9085e9;--mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;--shadow:0 18px 55px rgba(0,0,0,.25)}
 *{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}body{background:var(--bg);color:var(--text);font:13px/1.55 Inter,"Segoe UI",system-ui,sans-serif;min-height:100vh;overflow-x:hidden}body:before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(circle at 12% -8%,rgba(57,135,229,.16),transparent 32%),radial-gradient(circle at 92% 86%,rgba(54,211,156,.07),transparent 30%),linear-gradient(180deg,#02070f,#04101c 48%,#02070f)}body:after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.22;background-image:linear-gradient(rgba(130,170,215,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(130,170,215,.06) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(#000,transparent 78%)}
@@ -68,7 +68,7 @@ button{font:inherit;cursor:pointer}.app{max-width:1600px;margin:0 auto;padding:1
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><span class="brand-mark">⚓</span><span><em>Anchor</em> Terminal</span></div><span class="badge">v3.3 PRIVATE</span><span class="status safe" id="headerStatus">状态计算中</span><span class="spacer"></span><div class="topstat">数据源<b>本地 portfolio_data.json</b></div><div class="topstat">更新<b id="updateLabel">--</b></div><div class="clock" id="clock">--</div></header>
+<header class="topbar"><div class="brand"><span class="brand-mark">⚓</span><span><em>Anchor</em> Terminal</span></div><span class="badge">v3.5 PRIVATE</span><span class="status safe" id="headerStatus">状态计算中</span><span class="spacer"></span><div class="topstat">数据源<b>本地 portfolio_data.json</b></div><div class="topstat">更新<b id="updateLabel">--</b></div><div class="clock" id="clock">--</div></header>
 <section class="decision safe" id="decision"><div class="decision-icon" id="decisionIcon">◉</div><div class="decision-copy"><strong id="decisionTitle">今日结论计算中</strong><span id="decisionText">等待统一状态合同。</span></div><div class="decision-tag" id="decisionTag">--</div></section>
 <section class="kpi-grid" id="kpi"></section>
 <section class="control-grid"><div class="panel"><div class="panel-head"><h2>Allocation · 四层配置</h2><span>目标 / 当前</span></div><div class="panel-body"><div class="allocation" id="allocation"></div><div class="allocation-note" id="allocationNote"></div></div></div><div class="panel"><div class="panel-head"><h2>Portfolio control center · 持仓控制台</h2><span id="holdingSummary">--</span></div><div class="panel-body"><div class="filter-row" id="holdingFilters"><button class="filter-btn active" data-layer="all">全部</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心</button><button class="filter-btn" data-layer="sat">卫星</button><button class="filter-btn" data-layer="cash">现金</button><select class="sort-select" id="holdingSort" aria-label="持仓排序"><option value="mv">按市值</option><option value="pnl">按盈亏</option><option value="rate">按收益率</option><option value="name">按名称</option></select><span class="filter-count" id="holdingCount"></span></div><div class="holdings"><div class="holdings-head"><span>名称 / 状态</span><span>层级</span><span>市值</span><span>盈亏</span><span>收益率</span><span>日涨跌</span></div><div id="holdings"></div></div></div></div></section>
@@ -76,7 +76,7 @@ button{font:inherit;cursor:pointer}.app{max-width:1600px;margin:0 auto;padding:1
 <section class="grid2"><div class="panel"><div class="panel-head"><h2>Risk board · 风险矩阵</h2><span id="riskSummary">--</span></div><div class="panel-body list" id="risks"></div></div><div class="panel"><div class="panel-head"><h2>Drawdown & freeze · 回撤与冻结</h2><span id="freezeStatus">--</span></div><div class="panel-body" id="drawdown"></div></div></section>
 <section class="panel" style="margin-bottom:15px"><div class="panel-head"><h2>Market & PnL trend · 分量趋势</h2><span>单一量纲 · 独立小图</span></div><div class="panel-body"><div class="trend-grid" id="trendGrid"></div><details class="chart-table"><summary>打开趋势数据表</summary><div id="trendTable"></div></details></div></section>
 <section class="panel"><div class="panel-head"><h2>Daily review feed · 每日复盘</h2><span id="dailyCount">--</span></div><div class="panel-body daily" id="dailyFeed"></div></section>
-<div class="meta">Anchor v3.3 · 四层占比由统一数据合同生成 · 真实数据只存本地<br>回撤基准、风险状态、冻结状态、操作计数均来自 data_processor.process_all()</div>
+<div class="meta">Anchor v3.5 · 四层占比由统一数据合同生成 · 真实数据只存本地<br>回撤基准、风险状态、冻结状态、操作计数均来自 data_processor.process_all()</div>
 <footer class="footer"><a href="Anchor/08-website/anchor-pro.html" data-anchor-link="08-website/anchor-pro.html">📖 体系总览</a> · <a href="Anchor/05-scripts/anchor_calculator.html" data-anchor-link="05-scripts/anchor_calculator.html">🔢 仓位计算器</a><br>投资有风险，决策需谨慎</footer>
 </div>
 <script>

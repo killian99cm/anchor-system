@@ -290,6 +290,16 @@ def main():
     )
     check("核心测试通过", "ALL TESTS PASSED" in r2.stdout, f"(rc={r2.returncode})")
 
+    # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
+    #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
+    print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")
+    r3 = subprocess.run(
+        f'"{PY}" -m compileall -q "{SCRIPTS}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    check("全部脚本编译通过", r3.returncode == 0, "(含 gitignored 私有脚本；修复后需重跑 smoke)")
+
     print("\n" + "=" * 60)
     print(f"结果: {PASS} 通过 / {FAIL} 失败")
     if FAIL == 0:

@@ -163,7 +163,9 @@ def audit_daily() -> dict:
             break
 
     # DDX 准确率（8/17 审计：分母含假信号数并钳制到 [0,1]，防 0 触发时算出 -200%）
-    ddx_signals = [s for s in signals if "DDX" in s.get("name", "")]
+    # 8/17 补充：只统计近 30 天信号（与 weekly 语义一致，防历史累计失真）
+    cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+    ddx_signals = [s for s in signals if "DDX" in s.get("name", "") and s.get("date", "") >= cutoff]
     false_count = sum(1 for s in ddx_signals if s["action"] == "false_alarm")
     trigger_count = sum(1 for s in ddx_signals if s["action"] == "triggered")
     total_ddx = trigger_count + false_count

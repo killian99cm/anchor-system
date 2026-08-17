@@ -77,7 +77,7 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="section reveal" id="noise"><div class="section-head"><div><div class="section-kicker">Noise audit</div><h2>市场噪声，<em>量化审计</em></h2></div><p>信号是否有效，用数据说话：每次触发都被记录、归因、评分——假信号直接变成规则优化的素材，而不是"运气不好"。</p></div><div class="section-rule"></div><div class="noise-grid"><div class="noise-card"><div class="noise-index">01</div><h3>DDX 准确率</h3><p>主力资金信号触发后跟踪真实命中率；不准确就调整阈值，直到数据证明有效。</p></div><div class="noise-card"><div class="noise-index">02</div><h3>虚惊指数</h3><p>记录"差一点触发"的盘中干扰，衡量规则被市场噪声晃动的频率。</p></div><div class="noise-card"><div class="noise-index">03</div><h3>每周评分卡</h3><p>准确率 / 虚惊 / 盘中振幅 / 操作时机四项加权评分，高噪声一目了然。</p></div><div class="noise-card"><div class="noise-index">04</div><h3>三问优化</h3><p>能阻止哪段错误？与现有规则冲突吗？一个月内能验证吗？三问全过才吸收。</p></div></div></section>
 <section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="timeline" id="evoStrip"></div><div class="flow"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
 <section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div><div class="data-item"><strong>06 · 实时同步</strong>保存即重建</div></div></section>
-<section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
+<section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html" data-link-pages="index.html" data-link-local="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
 </main>
 <div class="chart-tooltip" id="chartTooltip"></div>
 <noscript><div class="noscript-note">本页面的数据面板需要 JavaScript 渲染；请启用 JS 查看完整内容。</div></noscript>
@@ -690,6 +690,12 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   total.addEventListener("input",R);sl.addEventListener("change",R);
   document.querySelectorAll(".calc-tab").forEach(function(t){t.addEventListener("click",function(){document.querySelectorAll(".calc-tab").forEach(function(x){x.classList.remove("active")});t.classList.add("active");R()})});
   R();
+})();
+
+(function(){
+  // 页面互链路径自适应：本地（08-website/06-dashboard 子目录）用相对路径，GitHub Pages（站点根）用根级路径
+  function isLocal(){var h=(location.href||"").replace(/\\/g,"/");return /\/08-website\/|\/06-dashboard\//.test(h)}
+  document.querySelectorAll("[data-link-pages]").forEach(function(a){a.href=isLocal()?a.getAttribute("data-link-local"):a.getAttribute("data-link-pages")});
 })();
 </script>
 </body>

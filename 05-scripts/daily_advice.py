@@ -49,12 +49,15 @@ ASTRBOT_USER = "astrbot"
 # 密码从环境变量读取（setx ASTRBOT_PASSWORD 已永久配置，不写死在源码）
 ASTRBOT_PASSWORD = os.environ.get("ASTRBOT_PASSWORD", "")
 # 用户微信会话（weixin_oc 管道；MessageType.value 是 FriendMessage 驼峰格式）
-WECHAT_SESSION = "REDACTED_WECHAT_SESSION"
+# ⚠️ 凭据安全（8/17 审计）：会话 ID 不得写死源码/公开文档，改从环境变量读取
+# 设置：setx WECHAT_SESSION "weixin_personal_xxx:FriendMessage:xxx@im.wechat"（用户级永久）
+WECHAT_SESSION = os.environ.get("WECHAT_SESSION", "")
 
-# 妙想 API 查询清单（合并查询减少调用次数，每天共 4 次）
+# 妙想 API 查询清单（合并查询减少调用次数，每天共 5 次）
 MX_QUERIES = [
     ("index", "上证指数 科创50指数 最新收盘价 涨跌幅"),
     ("sector", "半导体板块 创新药板块 证券板块 今日涨跌幅"),
+    ("ddx", "半导体板块 今日 DDX 超大单净流入"),  # 8/17 审计：补仓窗口直接进推送
     ("premium", "纳指ETF 溢价率"),
     ("etf", "515180 中证红利ETF 国泰黄金ETF 最新价格 涨跌幅"),
 ]
@@ -159,6 +162,25 @@ def fetch_quotes() -> dict:
 
 # ---------- 3. 规则信号 ----------
 
+def ddx_ledger_streak() -> tuple[int, str]:
+    """读取噪声台账（noise/ddx_daily.json）最近连续为正的天数（8/17 审计新增）。
+    台账由每日 21:30 复盘用 noise_audit.py --log-ddx 记录；此处用于 14:30 推送的补仓窗口提示。"""
+    try:
+        path = Path(__file__).parent.parent / "06-dashboard" / "noise" / "ddx_daily.json"
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return 0, ""
+    data = sorted(data, key=lambda x: str(x.get("date", "")))
+    streak, last_val = 0, ""
+    for d in reversed(data):
+        if d.get("direction") == "positive":
+            streak += 1
+            last_val = str(d.get("value", ""))
+        else:
+            break
+    return streak, last_val
+
+
 def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
     """从状态合同 + 实时行情生成信号清单（全部基于真实数据）"""
     sigs: list[str] = []
@@ -207,6 +229,23 @@ def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
             sigs.append(decision)
         else:
             sigs.append(f"🟡 {a.get('action') or '止损确认'}：板块行情未取到，以人工确认为准")
+    # 半导体 DDX 补仓窗口（8/17 审计：台账连击 + 今日实时 DDX 直接进推送，无需翻复盘）
+    streak, last_val = ddx_ledger_streak()
+    realtime_ddx = None
+    for r in quotes.get("ddx", []):
+        if "DDX" in r["name"] and "半导体" in (r.get("entity") or ""):
+            try:
+                realtime_ddx = float(r["value"])
+            except ValueError:
+                pass
+            break
+    ddx_txt = f"（今日实时 {realtime_ddx:+.3f}）" if realtime_ddx is not None else ""
+    if streak >= 2:
+        sigs.append(f"🔬 半导体 DDX 台账连续 {streak} 日为正{ddx_txt} → 补仓条件已满足，按规则执行并记录台账")
+    elif streak == 1:
+        sigs.append(f"🔬 半导体 DDX 台账第 {streak} 日为正{ddx_txt} → 明日再确认 1 日即满足补仓条件")
+    else:
+        sigs.append(f"🔬 半导体 DDX 未连正{ddx_txt} → 补仓继续等待（连 2 日为正才动手）")
     # 纳指溢价率（实时）
     for r in quotes.get("premium", []):
         if "折溢价率" in r["name"] or "溢价" in r["name"]:

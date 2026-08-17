@@ -72,27 +72,47 @@ DEFAULT_MONTHLY_OPS = 4
 TIME_STOP_DEADLINE = date(2026, 8, 20)
 
 
+def _in_time_stop_window(d, ref):
+    """日期窗口守卫（8/17 审计）：时间止损截止日只接受 参考日-7天 ~ 参考日+60天 内的日期，
+    防止 pending_actions 文本中的任意日期（如 '8/31归因'、历史日期）误当截止日。"""
+    return ref - timedelta(days=7) <= d <= ref + timedelta(days=60)
+
+
 def time_stop_deadline_from_data(data):
     """从 pending_actions 的时间止损条目解析截止日（'8/20' / '2026-08-20'）。
-    只扫描含"时间止损/创新药"的条目，取其中最晚日期（如 '7/21试探→8/20满30天' 取 8/20）。"""
+    语义（8/17 审计加固）：时间止损 = 建仓日 + 30 天。
+    解析规则：条目内最早日期视为建仓日；文本中的日期若与 建仓日+30 相差 ≤7 天
+    且落在参考日窗口内，才作为截止日候选；否则忽略（防 '8/31归因' 等杂项日期劫持）。"""
     ref = data_reference_date(data)
     candidates = [TIME_STOP_DEADLINE]
     for item in data.get('pending_actions', []):
         txt = str(item)
         if '时间止损' not in txt and '创新药' not in txt:
             continue
+        dates = []
         for m in re.finditer(r'(\d{4})-(\d{1,2})-(\d{1,2})', txt):
             try:
-                candidates.append(date(int(m.group(1)), int(m.group(2)), int(m.group(3))))
+                dates.append(date(int(m.group(1)), int(m.group(2)), int(m.group(3))))
             except ValueError:
                 pass
         for m in re.finditer(r'(\d{1,2})/(\d{1,2})', txt):
             try:
-                d = date(ref.year, int(m.group(1)), int(m.group(2)))
+                dates.append(date(ref.year, int(m.group(1)), int(m.group(2))))
             except ValueError:
-                continue
-            if d >= ref:
+                pass
+        if not dates:
+            continue
+        entry = min(dates)  # 建仓日（最早日期）
+        for d in dates:
+            # 与建仓日相差 ~30 天（±7 容差）且落在窗口内 → 截止日候选
+            if abs((d - entry).days - 30) <= 7 and _in_time_stop_window(d, ref):
                 candidates.append(d)
+        # 兜底：建仓日+30 可直接作为候选，但建仓日须合理（参考日前 5~60 天，
+        # 太近说明是行情/备注日期而非建仓日，避免 8/14→9/13 这类误判）
+        if ref - timedelta(days=60) <= entry <= ref - timedelta(days=5):
+            fallback = entry + timedelta(days=30)
+            if _in_time_stop_window(fallback, ref):
+                candidates.append(fallback)
     return max(candidates)
 
 

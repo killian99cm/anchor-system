@@ -250,7 +250,7 @@ def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
     for r in quotes.get("premium", []):
         if "折溢价率" in r["name"] or "溢价" in r["name"]:
             try:
-                pct = float(r["value"])
+                pct = float(str(r["value"]).rstrip("%").replace("+", ""))  # 8/17 审计：'1.5%' 不再抛异常
             except ValueError:
                 continue
             tag = f"🔴 溢价率 {pct}% ≥3%，纳指建仓继续冻结" if pct > 3 else \
@@ -262,8 +262,8 @@ def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
         sigs.append(f"🔴 回撤 {dd.get('dd_pct')}% 触及红线：{dd.get('action')}")
     elif dd.get("level") == "amber":
         sigs.append(f"🟡 回撤 {dd.get('dd_pct')}% 预警：{dd.get('action')}")
-    elif dd.get("cushion") is not None:
-        sigs.append(f"🟢 回撤安全，距 -5% 线 {dd.get('cushion'):,.0f} 元")
+    elif dd.get("safe_cushion") is not None:  # 8/17 审计：契约键为 safe_cushion（原 cushion 永不存在→信号静默丢失）
+        sigs.append(f"🟢 回撤安全，距 -5% 线 {dd.get('safe_cushion'):,.0f} 元")
     # 板块异动（|涨跌| ≥2%）
     for r in quotes.get("sector", []):
         if "涨跌" not in r["name"]:
@@ -278,7 +278,8 @@ def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
     # 冻结状态
     fz = state.get("freeze_state") or {}
     if fz.get("frozen"):
-        sigs.append(f"🧊 冻结状态：{fz.get('reason', '见知识库')}（{fz.get('remaining', '')}）")
+        reasons = fz.get("reasons") or ["见知识库"]  # 8/17 审计：契约键为 reasons（list），原 reason 永不存在
+        sigs.append(f"🧊 冻结状态：{reasons[0]}")
     return sigs
 
 

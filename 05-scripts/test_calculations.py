@@ -16,7 +16,7 @@ from datetime import date
 # data_processor.py 是本文件所在目录
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
-from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot
+from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot, time_stop_deadline_from_data
 
 # 测试辅助函数（data_processor 未提供，纯测试用）
 def calc_layer_ratios(bedrock_mv, core_mv, sat_mv, cash_mv):
@@ -207,13 +207,61 @@ class TestMonthlyOps(unittest.TestCase):
             self.skipTest("update_date 缺失，无法确定参考月")
         year, month = int(m.group(1)), int(m.group(2))
         count, viol = monthly_ops_summary(data, year=year, month=month)
-        prefixes = (f"{year}-{month:02d}", f"{month}/", f"{month:02d}/")
+        # 8/17 审计：改用与实现一致的严格日期解析（原 startswith 前缀为同义反复，发现不了误计）
+        from data_processor import _txn_date_in_month
         manual = sum(1 for t in data.get('transactions', [])
-                     if str(t.get('date', '')).startswith(prefixes) and is_manual_operation(t))
+                     if _txn_date_in_month(t.get('date'), year, month) and is_manual_operation(t))
         self.assertEqual(count, manual,
                          f"{year}-{month:02d} monthly_ops_summary={count} 但手动交易实际 {manual} 笔")
         self.assertEqual(viol, sum(1 for t in data.get('transactions', [])
                                    if '违规' in str(t.get('note', '')) and str(t.get('date', '')).startswith(prefixes)))
+
+class TestAuditRegression(unittest.TestCase):
+    """8/17 全文件审查回归测试"""
+
+    def test_rate_negative_cost(self):
+        # 成本 <= 0（大幅回血后）→ 返回 0，不再符号反转成 -200% 误触止损
+        self.assertEqual(rate(200, 100), 0)
+        self.assertEqual(rate(1500, 1200), 0)
+        self.assertEqual(rate(100, 100), 0)
+
+    def test_rate_normal_still_works(self):
+        self.assertAlmostEqual(rate(100, 1100), 10.0, places=1)
+        self.assertAlmostEqual(rate(-100, 900), -10.0, places=1)
+
+    def test_ops_no_miscount_text_date(self):
+        # 非标准日期文本（'8月31日归因'）不得误计；'8/31归因'（以合法 8/31 开头）计为 8 月正确
+        data = {"transactions": [
+            {"date": "8月31日归因于月度复盘", "op": "加仓", "amount": 300},
+            {"date": "2026-08-07", "op": "加仓", "amount": 100},
+            {"date": "8/31归因", "op": "加仓", "amount": 50},
+        ]}
+        count, _ = monthly_ops_summary(data, year=2026, month=8)
+        self.assertEqual(count, 2)
+
+    def test_ops_supports_iso_slash_format(self):
+        data = {"transactions": [{"date": "2026/8/7", "op": "加仓", "amount": 100}]}
+        count, _ = monthly_ops_summary(data, year=2026, month=8)
+        self.assertEqual(count, 1)
+        count7, _ = monthly_ops_summary(data, year=2026, month=7)
+        self.assertEqual(count7, 0)
+
+    def test_time_stop_deadline_no_hijack(self):
+        # 文本出现 8/31 归因等杂项日期时，截止日仍为 8/20（建仓日 7/21 + 30 天）
+        data = {"update_time": "2026-08-17", "pending_actions": [
+            {"name": "7/21试探→8/20满30天评估 8/31月度归因", "action": "创新药时间止损"}]}
+        self.assertEqual(time_stop_deadline_from_data(data), date(2026, 8, 20))
+        data2 = {"update_time": "2026-08-17", "pending_actions": [
+            {"name": "8/14港股暴跌→8/20评估倒计时6天", "action": "创新药时间止损"}]}
+        self.assertEqual(time_stop_deadline_from_data(data2), date(2026, 8, 20))
+
+    def test_drawdown_exact_boundaries(self):
+        # -5%/-10%/-15% 精确线上值必须落入对应等级
+        peak = 35655.0
+        self.assertEqual(drawdown_status(peak * 0.95, peak)['level'], 'amber')
+        self.assertEqual(drawdown_status(peak * 0.90, peak)['level'], 'red')
+        self.assertEqual(drawdown_status(peak * 0.85, peak)['level'], 'red')
+        self.assertEqual(drawdown_status(peak * 0.951, peak)['level'], 'safe')
 
 
 class TestRealPortfolioData(unittest.TestCase):

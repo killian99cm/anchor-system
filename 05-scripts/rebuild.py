@@ -138,7 +138,7 @@ function renderTrendCard(root,data,key,label,color,formatter){var card=node("art
 </html>'''
 
 # 转义 `</` 防止 JSON 内容逃逸出 <script> 上下文（数据可能来自外部源）
-html = html.replace("__DATA__", json.dumps(embed, ensure_ascii=False).replace("</", "<\\/"))
+html = html.replace("__DATA__", json.dumps(embed, ensure_ascii=False).replace("</", "<\\/").replace("<!--", "<\\!--"))  # 8/17 审计：防 </script> 与 <!-- 破坏内嵌脚本
 os.makedirs(ANCHOR_DATA, exist_ok=True)
 data_json_dest = os.path.join(ANCHOR_DATA, "portfolio_data.json")
 if os.path.abspath(DATA_PATH) != os.path.abspath(data_json_dest):

@@ -36,10 +36,15 @@ def fc(v):
 
 
 def rate(pnl, mv):
-    """Calculate return rate: pnl / (cost_basis) * 100"""
+    """Calculate return rate: pnl / (cost_basis) * 100
+    8/17 审计：成本 <= 0（pnl >= mv，如大幅回血后成本为负）时返回 0，
+    避免收益率符号反转导致止损线误判（rate(200,100) 原返回 -200% 会误触 -8% 红线）。"""
     if not mv or mv == pnl or mv - pnl == 0:
         return 0
-    return pnl / (mv - pnl) * 100
+    cost = mv - pnl
+    if cost <= 0:
+        return 0
+    return pnl / cost * 100
 
 
 def safe_float(val, default=0):
@@ -514,9 +519,12 @@ def pending_action_priority(item):
 
 
 def normalize_pending_actions(items):
-    """Normalize pending_actions into the compact UI contract used by the dashboard."""
+    """Normalize pending_actions into the compact UI contract used by the dashboard.
+    8/17 审计：非 dict 条目（字符串等脏数据）直接跳过，防止 rebuild 崩溃。"""
     normalized = []
     for item in items or []:
+        if not isinstance(item, dict):
+            continue
         normalized.append({
             'p': pending_action_priority(item),
             't': str(item.get('name') or item.get('t') or item.get('action') or ''),
@@ -539,7 +547,8 @@ def current_ops_period(data, today=None):
         try:
             year = int(year)
             month = int(month)
-            return year, month, f'{month}月'
+            if 1 <= month <= 12 and 2000 <= year <= 2100:  # 8/17 审计：月份/年份合法性校验
+                return year, month, f'{month}月'
         except (ValueError, TypeError):
             pass
 
@@ -590,22 +599,29 @@ def is_manual_operation(t):
     return True
 
 
+def _txn_date_in_month(d, year, month):
+    """交易日期是否属于目标月份（8/17 审计加固）：
+    支持 '2026-08-07' / '2026/8/7' / '8/7' / '8/7 14:49'，且必须是日期开头的严格匹配，
+    防止 '8/31归因' 这类文本被 startswith('8/') 误计。"""
+    d = str(d or '').strip()
+    m = re.match(r'^(\d{4})[\-/](\d{1,2})[\-/](\d{1,2})', d)
+    if m:
+        return int(m.group(1)) == year and int(m.group(2)) == month
+    m = re.match(r'^(\d{1,2})/(\d{1,2})', d)
+    if m:
+        return int(m.group(1)) == month
+    return False
+
+
 def monthly_ops_summary(data, year=None, month=None):
     """Count manual operations for a given month. Returns (count, violation_count).
     Single source of truth — used by rules, risk matrix, and HTML KPI.
-    Handles both '2026-08-07' and '8/7' date formats.
+    Handles '2026-08-07' / '2026/8/7' / '8/7' formats（严格日期开头匹配）。
     定投/出入金（非手动操作）不计入月操作限额。"""
     if year is None or month is None:
         year, month, _ = current_ops_period(data)
     txns = data.get('transactions', [])
-    prefix_iso = f'{int(year):04d}-{int(month):02d}'
-    prefix_short = f'{int(month)}/'
-    prefix_short_z = f'{int(month):02d}/'
-    month_txns = []
-    for t in txns:
-        d = str(t.get('date', ''))
-        if d.startswith(prefix_iso) or d.startswith(prefix_short) or d.startswith(prefix_short_z):
-            month_txns.append(t)
+    month_txns = [t for t in txns if _txn_date_in_month(t.get('date'), year, month)]
     manual_txns = [t for t in month_txns if is_manual_operation(t)]
     violation_count = sum(1 for t in manual_txns if '违规' in str(t.get('note', '')))
     return len(manual_txns), violation_count
@@ -937,7 +953,7 @@ def generate_risk_matrix(data, mkt_note, totals, ops_state=None):
     # 黄金
     gold_h = next((h for h in raw if '黄金' in str(h.get('name', '')) and h.get('mv', 0) > 0), None)
     if gold_h:
-        gold_day_pct = gold_h.get('day_pct', 0) or 0
+        gold_day_pct = safe_float(gold_h.get('day_pct', 0), 0)  # 8/17 审计：防字符串崩溃
         if gold_day_pct > 0.02:
             risks.append({"l": "amber", "n": "黄金短期过热", "d": f"单日+{gold_day_pct*100:.1f}%", "c": "a"})
         else:

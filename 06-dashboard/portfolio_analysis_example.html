@@ -51,29 +51,29 @@ var D={
   "stock_mv": 0,
   "cash_mv": 0,
   "holding_counts": {
-    "active": 4,
-    "total": 4,
-    "fund": 3,
+    "active": 9,
+    "total": 9,
+    "fund": 8,
     "stock": 0,
     "cash": 1,
     "by_layer": {
-      "bedrock": 1,
-      "core": 1,
-      "sat": 1,
+      "bedrock": 4,
+      "core": 2,
+      "sat": 2,
       "cash": 1
     },
     "layers": {
-      "bedrock": 1,
-      "core": 1,
-      "sat": 1,
+      "bedrock": 4,
+      "core": 2,
+      "sat": 2,
       "cash": 1
     },
     "by_type": {
-      "fund": 3,
+      "fund": 8,
       "stock": 0,
       "cash": 1
     },
-    "active_label": "3只基金 + 1项现金"
+    "active_label": "8只基金 + 1项现金"
   },
   "layers": [
     {
@@ -84,7 +84,7 @@ var D={
       "target": 45,
       "mv": 0,
       "pct": 0,
-      "count": 1
+      "count": 4
     },
     {
       "key": "core",
@@ -94,7 +94,7 @@ var D={
       "target": 20,
       "mv": 0,
       "pct": 0,
-      "count": 1
+      "count": 2
     },
     {
       "key": "sat",
@@ -104,7 +104,7 @@ var D={
       "target": 20,
       "mv": 0,
       "pct": 0,
-      "count": 1
+      "count": 2
     },
     {
       "key": "cash",
@@ -220,7 +220,7 @@ var D={
       "l": "bed",
       "icon": "🛡️",
       "name": "压舱石层 · 45%",
-      "assets": "示例压舱基金A",
+      "assets": "示例债券基金A + 示例债券基金B + 示例红利ETF + 示例黄金ETF",
       "detail": "低波动资产 · 年操作 0-1 次 · 稳定组合地基",
       "rule": "长期持有",
       "vol": "波动 ~2%",
@@ -231,7 +231,7 @@ var D={
       "l": "core",
       "icon": "🚀",
       "name": "核心增长层 · 20%",
-      "assets": "示例核心基金A",
+      "assets": "示例纳斯达克100 + 示例混合基金",
       "detail": "宽基 / 核心资产 · 定投为主 · 估值约束",
       "rule": "定投为主",
       "vol": "波动 ~8%",
@@ -242,7 +242,7 @@ var D={
       "l": "sat",
       "icon": "🔥",
       "name": "卫星进攻层 · 20%",
-      "assets": "示例行业ETFA",
+      "assets": "示例行业ETF A + 示例行业ETF B",
       "detail": "高弹性仓位 · 单只限额 · 快速纠错",
       "rule": "-8% 止损",
       "vol": "波动 ~12%",
@@ -264,7 +264,25 @@ var D={
   "holdings": {
     "bedrock": [
       {
-        "n": "示例压舱基金A",
+        "n": "示例债券基金A",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例债券基金B",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例红利ETF",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例黄金ETF",
         "v": 0,
         "c": "g",
         "type": "fund"
@@ -272,7 +290,13 @@ var D={
     ],
     "core": [
       {
-        "n": "示例核心基金A",
+        "n": "示例纳斯达克100",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例混合基金",
         "v": 0,
         "c": "g",
         "type": "fund"
@@ -280,7 +304,13 @@ var D={
     ],
     "sat": [
       {
-        "n": "示例行业ETFA",
+        "n": "示例行业ETF A",
+        "v": 0,
+        "c": "g",
+        "type": "fund"
+      },
+      {
+        "n": "示例行业ETF B",
         "v": 0,
         "c": "g",
         "type": "fund"

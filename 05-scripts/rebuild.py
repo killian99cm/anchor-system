@@ -77,7 +77,7 @@ button{font:inherit;cursor:pointer}.app{max-width:1600px;margin:0 auto;padding:1
 <section class="panel" style="margin-bottom:15px"><div class="panel-head"><h2>Market & PnL trend · 分量趋势</h2><span>单一量纲 · 独立小图</span></div><div class="panel-body"><div class="trend-grid" id="trendGrid"></div><details class="chart-table"><summary>打开趋势数据表</summary><div id="trendTable"></div></details></div></section>
 <section class="panel"><div class="panel-head"><h2>Daily review feed · 每日复盘</h2><span id="dailyCount">--</span></div><div class="panel-body daily" id="dailyFeed"></div></section>
 <div class="meta">Anchor v3.3 · 四层占比由统一数据合同生成 · 真实数据只存本地<br>回撤基准、风险状态、冻结状态、操作计数均来自 data_processor.process_all()</div>
-<footer class="footer"><a href="Anchor/08-website/anchor-pro.html">📖 体系总览</a> · <a href="Anchor/05-scripts/anchor_calculator.html">🔢 仓位计算器</a><br>投资有风险，决策需谨慎</footer>
+<footer class="footer"><a href="Anchor/08-website/anchor-pro.html" data-anchor-link="08-website/anchor-pro.html">📖 体系总览</a> · <a href="Anchor/05-scripts/anchor_calculator.html" data-anchor-link="05-scripts/anchor_calculator.html">🔢 仓位计算器</a><br>投资有风险，决策需谨慎</footer>
 </div>
 <script>
 var D=__DATA__;
@@ -121,6 +121,18 @@ function renderTrendCard(root,data,key,label,color,formatter){var card=node("art
 (function(){var root=document.getElementById("trendGrid"),data=D.chart||[];renderTrendCard(root,data,"sh","上证指数","#fab219",function(v){return Number(v||0).toFixed(0)});renderTrendCard(root,data,"st","科创50","#3987e5",function(v){return Number(v||0).toFixed(0)});renderTrendCard(root,data,"pnl","日盈亏","#e66767",function(v){return (Number(v||0)>=0?"+":"")+Number(v||0).toFixed(0)})})(); /* 红盈绿亏 */
 
 (function(){var root=document.getElementById("dailyFeed"),ds=D.ds||[];document.getElementById("dailyCount").textContent=ds.length+" 条";if(!ds.length){add(root,"div","empty","暂无每日总结");return}ds.forEach(function(d){var row=node("div","daily-row");add(row,"div","daily-date",(d.dt||"")+" "+(d.dy||""));add(row,"div","daily-market","上证 "+(d.sh||"--")+" ("+(d.sc||"--")+") · 科创 "+(d.kc||"--")+" ("+(d.kcc||"--")+") · PnL "+(d.pnl||"--"));var note=add(row,"div","daily-note",d.note||"");if(d.ops){add(note,"b",null,"操作："+d.ops)}root.appendChild(row)})})();
+
+(function(){
+  // 页脚链接路径修正：看板同时存在于 桌面 与 Anchor/06-dashboard/ 两个位置
+  // 06-dashboard 副本 → 用 ../ 上跳一级；桌面副本 → 用 Anchor/ 子目录
+  function anchorBase(){
+    var h=(window.location.href||"").replace(/\\/g,"/");
+    return h.indexOf("/06-dashboard/")>=0?"../":"Anchor/";
+  }
+  document.querySelectorAll("[data-anchor-link]").forEach(function(a){
+    a.href=anchorBase()+a.getAttribute("data-anchor-link");
+  });
+})();
 </script>
 </body>
 </html>'''

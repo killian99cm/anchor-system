@@ -97,6 +97,19 @@ def load_public_data():
         data = json.load(f)
     if not data.get("_example"):
         raise SystemExit(f"[ERROR] {PUBLIC_DATA_PATH} 必须带 _example=true，避免误用真实持仓。")
+    # 8/17 审计（M1 精准版）：示例输入必须是"结构空值"——任何持仓 mv/pnl/cumul 非零即拒绝，
+    # 防止误把真实市值带入公开页（比逐数字 token 扫描精准，避免小数字与示例图表值误报）
+    for section in ("holdings_summary", "stock_holdings"):
+        for item in data.get(section, []):
+            for key in ("mv", "pnl", "cumul"):
+                try:
+                    val = float(item.get(key) or 0)
+                except (TypeError, ValueError):
+                    val = 0.0
+                if abs(val) > 0:
+                    raise SystemExit(
+                        f"[ERROR] {section} 条目「{item.get('name', '?')}」的 {key} 非零 "
+                        f"({val})——示例文件必须全零，拒绝生成公开页")
     return data
 
 

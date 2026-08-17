@@ -162,11 +162,13 @@ def audit_daily() -> dict:
         else:
             break
 
-    # DDX 准确率
+    # DDX 准确率（8/17 审计：分母含假信号数并钳制到 [0,1]，防 0 触发时算出 -200%）
     ddx_signals = [s for s in signals if "DDX" in s.get("name", "")]
     false_count = sum(1 for s in ddx_signals if s["action"] == "false_alarm")
     trigger_count = sum(1 for s in ddx_signals if s["action"] == "triggered")
-    ddx_accuracy = (trigger_count - false_count) / max(trigger_count, 1)
+    total_ddx = trigger_count + false_count
+    ddx_accuracy = (trigger_count - false_count) / total_ddx if total_ddx else 1.0
+    ddx_accuracy = max(0.0, min(1.0, ddx_accuracy))
 
     # 今日虚惊
     today_near_misses = [n for n in near_misses if n["date"] == today]
@@ -211,7 +213,9 @@ def audit_weekly() -> dict:
                    if "DDX" in s.get("name", "") and s["date"] >= week_start]
     false_count = sum(1 for s in ddx_signals if s["action"] == "false_alarm")
     trigger_count = sum(1 for s in ddx_signals if s["action"] == "triggered")
-    ddx_accuracy = (trigger_count - false_count) / max(trigger_count, 1)
+    total_ddx = trigger_count + false_count
+    ddx_accuracy = (trigger_count - false_count) / total_ddx if total_ddx else 1.0
+    ddx_accuracy = max(0.0, min(1.0, ddx_accuracy))
 
     # 虚惊指数
     week_near_misses = [n for n in near_misses if n["date"] >= week_start]
@@ -231,9 +235,10 @@ def audit_weekly() -> dict:
     else:
         swing_score, swing_val = 0, f"{avg_ratio:.1f}x"
 
-    # 操作时机偏差（真实数据）：补仓后次日涨跌，跌越多偏差越大
+    # 操作时机偏差（真实数据）：只统计次日下跌幅度（买对了不罚，8/17 审计）
     week_timings = [t for t in timings if t["date"] >= week_start]
-    avg_timing = (sum(abs(t["next_day_pct"]) for t in week_timings) / len(week_timings)) if week_timings else None
+    bad_timings = [abs(t["next_day_pct"]) for t in week_timings if t["next_day_pct"] < 0]
+    avg_timing = (sum(bad_timings) / len(bad_timings)) if bad_timings else (0.0 if week_timings else None)
     if avg_timing is None:
         timing_score, timing_val = 15, "无数据"
     elif avg_timing <= 1:

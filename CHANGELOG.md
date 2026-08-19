@@ -5,6 +5,25 @@
 
 ---
 
+## v3.5.5 — 2026-08-19
+
+### 修复
+- 🔴 **回撤安全垫口径修正（净值口径）**：8/19 深度复盘发现看板「距 -5% 线安全垫 ¥10,145」被**贷款残留虚增 3.3 倍**
+  - **根因**：`compute_drawdown_state` 用 `totals['total']`（账户口径 44,017，余额宝含贷款残留 7,023.77）对比 peak_assets 35,655 → dd_pct 假新高 +23.5%、安全垫虚高
+  - **修复**：JSON `_meta.liabilities` 记录贷款结构（total 23,000 / repaid_from_cash 15,976.23 / in_cash 7,023.77）；引擎新增 `liabilities_in_cash()`，回撤/安全垫改用**净值口径** `net_assets = total_assets - liabilities.in_cash`
+  - **修复后**：净值 ¥36,993 → dd_pct **+3.75%（round +3.8%）**、距 -5% 线（¥33,872）安全垫 **¥3,121**（原虚高 ¥10,145）。一次像样回调即触发预警，口径与真实风险一致
+  - `drawdown_state` 输出新增 `total_assets` / `net_assets` / `liabilities_in_cash` 字段；四层占比保持账户口径，现金层贷款残留由副标题标注
+
+### 变更
+- 🔧 **看板显示净值口径**：Total assets KPI 副标题加「自有 ¥36,993」；Drawdown KPI 副标题加「净值 ¥36,993」；回撤区新增「净值口径」行（自有净值+扣贷款）；安全垫规则文案改为「自有净值距 -5% 线…已扣贷款残留 ¥7,024」
+- 🔧 **drawdown_alert.py**：文本输出加「自有净值」行，`--json` 输出新增 `net_assets` / `liabilities_in_cash` 字段
+- 🧪 **测试**：test_calculations 新增 5 项净值口径用例（liabilities 解析、net_assets/dd_pct/cushion 净值计算、与 drawdown_status 等价、无贷款兼容），`test_drawdown_check` 改用引擎净值口径；46 项全通过
+
+### 修改文件
+portfolio_data.json（system_version v3.5.5 + _meta.liabilities）| 05-scripts/data_processor.py（liabilities_in_cash + compute_drawdown_state 净值口径 + 规则文案）| 05-scripts/rebuild.py（KPI/回撤区净值标注）| 05-scripts/drawdown_alert.py（净值输出）| 05-scripts/test_calculations.py（净值口径用例）| CHANGELOG.md
+
+---
+
 ## v3.5.4 — 2026-08-18
 
 ### 新增

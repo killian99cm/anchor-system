@@ -49,10 +49,14 @@ def main():
     action = state.get('action')
     lines = state.get('lines', {})
     cushion = state.get('safe_cushion', 0)
+    net_assets = state.get('net_assets', total)
+    liabilities = state.get('liabilities_in_cash', 0)
 
     if '--json' in sys.argv:
         out = {
             "total": round(total, 2),
+            "net_assets": round(net_assets, 2),
+            "liabilities_in_cash": round(liabilities, 2),
             "peak": round(peak, 2),
             "dd_pct": round(dd_pct, 2),
             "level": level,
@@ -67,6 +71,7 @@ def main():
         print("Anchor 回撤预警")
         print("=" * 50)
         print(f"  当前总资产: ¥{total:,.0f}")
+        print(f"  自有净值:   ¥{net_assets:,.0f}（回撤口径，扣贷款残留 ¥{liabilities:,.0f}）")
         print(f"  基准(peak): ¥{peak:,.0f}  {peak_note}")
         print(f"  回撤幅度:   {sign}{dd_pct:.2f}%")
         print("-" * 50)

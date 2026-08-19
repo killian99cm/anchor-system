@@ -137,6 +137,16 @@ def get_peak_assets(data):
     return peak
 
 
+def liabilities_in_cash(data):
+    """Return the loan principal still sitting in cash (余额宝残留).
+
+    净值口径：自有净值 = total_assets - liabilities.in_cash。
+    贷款到账后未转出部分混在余额宝，会虚增回撤基准对照的总资产。
+    v3.5.5：回撤/安全垫按净值计算，避免贷款残留虚高安全垫。
+    """
+    return safe_float(data.get('_meta', {}).get('liabilities', {}).get('in_cash', 0), 0)
+
+
 def drawdown_status(total, peak):
     """Return explicit drawdown status with signed precedence."""
     if peak <= 0:
@@ -160,16 +170,29 @@ def drawdown_status(total, peak):
 
 
 def compute_drawdown_state(data, totals):
-    """Return normalized drawdown state using portfolio data."""
+    """Return normalized drawdown state using portfolio data.
+
+    v3.5.5 净值口径：回撤/安全垫以自有净值计算
+    （total_assets 扣减账户内贷款残留 liabilities.in_cash），
+    防止贷款虚增总资产导致安全垫被高估 3 倍以上。
+    total_assets = 账户口径（含贷款残留，四层占比仍用它）；
+    net_assets   = 净值口径（回撤/安全垫用它）。
+    """
     peak = get_peak_assets(data)
     peak_note = data.get('_meta', {}).get('peak_note', '')
-    status = drawdown_status(totals['total'], peak)
+    total_assets = safe_float(totals['total'], 0)
+    liabilities = liabilities_in_cash(data)
+    net_assets = total_assets - liabilities
+    status = drawdown_status(net_assets, peak)
     triggered_line = status['line']
     if status['level'] == 'safe' and status['dd_pct'] >= 0:
         triggered_line = None
     return {
         'peak_assets': peak,
         'peak_note': peak_note,
+        'total_assets': round(total_assets, 2),
+        'net_assets': round(net_assets, 2),
+        'liabilities_in_cash': round(liabilities, 2),
         'dd_pct': round(status['dd_pct'], 1),
         'dd_level': status['level'],
         'safe_cushion': round(status['cushion'], 2),
@@ -890,7 +913,7 @@ def generate_rules(sat_holdings, data, mkt, totals, drawdown_state=None, ops_sta
     elif dd_pct <= -5:
         rules.append({"lv": "ra", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -5% 线！卫星仓位减半"})
     else:
-        rules.append({"lv": "rg", "t": f"总资产距 -5% 回撤线 ¥{drawdown_state['lines']['minus5']:,.0f} 还有 ¥{safe_cushion:,.0f} 安全垫"})
+        rules.append({"lv": "rg", "t": f"自有净值距 -5% 回撤线 ¥{drawdown_state['lines']['minus5']:,.0f} 还有 ¥{safe_cushion:,.0f} 安全垫（已扣贷款残留 ¥{drawdown_state['liabilities_in_cash']:,.0f}）"})
 
     # 操作计数 (from unified helper)
     violations = ops_state.get('violations', 0)

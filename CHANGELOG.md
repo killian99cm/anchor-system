@@ -22,6 +22,10 @@
 ### 修改文件
 portfolio_data.json（system_version v3.5.5 + _meta.liabilities）| 05-scripts/data_processor.py（liabilities_in_cash + compute_drawdown_state 净值口径 + 规则文案）| 05-scripts/rebuild.py（KPI/回撤区净值标注）| 05-scripts/drawdown_alert.py（净值输出）| 05-scripts/test_calculations.py（净值口径用例）| CHANGELOG.md
 
+### 数据（8/19，决策记录，不 bump 版本）
+- 📝 **贷款资金配置方案**：贷款 ¥28,619（余额宝 7,023.77 + 银行卡 21,595）用户确认**债券垫 20%**方案——立即建仓 ¥6,000（创新药 +3,000 + 纳指 +3,000）＋ 债券垫 ¥5,700（中银稳健增利）＋ 右侧子弹 ¥12,300（时机 A 站稳3,900→6,000 / B DDX连正→3,800 / C 跌至3,741→2,500）＋ 机动 ¥4,619；目标年化 10-13%、胜率 70%+、波动 5-8%
+- 📄 文档：`04-reviews/special/2026-08-19-贷款配置方案.md`（新增）｜ pending_actions 贷款项已更新为执行中（银行卡 21,595 需先转入余额宝）
+
 ---
 
 ## v3.5.4 — 2026-08-18

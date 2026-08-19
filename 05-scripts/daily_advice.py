@@ -219,8 +219,11 @@ def build_signals(data: dict, state: dict, quotes: dict) -> list[str]:
             except ValueError:
                 continue
             if pct <= -threshold:
+                # 8/19 修复：只拼 action（触发动作，稳定），不拼 name+action 拼接全文
+                # 原 text[:36] 会把「止损解除」等过期状态文案拼进决策信号，造成自相矛盾
+                act_txt = (a.get("action") or "").strip().replace("\n", " ")[:40] or "按执行预案"
                 decision = (f"🔴【执行】{sector_kw or '相关'}板块 {r['value']} 跌破 {threshold:.1f}% "
-                            f"→ 按规则执行止损一半（{text[:36]}…）")
+                            f"→ 按规则执行止损一半（{act_txt}…）")
             else:
                 decision = (f"🟢【延期】{sector_kw or '相关'}板块 {r['value']} 未跌破 {threshold:.1f}% "
                             f"→ 止损延期一天，明日 14:30 再确认")

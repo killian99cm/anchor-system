@@ -24,8 +24,13 @@
 - 🚨 **半导体 -7.54% 暴跌二次触发 -8% 止损**（8/19 盘中报告）：估算浮亏 -11.56%，上证 3,886 失守 3900、科创50 -7.24%；8/20 14:30 缓冲确认（跌>0.5% 执行止损一半）+ 创新药满 30 天评估双事件
 - 📄 盘中研究报告：`04-reviews/daily/2026-08-19-盘中研究报告.md`（新增）
 
+### 修复（8/19）
+- 🔧 **14:30 推送连续失败（WinError 10061）**：根因= Docker Desktop 未启动 → AstrBot 容器退出（8/12 起）→ 6185 端口无服务 → 每日推送登录被拒。已启动 Docker + `docker start astrbot`，API 恢复（HTTP 200）
+- 🔧 **半导体止损信号自相矛盾**：portfolio_data.json 的 pending_action 残留 8/17「止损解除」旧文案（8/19 二次触发漏更新）→ 已更新为「8/19 二次触发，8/20 14:30 缓冲确认」；daily_advice.py 止损信号改为只拼 action（不拼 name+action 全文），防止过期状态文案污染决策信号
+- 📌 确认：DDX 补仓规则为「连 2 日为正」（v3.3 手册 2.6 节），代码正确，无需改动
+
 ### 修改文件
-portfolio_data.json（8/19 贷款数据 + system_version）| 04-reviews/daily/2026-08-19-盘中研究报告.md（新增）| 00-system/会话检查点.md | CLAUDE.md | CHANGELOG.md
+portfolio_data.json（8/19 贷款 + 半导体止损状态 + system_version）| 05-scripts/daily_advice.py | 04-reviews/daily/2026-08-19-盘中研究报告.md（新增）| 00-system/会话检查点.md | CLAUDE.md | CHANGELOG.md
 
 ---
 

@@ -16,7 +16,7 @@ from datetime import date
 # data_processor.py 是本文件所在目录
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
-from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot, time_stop_deadline_from_data
+from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot, time_stop_deadline_from_data, compute_drawdown_state, liabilities_in_cash
 
 # 测试辅助函数（data_processor 未提供，纯测试用）
 def calc_layer_ratios(bedrock_mv, core_mv, sat_mv, cash_mv):
@@ -144,6 +144,61 @@ class TestDrawdownCheck(unittest.TestCase):
         level, pct = check_drawdown_level(29000, self.PEAK)
         self.assertEqual(level, "critical-15")
         self.assertLessEqual(pct, -15)
+
+
+class TestNetAssetsDrawdown(unittest.TestCase):
+    """v3.5.5 净值口径：回撤/安全垫须扣减账户内贷款残留，防止贷款虚增安全垫"""
+
+    PEAK = 35655
+
+    def _data(self, total_assets=44016.90, in_cash=7023.77):
+        """构造 8/19 真实场景数据：含贷款残留的账户 vs 自有净值"""
+        return {
+            'total_assets': total_assets,
+            '_meta': {
+                'peak_assets': self.PEAK,
+                'liabilities': {
+                    'total': 23000,
+                    'repaid_from_cash': 15976.23,
+                    'in_cash': in_cash,
+                },
+            },
+        }
+
+    def test_liabilities_in_cash_parsed(self):
+        self.assertAlmostEqual(liabilities_in_cash(self._data()), 7023.77, places=2)
+        # 缺失 liabilities 时兜底为 0（不影响无贷款的历史数据）
+        self.assertEqual(liabilities_in_cash({'_meta': {}}), 0)
+        self.assertEqual(liabilities_in_cash({'total_assets': 100}), 0)
+
+    def test_net_assets_and_dd_use_net(self):
+        dd = compute_drawdown_state(self._data(), {'total': 44016.90})
+        # net_assets = 账户口径 - 贷款残留
+        self.assertAlmostEqual(dd['net_assets'], 36993.13, places=2)
+        self.assertEqual(dd['total_assets'], 44016.90)
+        self.assertEqual(dd['liabilities_in_cash'], 7023.77)
+        # 回撤必须用净值：旧口径 +23.5%（假新高），净值口径 +3.8%（round 1 位）
+        expected_pct = round((36993.13 - self.PEAK) / self.PEAK * 100, 1)
+        self.assertEqual(dd['dd_pct'], expected_pct)
+        # 安全垫 = 净值 - peak*0.95（约 ¥3,121，而非虚高的 ¥10,145）
+        expected_cushion = 36993.13 - self.PEAK * 0.95
+        self.assertAlmostEqual(dd['safe_cushion'], expected_cushion, places=2)
+
+    def test_same_as_drawdown_status_on_net(self):
+        """compute_drawdown_state 的净值结果应等价于 drawdown_status(net, peak)"""
+        data = self._data()
+        dd = compute_drawdown_state(data, {'total': data['total_assets']})
+        ref = drawdown_status(dd['net_assets'], self.PEAK)
+        self.assertEqual(dd['dd_pct'], round(ref['dd_pct'], 1))
+        self.assertEqual(dd['dd_level'], ref['level'])
+        self.assertEqual(dd['safe_cushion'], round(ref['cushion'], 2))
+
+    def test_no_liabilities_unchanged(self):
+        """无贷款残留（旧数据）时净值 = 账户口径，行为不变"""
+        data = self._data(in_cash=0)
+        dd = compute_drawdown_state(data, {'total': 44016.90})
+        self.assertAlmostEqual(dd['net_assets'], 44016.90, places=2)
+        self.assertAlmostEqual(dd['dd_pct'], (44016.90 - self.PEAK) / self.PEAK * 100, places=1)
 
 
 class TestStopLoss(unittest.TestCase):
@@ -314,16 +369,29 @@ class TestRealPortfolioData(unittest.TestCase):
             get_peak_assets({'_meta': {}})
 
     def test_drawdown_check(self):
-        """检查当前回撤级别 — 使用 _meta.peak_assets 作为唯一基准"""
-        current = self.data.get('total_assets', 0)
+        """检查当前回撤级别 — 使用引擎净值口径 drawdown_state（v3.5.5）"""
         peak = get_peak_assets(self.data)
-        level, pct = check_drawdown_level(current, peak)
-        expected = drawdown_status(current, peak)
-        print(f"\n  [INFO] Current: {current:,.0f}, Peak: {peak:,.0f}, DD: {pct:.1f}%, Level: {level}")
-        self.assertEqual(expected['dd_pct'], pct)
-        if level != "safe":
-            print(f"  [WARN] Portfolio in {level} zone! Check drawdown_state in process_all output.")
-        self.assertIsNotNone(level)
+        dd = process_all(self.data).get('drawdown_state', {})
+        self.assertAlmostEqual(dd['net_assets'], dd['total_assets'] - dd['liabilities_in_cash'], places=2)
+        pct = dd['dd_pct']
+        print(f"\n  [INFO] Total: {dd['total_assets']:,.0f}, Net: {dd['net_assets']:,.0f}, "
+              f"Peak: {peak:,.0f}, DD: {pct:.1f}%, Level: {dd['dd_level']}")
+        self.assertIsNotNone(dd['dd_level'])
+        if dd['dd_level'] != "safe":
+            print(f"  [WARN] Portfolio in {dd['dd_level']} zone! Check drawdown_state in process_all output.")
+
+    def test_drawdown_uses_net_assets(self):
+        """process_all 的回撤必须用净值口径：net_assets = total - 贷款残留"""
+        embed = process_all(self.data)
+        dd = embed.get('drawdown_state', {})
+        total = embed.get('total', 0)
+        self.assertIn('net_assets', dd)
+        self.assertIn('liabilities_in_cash', dd)
+        self.assertAlmostEqual(dd['net_assets'], total - dd['liabilities_in_cash'], places=2)
+        # 安全垫 = 净值 - peak*0.95（与 drawdown_status 一致）
+        peak = get_peak_assets(self.data)
+        expected_cushion = dd['net_assets'] - peak * 0.95
+        self.assertAlmostEqual(dd['safe_cushion'], round(expected_cushion, 2), places=1)
 
     def test_process_all_state_contract(self):
         """process_all 应输出统一 state 合同"""

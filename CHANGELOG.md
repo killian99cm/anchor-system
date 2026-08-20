@@ -5,6 +5,24 @@
 
 ---
 
+## v3.6.0 — 2026-08-20
+
+### 新增（数据制度升级：准确性 → 可回溯）
+- 🆕 **`05-scripts/data_pipeline.py`（数据管道四层规范）**：把 8/20 深度研究教训固化成代码——
+  - **① 定位层** `DATA_PIPELINE_MAP`：9 类持仓 → 跟踪指数 → 市场 → 资金面来源 → 宏观归因 → mx查询模板 映射（防张冠李戴：港股看南向/债券看中国10Y/QDII看美股净值+溢价）
+  - **② 获取层** `fund_flow_snapshot()`：mx-data raw JSON → 标准资金面快照（{ddx, ddx3, ddx10, 超大单净流入, 时间}），实测兼容双层嵌套结构 + 「亿元」单位 + 列名模糊匹配
+  - **③ 归因层** `MACRO_DRIVER_MAP`：资产类别 → 正确宏观驱动（防因果错配，如债券归因美债）
+  - **④ 验证层** `data_quality_check()`：报告前自检（时间戳/资金面/来源标注 + 持仓逐只覆盖）
+- 🆕 **`05-scripts/decision_log.py`（决策闭环 + 胜率统计）**：用户「在一次次操作中吸取经验，提高胜率/收益率/准确率」的落地——
+  - `--add` 记录决策（类型/标的/判定/金额/依据/预期方向 + 数据快照）→ `--review` 事后回填结果（correct/wrong/neutral + 收益率）→ `--report` 按类型统计准确率/平均收益率 → `--pending` 列出待复盘项（T+3）
+  - 数据存 `06-dashboard/decision_log.json`（.gitignore，含判断依据属隐私）
+  - 8/20 已录入 3 条种子决策：创新药+3,000 暂缓 / 纳指+3,000 暂缓 / 债券+5,700 执行
+
+### 修改文件
+05-scripts/data_pipeline.py（新增）| 05-scripts/decision_log.py（新增）| 06-dashboard/decision_log.json（新增，gitignore）| .gitignore（新增 decision_log 条目）| portfolio_data.json（system_version v3.6.0）| CHANGELOG.md | CLAUDE.md | 00-system/会话检查点.md
+
+---
+
 ## v3.5.5 — 2026-08-19
 
 ### 修复

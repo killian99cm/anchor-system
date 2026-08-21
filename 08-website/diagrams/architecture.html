@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anchor 系统架构 · 数据流总览</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:  #02070f;
+      --color-ink:    #e8f1ff;
+      --color-muted:  #91a4bd;
+      --color-soft:   #536a85;
+      --color-accent: #3987e5;
+      --color-good:   #36d39c;
+      --color-warn:   #fab219;
+      --color-system: #9085e9;
+      --font-sans:    'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+      --font-mono:    'Cascadia Mono', Consolas, ui-monospace, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 2rem; }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-size: clamp(1.4rem, 2.2vw + 0.7rem, 1.9rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 1.4rem; }
+    svg { width: 100%; min-width: 980px; display: block; }
+    .foot-note { color: var(--color-soft); font-size: 0.8rem; margin-top: 0.6rem; text-align: center; font-family: var(--font-mono); }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Anchor Architecture · Data Flow</p>
+    <h1>系统架构 · 一份数据，流向所有输出</h1>
+    <svg viewBox="0 0 980 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="arc-title arc-desc">
+      <title id="arc-title">Anchor 系统架构数据流</title>
+      <desc id="arc-desc">数据源进入处理层，经过数据管道与决策日志，产出看板、报告、Excel 和公开页。</desc>
+      <defs>
+        <marker id="arc-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(232,241,255,0.5)"/>
+        </marker>
+        <pattern id="arc-dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="0.9" fill="rgba(232,241,255,0.05)"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="#02070f"/>
+      <rect width="100%" height="100%" fill="url(#arc-dots)" opacity="0.5"/>
+
+      <!-- ===== Input zone ===== -->
+      <text x="60" y="34" fill="#536a85" font-size="8" font-family="'Cascadia Mono', monospace" letter-spacing="0.18em">数据源 INPUT</text>
+      <rect x="40" y="44" width="210" height="52" rx="4" fill="rgba(57,135,229,0.08)" stroke="#3987e5" stroke-width="0.8"/>
+      <text x="145" y="64" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">portfolio_data.json</text>
+      <text x="145" y="80" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">桌面 · 唯一权威持仓数据</text>
+
+      <rect x="270" y="44" width="210" height="52" rx="4" fill="rgba(57,135,229,0.08)" stroke="#3987e5" stroke-width="0.8"/>
+      <text x="375" y="64" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">mx-data 妙想行情</text>
+      <text x="375" y="80" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">实时行情 · 资金面 · 宏观</text>
+
+      <rect x="500" y="44" width="210" height="52" rx="4" fill="rgba(57,135,229,0.08)" stroke="#3987e5" stroke-width="0.8"/>
+      <text x="605" y="64" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">决策日志 decision_log.json</text>
+      <text x="605" y="80" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">每次建议 → T+3 复盘</text>
+
+      <rect x="730" y="44" width="210" height="52" rx="4" fill="rgba(57,135,229,0.08)" stroke="#3987e5" stroke-width="0.8"/>
+      <text x="835" y="64" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">复盘报告 *.md</text>
+      <text x="835" y="80" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">04-reviews 各类型</text>
+
+      <!-- ===== Processing zone ===== -->
+      <text x="60" y="164" fill="#536a85" font-size="8" font-family="'Cascadia Mono', monospace" letter-spacing="0.18em">处理层 PROCESSING（05-scripts/）</text>
+      <rect x="40" y="176" width="470" height="120" rx="5" fill="rgba(144,133,233,0.06)" stroke="#9085e9" stroke-width="1"/>
+      <rect x="60" y="192" width="200" height="40" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="160" y="208" fill="#e8f1ff" font-size="9.5" font-weight="600" text-anchor="middle">data_processor.py</text>
+      <text x="160" y="222" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">process_all() 状态合同唯一计算层</text>
+      <rect x="280" y="192" width="210" height="40" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="385" y="208" fill="#e8f1ff" font-size="9.5" font-weight="600" text-anchor="middle">data_pipeline.py</text>
+      <text x="385" y="222" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">四层数据规范 · --check 自检</text>
+
+      <rect x="60" y="244" width="200" height="40" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="160" y="260" fill="#e8f1ff" font-size="9.5" font-weight="600" text-anchor="middle">decision_log.py</text>
+      <text x="160" y="274" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">决策记录 / 复盘 / 胜率统计</text>
+      <rect x="280" y="244" width="210" height="40" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="385" y="260" fill="#e8f1ff" font-size="9.5" font-weight="600" text-anchor="middle">noise_audit.py</text>
+      <text x="385" y="274" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">噪声审计 · 双报告制度</text>
+
+      <rect x="530" y="176" width="410" height="120" rx="5" fill="rgba(144,133,233,0.06)" stroke="#9085e9" stroke-width="1"/>
+      <text x="735" y="198" fill="#9085e9" font-size="9.5" font-weight="600" text-anchor="middle">生成器 GENERATORS</text>
+      <rect x="550" y="210" width="180" height="34" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="640" y="231" fill="#91a4bd" font-size="9" text-anchor="middle">rebuild.py · 私有看板</text>
+      <rect x="745" y="210" width="175" height="34" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="832" y="231" fill="#91a4bd" font-size="9" text-anchor="middle">gen_anchor_pro.py · 公开页</text>
+      <rect x="550" y="252" width="180" height="34" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="640" y="273" fill="#91a4bd" font-size="9" text-anchor="middle">sync_all.py · 一键同步</text>
+      <rect x="745" y="252" width="175" height="34" rx="4" fill="rgba(144,133,233,0.10)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="832" y="273" fill="#91a4bd" font-size="9" text-anchor="middle">smoke_test.py · 端到端检查</text>
+
+      <!-- ===== Output zone ===== -->
+      <text x="60" y="360" fill="#536a85" font-size="8" font-family="'Cascadia Mono', monospace" letter-spacing="0.18em">输出层 OUTPUT</text>
+      <rect x="40" y="372" width="210" height="52" rx="4" fill="rgba(54,211,156,0.08)" stroke="#36d39c" stroke-width="0.8"/>
+      <text x="145" y="392" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">portfolio_analysis.html</text>
+      <text x="145" y="408" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">桌面 + 06-dashboard/ 私有驾驶舱</text>
+
+      <rect x="270" y="372" width="210" height="52" rx="4" fill="rgba(54,211,156,0.08)" stroke="#36d39c" stroke-width="0.8"/>
+      <text x="375" y="392" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">复盘报告 + Excel</text>
+      <text x="375" y="408" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">04-reviews/ · 06-dashboard/*.xlsx</text>
+
+      <rect x="500" y="372" width="210" height="52" rx="4" fill="rgba(54,211,156,0.08)" stroke="#36d39c" stroke-width="0.8"/>
+      <text x="605" y="392" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">portfolio_data_example.json</text>
+      <text x="605" y="408" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">脱敏示例 · 仅公开页使用</text>
+
+      <rect x="730" y="372" width="210" height="52" rx="4" fill="rgba(54,211,156,0.08)" stroke="#36d39c" stroke-width="0.8"/>
+      <text x="835" y="392" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">anchor-pro.html</text>
+      <text x="835" y="408" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace" text-anchor="middle">08-website/ 对外展示页</text>
+
+      <!-- ===== Publish zone ===== -->
+      <text x="60" y="456" fill="#536a85" font-size="8" font-family="'Cascadia Mono', monospace" letter-spacing="0.18em">发布层 PUBLISH</text>
+      <rect x="310" y="452" width="360" height="40" rx="20" fill="rgba(250,178,25,0.08)" stroke="#fab219" stroke-width="1"/>
+      <text x="490" y="476" fill="#e8f1ff" font-size="10" font-weight="600" text-anchor="middle">GitHub Pages · workflows/pages.yml</text>
+      <text x="660" y="476" fill="#536a85" font-size="7.5" font-family="'Cascadia Mono', monospace">公开页 + 示例看板发布</text>
+
+      <!-- ===== Flow arrows ===== -->
+      <line x1="145" y1="96" x2="145" y2="172" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <line x1="375" y1="96" x2="375" y2="172" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <line x1="605" y1="96" x2="605" y2="172" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <line x1="835" y1="96" x2="835" y2="172" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+
+      <path d="M 255 236 Q 320 230 400 230" fill="none" stroke="rgba(232,241,255,0.3)" stroke-width="1"/>
+      <path d="M 400 236 L 400 220 M 400 236 L 400 252" stroke="rgba(232,241,255,0.3)" stroke-width="1"/>
+      <path d="M 490 264 L 546 240" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <path d="M 235 306 Q 235 340 200 368" fill="none" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <path d="M 385 306 L 385 368" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <path d="M 605 306 Q 605 330 605 368" fill="none" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+      <path d="M 735 306 Q 740 330 780 368" fill="none" stroke="rgba(232,241,255,0.35)" stroke-width="1.2" marker-end="url(#arc-arrow)"/>
+
+      <!-- Legend -->
+      <line x1="40" y1="340" x2="940" y2="340" stroke="rgba(232,241,255,0.12)" stroke-width="0.8"/>
+      <rect x="40" y="434" width="14" height="10" fill="rgba(57,135,229,0.2)" stroke="#3987e5" stroke-width="0.8"/>
+      <text x="62" y="443" fill="#91a4bd" font-size="8.5">数据源</text>
+      <rect x="180" y="434" width="14" height="10" fill="rgba(144,133,233,0.2)" stroke="#9085e9" stroke-width="0.8"/>
+      <text x="202" y="443" fill="#91a4bd" font-size="8.5">处理 / 生成</text>
+      <rect x="320" y="434" width="14" height="10" fill="rgba(54,211,156,0.2)" stroke="#36d39c" stroke-width="0.8"/>
+      <text x="342" y="443" fill="#91a4bd" font-size="8.5">输出</text>
+      <rect x="460" y="434" width="14" height="10" fill="rgba(250,178,25,0.2)" stroke="#fab219" stroke-width="0.8"/>
+      <text x="482" y="443" fill="#91a4bd" font-size="8.5">发布</text>
+      <text x="700" y="443" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace" font-style="italic">公开页只消费脱敏示例 · 私有看板只消费真实 JSON</text>
+    </svg>
+    <p class="foot-note">Anchor v3.6.0 · 05-scripts/ 20 个脚本 · 数据协议见 00-system/数据更新协议.md</p>
+  </div>
+</body>
+</html>

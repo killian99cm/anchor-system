@@ -61,6 +61,8 @@ setup.py
 06-dashboard/noise/
 # 决策日志（含判断依据与复盘，属隐私，不提交）
 06-dashboard/decision_log.json
+# 决策胜率仪表盘（由决策日志生成，含隐私，不提交）
+06-dashboard/decision_dashboard.html
 
 # Python
 __pycache__/

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """
-Anchor 决策日志 + 胜率统计 v1.0（8/20 确立）
+Anchor 决策日志 + 胜率统计 v2.0（8/21 升级：T+3 到期提醒 + HTML 胜率仪表盘）
 
 核心目标（用户）：「在一次一次操作中吸取经验，提高胜率、收益率、准确率」。
 机制：每次给操作建议 → 留痕（数据快照 + 判断 + 预期）→ 事后复盘（实际结果）
       → 统计准确率/胜率 → 校准规则。与 noise_audit（审计规则信号质量）互补，
       decision_log 记录的是「我的决策」本身。
+
+T+3 复盘规则（8/21 确立）：记录日 + 3 个自然日后到期回填，如 8/20 记录 → 8/23 到期。
+到期日算法 = 记录日 + 3 天，禁止估算。
 
 用法:
   python decision_log.py --add <类型> <标的> <判定> [金额] [依据] [预期方向]
@@ -14,10 +17,13 @@ Anchor 决策日志 + 胜率统计 v1.0（8/20 确立）
       # 例: python decision_log.py --review 1 correct +3.2 "3日后创新药回落，不买正确"
       # 结果: correct(判断对)/wrong(判断错)/neutral(中性无法判定)
   python decision_log.py --report        → 胜率/准确率统计
+  python decision_log.py --due           → 今日到期/已超期的复盘项（T+3 精确计算）
+  python decision_log.py --dashboard     → 生成胜率仪表盘 HTML（06-dashboard/decision_dashboard.html）
   python decision_log.py --list          → 列出全部决策（含待复盘）
   python decision_log.py --pending       → 列出待复盘项（T+3 后回填）
 
 数据: Anchor/06-dashboard/decision_log.json（私有，.gitignore）
+      Anchor/06-dashboard/decision_dashboard.html（生成的仪表盘，私有）
 """
 import json
 import sys
@@ -141,6 +147,147 @@ def accuracy_report() -> dict:
     }
 
 
+def due_date(d: dict) -> str:
+    """T+3 到期日 = 记录日 + 3 个自然日（精确计算，禁止估算）"""
+    return (datetime.strptime(d["date"], "%Y-%m-%d") + timedelta(days=3)).strftime("%Y-%m-%d")
+
+
+def due_list() -> list:
+    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日）"""
+    log = load_log()
+    now = datetime.now().strftime("%Y-%m-%d")
+    due = []
+    for d in log["decisions"]:
+        if d["outcome"] is None and due_date(d) <= now:
+            d["due"] = due_date(d)
+            due.append(d)
+    return due
+
+
+def next_due() -> dict:
+    """下一次到期信息：{date: 最近到期日, items: [决策]}，无待复盘则 date=None"""
+    log = load_log()
+    nxt = None
+    items = []
+    for d in log["decisions"]:
+        if d["outcome"] is None:
+            dd = due_date(d)
+            if nxt is None or dd < nxt:
+                nxt = dd
+                items = [d]
+            elif dd == nxt:
+                items.append(d)
+    return {"date": nxt, "items": items}
+
+
+def dashboard_html() -> str:
+    """生成胜率仪表盘 HTML（Anchor 品牌深色金融终端风格）"""
+    rep = accuracy_report()
+    log = load_log()
+    decisions = log["decisions"]
+    due = due_list()
+    nd = next_due()
+
+    def badge(outcome: str) -> str:
+        if outcome == "correct":
+            return '<span style="color:#36d39c;font-family:Cascadia Mono,monospace">● 正确</span>'
+        if outcome == "wrong":
+            return '<span style="color:#e66767;font-family:Cascadia Mono,monospace">● 错误</span>'
+        if outcome == "neutral":
+            return '<span style="color:#91a4bd;font-family:Cascadia Mono,monospace">● 中性</span>'
+        return '<span style="color:#fab219;font-family:Cascadia Mono,monospace">◌ 待复盘</span>'
+
+    rows = []
+    for d in decisions:
+        due_txt = due_date(d)
+        status = f'<span style="color:#fab219;font-size:11px">⏳ 待复盘（到期 {due_txt}）</span>' if d["outcome"] is None else f'复盘于 {d["review_date"]}'
+        rows.append(f"""
+      <tr>
+        <td style="padding:10px 14px;color:#536a85;font-family:Cascadia Mono,monospace">#{d['id']}</td>
+        <td style="padding:10px 14px;color:#91a4bd;font-family:Cascadia Mono,monospace">{d['date']}</td>
+        <td style="padding:10px 14px;color:#9085e9;font-family:Cascadia Mono,monospace">{d['type']}</td>
+        <td style="padding:10px 14px;color:#e8f1ff">{d['fund']}</td>
+        <td style="padding:10px 14px;color:#3987e5">{d['verdict']}</td>
+        <td style="padding:10px 14px;color:#e8f1ff;font-family:Cascadia Mono,monospace">{"¥{:,.0f}".format(d['amount']) if d['amount'] else "—"}</td>
+        <td style="padding:10px 14px;color:#91a4bd">{d['expected'] or "—"}</td>
+        <td style="padding:10px 14px;color:#91a4bd;font-size:11px">{d['rationale'][:34] or "—"}</td>
+        <td style="padding:10px 14px">{badge(d['outcome'])}</td>
+        <td style="padding:10px 14px;color:#536a85;font-size:11px">{status}</td>
+      </tr>""")
+    rows_html = "\n".join(rows)
+
+    # KPI 卡片
+    acc = rep["accuracy_pct"]
+    acc_txt = f"{acc}%" if acc is not None else "—"
+    avg = rep["avg_pnl_pct"]
+    avg_txt = f"{avg:+.2f}%" if avg is not None else "—"
+
+    # 到期提醒区
+    if due:
+        due_items = "、".join(f"#{d['id']} {d['fund']}" for d in due)
+        due_html = f'<div style="background:rgba(230,103,103,0.10);border:1px solid #e66767;border-radius:8px;padding:14px 18px;margin-bottom:22px"><span style="color:#e66767;font-weight:600">🔴 {len(due)} 项已到复盘期</span> <span style="color:#91a4bd;font-size:12px">— {due_items}</span><br><span style="color:#536a85;font-size:11px;font-family:Cascadia Mono,monospace">运行: python decision_log.py --review &lt;id&gt; correct/wrong/neutral &lt;收益率%&gt; &lt;备注&gt;</span></div>'
+    elif nd["date"]:
+        nxt_items = "、".join(f"#{d['id']} {d['fund']}" for d in nd["items"])
+        due_html = f'<div style="background:rgba(250,178,25,0.08);border:1px solid rgba(250,178,25,0.4);border-radius:8px;padding:14px 18px;margin-bottom:22px"><span style="color:#fab219;font-weight:600">📅 下次复盘日 {nd["date"]}</span> <span style="color:#91a4bd;font-size:12px">— {nxt_items}</span></div>'
+    else:
+        due_html = '<div style="background:rgba(54,211,156,0.08);border:1px solid rgba(54,211,156,0.4);border-radius:8px;padding:14px 18px;margin-bottom:22px"><span style="color:#36d39c;font-weight:600">✅ 无待复盘项</span></div>'
+
+    by_type_html = ""
+    if rep["by_type"]:
+        trows = []
+        for t, b in rep["by_type"].items():
+            tacc = b["correct"] / (b["correct"] + b["wrong"]) * 100 if (b["correct"] + b["wrong"]) else None
+            tacc_s = f"{tacc:.0f}%" if tacc is not None else "—"
+            trows.append(f'<div style="background:rgba(144,133,233,0.08);border:1px solid rgba(144,133,233,0.3);border-radius:8px;padding:12px 16px"><div style="color:#e8f1ff;font-size:12px">{t} <span style="color:#536a85">×{b["total"]}</span></div><div style="color:#36d39c;font-size:11px;margin-top:4px">正确 {b["correct"]} · <span style="color:#e66767">错 {b["wrong"]}</span> · <span style="color:#91a4bd">中性 {b["neutral"]}</span></div><div style="color:#fab219;font-size:16px;font-family:Cascadia Mono,monospace;margin-top:4px">{tacc_s}</div></div>')
+        by_type_html = f'<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px">{"".join(trows)}</div>'
+
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anchor 决策日志 · 胜率仪表盘</title>
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  body {{ font-family: 'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif; background: #02070f; color: #e8f1ff; padding: 2.5rem; min-height: 100vh; }}
+  .eyebrow {{ font-family: 'Cascadia Mono', Consolas, monospace; font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #536a85; margin-bottom: 0.5rem; }}
+  h1 {{ font-size: clamp(1.4rem, 2.2vw + 0.7rem, 1.9rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 1.5rem; }}
+  .kpis {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 22px; }}
+  .kpi {{ background: rgba(57,135,229,0.07); border: 1px solid rgba(57,135,229,0.25); border-radius: 10px; padding: 16px 18px; }}
+  .kpi .label {{ color: #536a85; font-size: 10px; font-family: 'Cascadia Mono', monospace; letter-spacing: 0.12em; text-transform: uppercase; }}
+  .kpi .value {{ color: #e8f1ff; font-size: 26px; font-weight: 600; font-family: 'Cascadia Mono', monospace; margin-top: 6px; }}
+  .kpi .sub {{ color: #91a4bd; font-size: 11px; margin-top: 3px; }}
+  h2 {{ color: #3987e5; font-size: 13px; font-family: 'Cascadia Mono', monospace; letter-spacing: 0.12em; margin: 22px 0 10px; }}
+  table {{ width: 100%; border-collapse: collapse; background: rgba(232,241,255,0.02); border-radius: 10px; overflow: hidden; }}
+  th {{ text-align: left; padding: 10px 14px; color: #536a85; font-size: 10px; font-family: 'Cascadia Mono', monospace; letter-spacing: 0.1em; border-bottom: 1px solid rgba(232,241,255,0.1); text-transform: uppercase; }}
+  td {{ border-bottom: 1px solid rgba(232,241,255,0.05); }}
+  tr:last-child td {{ border-bottom: none; }}
+  .foot {{ color: #536a85; font-size: 11px; margin-top: 22px; text-align: center; font-family: 'Cascadia Mono', monospace; }}
+</style>
+</head>
+<body>
+  <p class="eyebrow">Anchor Decision Log · Win-Rate Dashboard</p>
+  <h1>决策日志 · 胜率仪表盘</h1>
+  {due_html}
+  <div class="kpis">
+    <div class="kpi"><div class="label">总决策</div><div class="value">{rep['total_decisions']}</div><div class="sub">历史累计</div></div>
+    <div class="kpi"><div class="label">已复盘</div><div class="value">{rep['reviewed']}</div><div class="sub">T+3 回填</div></div>
+    <div class="kpi"><div class="label">待复盘</div><div class="value">{rep['pending_review']}</div><div class="sub">未到/未填</div></div>
+    <div class="kpi"><div class="label">准确率</div><div class="value" style="color:#36d39c">{acc_txt}</div><div class="sub">correct / (correct+wrong)</div></div>
+    <div class="kpi"><div class="label">平均收益率</div><div class="value" style="color:#3987e5">{avg_txt}</div><div class="sub">已复盘 pnl</div></div>
+  </div>
+  <h2>按类型统计</h2>
+  {by_type_html or '<p style="color:#536a85;font-size:12px">暂无已复盘数据</p>'}
+  <h2>全部决策</h2>
+  <table>
+    <thead><tr><th>ID</th><th>日期</th><th>类型</th><th>标的</th><th>判定</th><th>金额</th><th>预期</th><th>依据</th><th>结果</th><th>复盘</th></tr></thead>
+    <tbody>{rows_html}</tbody>
+  </table>
+  <p class="foot">决策日志 v2.0 · T+3 到期日 = 记录日 + 3 自然日 · 数据生成时间见文件生成时刻</p>
+</body>
+</html>"""
+
+
 def main() -> int:
     if "--add" in sys.argv:
         idx = sys.argv.index("--add")
@@ -167,7 +314,7 @@ def main() -> int:
 
     if "--report" in sys.argv:
         rep = accuracy_report()
-        print(f"📊 决策统计（决策日志 v1.0）")
+        print(f"📊 决策统计（决策日志 v2.0）")
         print(f"   总决策: {rep['total_decisions']} | 已复盘: {rep['reviewed']} | 待复盘: {rep['pending_review']}")
         if rep["accuracy_pct"] is not None:
             print(f"   准确率: {rep['accuracy_pct']}%（correct {rep['correct']} / wrong {rep['wrong']} / neutral {rep['neutral']}）")
@@ -191,6 +338,30 @@ def main() -> int:
         for d in pend:
             print(f"  #{d['id']} {d['date']} [{d['type']}] {d['fund']} → {d['verdict']}")
             print(f"     复盘: python decision_log.py --review {d['id']} <correct/wrong/neutral> <收益率%> <备注>")
+        return 0
+
+    if "--due" in sys.argv:
+        due = due_list()
+        if not due:
+            nd = next_due()
+            if nd["date"]:
+                items = "、".join(f"#{d['id']} {d['fund']}" for d in nd["items"])
+                print(f"📅 今日无到期项。最近一次复盘日：{nd['date']}（{items}）")
+            else:
+                print("✅ 无待复盘项")
+            return 0
+        print(f"🔴 {len(due)} 项已到 T+3 复盘期（今日 {datetime.now().strftime('%Y-%m-%d')}）:")
+        for d in due:
+            print(f"  #{d['id']} {d['date']} [{d['type']}] {d['fund']} → {d['verdict']}（到期 {d['due']}）")
+            print(f"     复盘: python decision_log.py --review {d['id']} <correct/wrong/neutral> <收益率%> <备注>")
+        return 0
+
+    if "--dashboard" in sys.argv:
+        html = dashboard_html()
+        out = LOG_FILE.parent / "decision_dashboard.html"
+        out.write_text(html, encoding="utf-8")
+        print(f"✅ 胜率仪表盘已生成: {out}")
+        print("   打开方式: 双击 decision_dashboard.html 或用浏览器打开")
         return 0
 
     if "--list" in sys.argv:

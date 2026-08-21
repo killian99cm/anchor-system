@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Anchor 决策日志 + 胜率统计 v2.0（8/21 升级：T+3 到期提醒 + HTML 胜率仪表盘）
+Anchor 决策日志 + 胜率统计 v3.4（8/21 升级：T+3 到期提醒 + HTML 胜率仪表盘 + 盈亏比分桶 + 止损倒计时）
 
 核心目标（用户）：「在一次一次操作中吸取经验，提高胜率、收益率、准确率」。
 机制：每次给操作建议 → 留痕（数据快照 + 判断 + 预期）→ 事后复盘（实际结果）
@@ -11,16 +11,18 @@ T+3 复盘规则（8/21 确立）：记录日 + 3 个自然日后到期回填，
 到期日算法 = 记录日 + 3 天，禁止估算。
 
 用法:
-  python decision_log.py --add <类型> <标的> <判定> [金额] [依据] [预期方向]
+  python decision_log.py --add <类型> <标的> <判定> [金额] [依据] [预期方向] [标签]
       # 例: python decision_log.py --add 建仓 创新药 暂缓不买 3000 "单日+5.36%追高+资金获利了结" 跌
+      # 标签（v3.4）: 逗号分隔，如 "追高,红日" —— --report 统计追高型买入占比
   python decision_log.py --backfill "日期|类型|标的|判定|金额|依据|预期" [...多行]
       # 例: python decision_log.py --backfill "2026-08-07|加仓|半导体|执行买入|300|DDX连3日为正|涨"
       # 补录历史操作（8/20 决策日志建立前的手动操作），标记 backfilled=true
   python decision_log.py --review <id> <结果> [收益率%] [复盘备注]
       # 例: python decision_log.py --review 1 correct +3.2 "3日后创新药回落，不买正确"
       # 结果: correct(判断对)/wrong(判断错)/neutral(中性无法判定)
-  python decision_log.py --report        → 胜率/准确率统计
+  python decision_log.py --report        → 胜率/准确率/盈亏比/追高占比统计
   python decision_log.py --due           → 今日到期/已超期的复盘项（T+3 精确计算）
+  python decision_log.py --stopwatch     → 止损倒计时（读取 portfolio_data.json stop_loss_watch，硬Deadline 三态）
   python decision_log.py --dashboard     → 生成胜率仪表盘 HTML（06-dashboard/decision_dashboard.html）
   python decision_log.py --list          → 列出全部决策（含待复盘）
   python decision_log.py --pending       → 列出待复盘项（T+3 后回填）
@@ -55,10 +57,11 @@ def save_log(log: dict) -> None:
 
 def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
                  rationale: str = "", expected: str = "", snapshot: dict = None,
-                 entry_date: str = None) -> str:
+                 entry_date: str = None, tags: list = None) -> str:
     """记录一次决策。verdict: 执行买入/执行卖出/等待未触发/观望不买/持有。
     expected: 预期方向（涨/跌/中性）。snapshot: 数据快照 dict（如 fund_flow_snapshot 输出）。
-    entry_date: 补录历史决策时指定 YYYY-MM-DD（默认当天，保证 T+3 复盘精确）。"""
+    entry_date: 补录历史决策时指定 YYYY-MM-DD（默认当天，保证 T+3 复盘精确）。
+    tags: 标签列表（v3.4，如 ["追高"]，--report 统计追高型买入占比）。"""
     log = load_log()
     now = datetime.now()
     did = str(len(log["decisions"]) + 1)
@@ -83,6 +86,7 @@ def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
         "rationale": rationale,   # 判断依据（引用数据管道，防张冠李戴）
         "expected": expected,     # 预期方向
         "snapshot": snapshot or {},
+        "tags": tags or [],       # v3.4: 追高等标签，--report 分桶统计
         "outcome": None,          # correct/wrong/neutral
         "pnl_pct": None,          # 事后收益率 %
         "review_date": None,
@@ -149,6 +153,17 @@ def accuracy_report() -> dict:
     pnl_values = [d["pnl_pct"] for d in reviewed if d["pnl_pct"] is not None]
     avg_pnl = sum(pnl_values) / len(pnl_values) if pnl_values else None
 
+    # 盈亏比分桶（v3.4）：avg_win / avg_loss / 盈亏比（赚得抠亏得大方 → 目标 ≥1.5:1）
+    wins = [d["pnl_pct"] for d in reviewed if d["pnl_pct"] is not None and d["pnl_pct"] > 0]
+    losses = [d["pnl_pct"] for d in reviewed if d["pnl_pct"] is not None and d["pnl_pct"] < 0]
+    avg_win = sum(wins) / len(wins) if wins else None
+    avg_loss = abs(sum(losses) / len(losses)) if losses else None
+    pnl_ratio = (avg_win / avg_loss) if (avg_win is not None and avg_loss) else None
+
+    # 追高型买入占比（v3.4，A1 标签）：目标 ≤20%
+    chase_all = [d for d in decisions if "追高" in (d.get("tags") or [])]
+    chase_pct = (len(chase_all) / len(decisions) * 100) if decisions else None
+
     return {
         "total_decisions": total,
         "reviewed": len(reviewed),
@@ -158,6 +173,11 @@ def accuracy_report() -> dict:
         "neutral": neutral,
         "accuracy_pct": round(accuracy, 1) if accuracy is not None else None,
         "avg_pnl_pct": round(avg_pnl, 2) if avg_pnl is not None else None,
+        "avg_win_pct": round(avg_win, 2) if avg_win is not None else None,
+        "avg_loss_pct": round(avg_loss, 2) if avg_loss is not None else None,
+        "pnl_ratio": round(pnl_ratio, 2) if pnl_ratio is not None else None,
+        "chase_count": len(chase_all),
+        "chase_pct": round(chase_pct, 1) if chase_pct is not None else None,
         "by_type": by_type,
     }
 
@@ -193,6 +213,50 @@ def next_due() -> dict:
             elif dd == nxt:
                 items.append(d)
     return {"date": nxt, "items": items}
+
+
+def stopwatch() -> int:
+    """止损倒计时（v3.4 B4 状态机）：读取 portfolio_data.json stop_loss_watch，按硬Deadline推送三态。
+    结构: stop_loss_watch = { "半导体": {"triggered":"2026-08-19","cur_pct":-12.38,
+                                        "buffers_used":2,"deadline":"2026-08-22","status":"观察中"} }"""
+    desktop_pf = Path.home() / "Desktop" / "portfolio_data.json"
+    if not desktop_pf.exists():
+        desktop_pf = LOG_FILE.parent / "portfolio_data.json"  # 06-dashboard 只读副本
+    if not desktop_pf.exists():
+        print("❌ 未找到 portfolio_data.json（桌面/06-dashboard）——无法读取 stop_loss_watch")
+        return 1
+    try:
+        data = json.loads(desktop_pf.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"❌ portfolio_data.json 解析失败: {e}")
+        return 1
+    watch = data.get("stop_loss_watch") or {}
+    if not watch:
+        print("✅ 无进行中止损监控（stop_loss_watch 为空）")
+        return 0
+    today = datetime.now()
+    print(f"⏱️ 止损倒计时（今日 {today.strftime('%Y-%m-%d')}）· 硬Deadline = 触发后第4交易日 14:30")
+    for name, w in watch.items():
+        triggered = w.get("triggered") or ""
+        deadline = w.get("deadline") or ""
+        buffers = w.get("buffers_used", 0)
+        pct = w.get("cur_pct")
+        status = w.get("status", "观察中")
+        pct_s = f"{pct:+.2f}%" if pct is not None else "—"
+        if status == "已执行":
+            state = "✅ 已执行"
+        elif deadline:
+            dd = datetime.strptime(deadline, "%Y-%m-%d")
+            if dd.date() <= today.date():
+                state = "🔴 硬Deadline已到 —— 今日14:30无条件执行（不看红绿）"
+            else:
+                days = (dd.date() - today.date()).days
+                state = f"🟡 距硬Deadline {deadline} 剩 {days} 天"
+        else:
+            state = "🟡 观察中（无deadline，待设置）"
+        print(f"  {name}: 浮亏 {pct_s} | 缓冲/延期已用 {buffers} 次 | 触发 {triggered or '—'} | {state}")
+    print("  提示: 止损用 decision_log.py --add 止损 <标的> <执行止损/等待> 留痕，T+3 后 --review 复盘")
+    return 0
 
 
 def dashboard_html() -> str:
@@ -236,6 +300,10 @@ def dashboard_html() -> str:
     acc_txt = f"{acc}%" if acc is not None else "—"
     avg = rep["avg_pnl_pct"]
     avg_txt = f"{avg:+.2f}%" if avg is not None else "—"
+    pr = rep["pnl_ratio"]
+    pr_txt = f"{pr:.2f}:1" if pr is not None else "—"
+    chase = rep["chase_pct"]
+    chase_txt = f"{chase:.1f}%" if chase is not None else "—"
 
     # 到期提醒区
     if due:
@@ -290,6 +358,8 @@ def dashboard_html() -> str:
     <div class="kpi"><div class="label">待复盘</div><div class="value">{rep['pending_review']}</div><div class="sub">未到/未填</div></div>
     <div class="kpi"><div class="label">准确率</div><div class="value" style="color:#36d39c">{acc_txt}</div><div class="sub">correct / (correct+wrong)</div></div>
     <div class="kpi"><div class="label">平均收益率</div><div class="value" style="color:#3987e5">{avg_txt}</div><div class="sub">已复盘 pnl</div></div>
+    <div class="kpi"><div class="label">盈亏比</div><div class="value" style="color:{'#36d39c' if pr and pr >= 1.5 else '#fab219'}">{pr_txt}</div><div class="sub">均盈/均亏 · 目标 ≥1.5:1</div></div>
+    <div class="kpi"><div class="label">追高占比</div><div class="value" style="color:{'#36d39c' if chase is not None and chase <= 20 else '#fab219'}">{chase_txt}</div><div class="sub">目标 ≤20%</div></div>
   </div>
   <h2>按类型统计</h2>
   {by_type_html or '<p style="color:#536a85;font-size:12px">暂无已复盘数据</p>'}
@@ -298,7 +368,7 @@ def dashboard_html() -> str:
     <thead><tr><th>ID</th><th>日期</th><th>类型</th><th>标的</th><th>判定</th><th>金额</th><th>预期</th><th>依据</th><th>结果</th><th>复盘</th></tr></thead>
     <tbody>{rows_html}</tbody>
   </table>
-  <p class="foot">决策日志 v2.0 · T+3 到期日 = 记录日 + 3 自然日 · 数据生成时间见文件生成时刻</p>
+  <p class="foot">决策日志 v3.4 · T+3 到期日 = 记录日 + 3 自然日 · 盈亏比目标 ≥1.5:1 · 数据生成时间见文件生成时刻</p>
 </body>
 </html>"""
 
@@ -315,7 +385,8 @@ def main() -> int:
         amount = float(args[3]) if len(args) > 3 and args[3].replace(".", "").replace("-", "").isdigit() else 0
         rationale = args[4] if len(args) > 4 else ""
         expected = args[5] if len(args) > 5 else ""
-        log_decision(dtype, fund, verdict, amount, rationale, expected)
+        tags = [t.strip() for t in args[6].split(",") if t.strip()] if len(args) > 6 else []
+        log_decision(dtype, fund, verdict, amount, rationale, expected, tags=tags)
         return 0
 
     if "--backfill" in sys.argv:
@@ -336,7 +407,8 @@ def main() -> int:
             amount = float(parts[4]) if len(parts) > 4 and parts[4].replace(".", "").replace("-", "").isdigit() else 0
             rationale = parts[5] if len(parts) > 5 else ""
             expected = parts[6] if len(parts) > 6 else ""
-            log_decision(dtype, fund, verdict, amount, rationale, expected, entry_date=date_s)
+            tags = [t.strip() for t in parts[7].split(",") if t.strip()] if len(parts) > 7 else []
+            log_decision(dtype, fund, verdict, amount, rationale, expected, entry_date=date_s, tags=tags)
             n += 1
         print(f"✅ 补录完成：{n} 条历史决策（标记 backfilled=true）")
         return 0
@@ -352,7 +424,7 @@ def main() -> int:
 
     if "--report" in sys.argv:
         rep = accuracy_report()
-        print(f"📊 决策统计（决策日志 v2.0）")
+        print(f"📊 决策统计（决策日志 v3.4）")
         print(f"   总决策: {rep['total_decisions']} | 已复盘: {rep['reviewed']} | 待复盘: {rep['pending_review']}")
         if rep["accuracy_pct"] is not None:
             print(f"   准确率: {rep['accuracy_pct']}%（correct {rep['correct']} / wrong {rep['wrong']} / neutral {rep['neutral']}）")
@@ -360,6 +432,11 @@ def main() -> int:
             print("   准确率: 无已复盘数据（需 --review 回填）")
         if rep["avg_pnl_pct"] is not None:
             print(f"   平均收益率: {rep['avg_pnl_pct']:+.2f}%")
+        # 盈亏比分桶（v3.4 新增）
+        if rep["pnl_ratio"] is not None:
+            print(f"   盈亏比: {rep['pnl_ratio']:.2f}:1（均盈 {rep['avg_win_pct']:+.2f}% vs 均亏 {rep['avg_loss_pct']:+.2f}%｜目标 ≥1.5:1）")
+        if rep["chase_pct"] is not None:
+            print(f"   追高型买入: {rep['chase_count']} 条（{rep['chase_pct']:.1f}%｜目标 ≤20%）")
         if rep["by_type"]:
             print("   按类型:")
             for t, b in rep["by_type"].items():
@@ -377,6 +454,9 @@ def main() -> int:
             print(f"  #{d['id']} {d['date']} [{d['type']}] {d['fund']} → {d['verdict']}")
             print(f"     复盘: python decision_log.py --review {d['id']} <correct/wrong/neutral> <收益率%> <备注>")
         return 0
+
+    if "--stopwatch" in sys.argv:
+        return stopwatch()
 
     if "--due" in sys.argv:
         due = due_list()

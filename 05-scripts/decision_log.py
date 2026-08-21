@@ -13,6 +13,9 @@ T+3 复盘规则（8/21 确立）：记录日 + 3 个自然日后到期回填，
 用法:
   python decision_log.py --add <类型> <标的> <判定> [金额] [依据] [预期方向]
       # 例: python decision_log.py --add 建仓 创新药 暂缓不买 3000 "单日+5.36%追高+资金获利了结" 跌
+  python decision_log.py --backfill "日期|类型|标的|判定|金额|依据|预期" [...多行]
+      # 例: python decision_log.py --backfill "2026-08-07|加仓|半导体|执行买入|300|DDX连3日为正|涨"
+      # 补录历史操作（8/20 决策日志建立前的手动操作），标记 backfilled=true
   python decision_log.py --review <id> <结果> [收益率%] [复盘备注]
       # 例: python decision_log.py --review 1 correct +3.2 "3日后创新药回落，不买正确"
       # 结果: correct(判断对)/wrong(判断错)/neutral(中性无法判定)
@@ -51,16 +54,28 @@ def save_log(log: dict) -> None:
 
 
 def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
-                 rationale: str = "", expected: str = "", snapshot: dict = None) -> str:
+                 rationale: str = "", expected: str = "", snapshot: dict = None,
+                 entry_date: str = None) -> str:
     """记录一次决策。verdict: 执行买入/执行卖出/等待未触发/观望不买/持有。
-    expected: 预期方向（涨/跌/中性）。snapshot: 数据快照 dict（如 fund_flow_snapshot 输出）。"""
+    expected: 预期方向（涨/跌/中性）。snapshot: 数据快照 dict（如 fund_flow_snapshot 输出）。
+    entry_date: 补录历史决策时指定 YYYY-MM-DD（默认当天，保证 T+3 复盘精确）。"""
     log = load_log()
     now = datetime.now()
     did = str(len(log["decisions"]) + 1)
+    # 补录历史：用 entry_date；否则当天。时间统一标补录操作发生时间
+    if entry_date:
+        try:
+            entry_dt = datetime.strptime(entry_date, "%Y-%m-%d")
+            date_str, time_str = entry_dt.strftime("%Y-%m-%d"), "00:00"
+        except ValueError:
+            date_str, time_str = now.strftime("%Y-%m-%d"), now.strftime("%H:%M")
+    else:
+        date_str, time_str = now.strftime("%Y-%m-%d"), now.strftime("%H:%M")
     entry = {
         "id": did,
-        "date": now.strftime("%Y-%m-%d"),
-        "time": now.strftime("%H:%M"),
+        "date": date_str,
+        "time": time_str,
+        "backfilled": bool(entry_date),   # 标记补录历史，区别于实时记录
         "type": dtype,            # 建仓/加仓/止损/评估/观望
         "fund": fund,             # 标的（建议用 data_pipeline 的 key）
         "verdict": verdict,       # 三档：执行买入/执行卖出/等待未触发/观望不买/持有
@@ -301,6 +316,29 @@ def main() -> int:
         rationale = args[4] if len(args) > 4 else ""
         expected = args[5] if len(args) > 5 else ""
         log_decision(dtype, fund, verdict, amount, rationale, expected)
+        return 0
+
+    if "--backfill" in sys.argv:
+        # 补录历史决策，每条: 日期|类型|标的|判定|金额|依据|预期
+        # 例: python decision_log.py --backfill "2026-08-07|加仓|半导体|执行买入|300|DDX连3日为正|涨" ...
+        idx = sys.argv.index("--backfill")
+        entries = sys.argv[idx + 1:]
+        if not entries:
+            print("用法: --backfill \"日期|类型|标的|判定|金额|依据|预期\" [...多行]")
+            return 1
+        n = 0
+        for raw in entries:
+            parts = [p.strip() for p in raw.split("|")]
+            if len(parts) < 4:
+                print(f"⚠️ 跳过格式错误: {raw}")
+                continue
+            date_s, dtype, fund, verdict = parts[0], parts[1], parts[2], parts[3]
+            amount = float(parts[4]) if len(parts) > 4 and parts[4].replace(".", "").replace("-", "").isdigit() else 0
+            rationale = parts[5] if len(parts) > 5 else ""
+            expected = parts[6] if len(parts) > 6 else ""
+            log_decision(dtype, fund, verdict, amount, rationale, expected, entry_date=date_s)
+            n += 1
+        print(f"✅ 补录完成：{n} 条历史决策（标记 backfilled=true）")
         return 0
 
     if "--review" in sys.argv:

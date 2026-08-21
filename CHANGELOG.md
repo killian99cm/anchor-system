@@ -5,6 +5,22 @@
 
 ---
 
+## v3.7.1 — 2026-08-21
+
+### 新增（决策日志历史补录：胜率覆盖完整历史）
+- 🆕 **`decision_log.py` 新增 `--backfill`**：补录历史决策（`"日期|类型|标的|判定|金额|依据|预期"` 多行 CSV），自动标记 `backfilled=true`，T+3 到期日按记录日+3精确计算
+- 📥 **补录 16 笔历史手动操作**（7/15–8/7 + 7/24，来自 portfolio_data.json transactions + 复盘报告交叉验证）：决策数 5 → **21 条**
+- 📊 **回填 16 笔历史 outcome**（依据 04-reviews 复盘报告/教训库明确记载）：
+  - **准确率 80%**（correct 12 / wrong 3 / neutral 1）
+  - 🔍 **核心发现：加仓准确率仅 40%**（2对3错1中性）——3 笔全错均为**半导体追高补仓**（7/15 打新布局、7/16 触-12%加仓线、8/7 DDX未过建仓检查），印证教训库「追高/补仓摊平是亏损之源」
+  - 卖出纪律优秀：减仓 100%（3/3）、清仓 100%（6/6）、建仓 100%（1/1）
+- ⚠️ **发现数据缺口**：portfolio_data.json transactions **缺失 7/24 证券+500**（复盘报告 deep_review_20260724 明确记载，decision_log 已补录 #21，待用户确认是否回填 transactions）
+
+### 影响文件
+- 修改：`05-scripts/decision_log.py`（--backfill）、`06-dashboard/decision_log.json`（21 条，gitignore）、`06-dashboard/decision_dashboard.html`（重新生成，gitignore）
+
+---
+
 ## v3.7.0 — 2026-08-21
 
 ### 新增（可视化升级：品牌体系图 + 决策闭环自动化）

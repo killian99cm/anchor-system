@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anchor 四层金字塔 · 资产配置体系</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #02070f;
+      --color-ink:     #e8f1ff;
+      --color-muted:   #91a4bd;
+      --color-soft:    #536a85;
+      --color-accent:  #3987e5;
+      --font-sans:     'Segoe UI', 'Microsoft YaHei', system-ui, sans-serif;
+      --font-mono:     'Cascadia Mono', Consolas, ui-monospace, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1200px; width: 100%; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .foot-note { color: var(--color-soft); font-size: 0.8rem; margin-top: 0.6rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Anchor Investment OS · Asset Allocation</p>
+    <h1>四层金字塔 · 底部求稳，顶部求活</h1>
+
+    <svg viewBox="0 0 1000 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pyramid-title pyramid-desc">
+      <title id="pyramid-title">Anchor 四层金字塔资产配置体系</title>
+      <desc id="pyramid-desc">压舱石45%、核心20%、卫星20%、现金15%，四层从底部到顶部：从低波动打底到高流动性弹药。</desc>
+      <defs>
+        <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+          <circle cx="1" cy="1" r="0.9" fill="rgba(232,241,255,0.06)"/>
+        </pattern>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#02070f"/>
+      <rect width="100%" height="100%" fill="url(#dots)" opacity="0.5"/>
+
+      <!-- Left axis: liquidity increases upward -->
+      <line x1="88" y1="40" x2="88" y2="320" stroke="rgba(232,241,255,0.25)" stroke-width="1"/>
+      <polygon points="84,320 92,320 88,332" fill="rgba(232,241,255,0.45)"/>
+      <text x="68" y="196" fill="#536a85" font-size="8" font-family="'Cascadia Mono', Consolas, monospace" letter-spacing="0.18em" text-anchor="middle" transform="rotate(-90 68 196)">流动性 · 弹药 ↑</text>
+
+      <!-- Layer 1 base: 压舱石 45% (accent focal - the foundation) -->
+      <polygon points="230,300 770,300 830,364 170,364" fill="rgba(57,135,229,0.16)" stroke="#3987e5" stroke-width="1.2"/>
+      <text x="500" y="326" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">压舱石 · 45%</text>
+      <text x="500" y="343" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">债券 · 黄金 · 红利｜低波动打底</text>
+      <text x="852" y="326" fill="#3987e5" font-size="10" font-family="'Cascadia Mono', monospace">当前 49.6% (+4.6)</text>
+      <text x="128" y="326" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">体系基石 · 防崩盘</text>
+
+      <!-- Layer 2: 核心 20% -->
+      <polygon points="290,236 710,236 770,300 230,300" fill="rgba(54,211,156,0.12)" stroke="#36d39c" stroke-width="1"/>
+      <text x="500" y="262" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">核心 · 20%</text>
+      <text x="500" y="279" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">纳指 · 创新药｜稳健成长</text>
+      <text x="852" y="262" fill="#36d39c" font-size="10" font-family="'Cascadia Mono', monospace">当前 12.5% (-7.5)</text>
+      <text x="128" y="262" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">穿越周期</text>
+
+      <!-- Layer 3: 卫星 20% -->
+      <polygon points="350,172 650,172 710,236 290,236" fill="rgba(250,178,25,0.12)" stroke="#fab219" stroke-width="1"/>
+      <text x="500" y="198" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">卫星 · 20%</text>
+      <text x="500" y="215" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">半导体 · 证券｜进攻弹性</text>
+      <text x="852" y="198" fill="#fab219" font-size="10" font-family="'Cascadia Mono', monospace">当前 11.6% (-8.4)</text>
+      <text x="128" y="198" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">博超额收益</text>
+
+      <!-- Apex: 现金 15% -->
+      <polygon points="500,108 650,172 350,172" fill="rgba(144,133,233,0.12)" stroke="#9085e9" stroke-width="1"/>
+      <text x="500" y="140" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">现金 · 15%</text>
+      <text x="500" y="157" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">余额宝｜流动性弹药</text>
+      <text x="852" y="140" fill="#9085e9" font-size="10" font-family="'Cascadia Mono', monospace">当前 26.4% (+11.4)</text>
+      <text x="128" y="140" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">机会来时是子弹</text>
+
+      <!-- Footnote -->
+      <text x="500" y="400" fill="#91a4bd" font-size="9" font-family="'Segoe UI', sans-serif" text-anchor="middle" font-style="italic">压舱石防崩盘，现金备子弹。纪律：月操作 ≤4 笔 · -8% 止损 · DDX 过滤 · 溢价 ≤3%</text>
+
+      <!-- Legend -->
+      <line x1="40" y1="430" x2="960" y2="430" stroke="rgba(232,241,255,0.12)" stroke-width="0.8"/>
+      <text x="40" y="448" fill="#536a85" font-size="8" font-family="'Cascadia Mono', monospace" letter-spacing="0.18em">图例</text>
+      <rect x="40" y="460" width="16" height="12" fill="rgba(57,135,229,0.16)" stroke="#3987e5" stroke-width="1"/>
+      <text x="64" y="470" fill="#91a4bd" font-size="8.5" font-family="'Segoe UI', sans-serif">压舱石 — 体系基石（低波动打底）</text>
+      <rect x="280" y="460" width="16" height="12" fill="rgba(54,211,156,0.12)" stroke="#36d39c" stroke-width="1"/>
+      <text x="304" y="470" fill="#91a4bd" font-size="8.5" font-family="'Segoe UI', sans-serif">核心/卫星 — 成长与进攻</text>
+      <rect x="520" y="460" width="16" height="12" fill="rgba(144,133,233,0.12)" stroke="#9085e9" stroke-width="1"/>
+      <text x="544" y="470" fill="#91a4bd" font-size="8.5" font-family="'Segoe UI', sans-serif">现金 — 弹药</text>
+      <text x="720" y="470" fill="#536a85" font-size="8.5" font-family="'Segoe UI', sans-serif" font-style="italic">层宽诚实：越窄 = 越流动越稀缺</text>
+    </svg>
+    <p class="foot-note">目标：压舱石 45% · 核心 20% · 卫星 20% · 现金 15%（8/21 收盘数据）</p>
+  </div>
+</body>
+</html>

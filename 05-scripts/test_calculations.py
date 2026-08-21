@@ -268,8 +268,6 @@ class TestMonthlyOps(unittest.TestCase):
                      if _txn_date_in_month(t.get('date'), year, month) and is_manual_operation(t))
         self.assertEqual(count, manual,
                          f"{year}-{month:02d} monthly_ops_summary={count} 但手动交易实际 {manual} 笔")
-        self.assertEqual(viol, sum(1 for t in data.get('transactions', [])
-                                   if '违规' in str(t.get('note', '')) and str(t.get('date', '')).startswith(prefixes)))
 
 class TestAuditRegression(unittest.TestCase):
     """8/17 全文件审查回归测试"""

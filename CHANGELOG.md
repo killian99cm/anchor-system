@@ -5,6 +5,32 @@
 
 ---
 
+## v3.7.0 — 2026-08-21
+
+### 新增（可视化升级：品牌体系图 + 决策闭环自动化）
+- 🆕 **`08-website/diagrams/` 体系图集（4 张 Anchor 品牌 SVG 图）**：深色金融终端风格，统一品牌色——
+  - **`pyramid-4layer.html` 四层金字塔**：目标比例 + 当前占比偏差 + 典型持仓，塔尖现金「弹药」/塔底压舱石「基石」
+  - **`data-pipeline.html` 数据管道**：定位/获取/归因/验证 四层规范流程
+  - **`decision-loop.html` 决策闭环**：建议→观察→T+3复盘→校准 循环
+  - **`architecture.html` 系统架构**：数据源→处理→输出→发布 全链路
+- 🆕 **`~/.diagram-design/profiles/anchor.md` + `Anchor/.diagram-design`**：diagram-design 品牌 profile（语义角色 token + 四层金字塔层级色）+ 项目标记
+- 🆕 **`decision_log.py` v2.0 增强**：
+  - `--due`：T+3 到期日精确计算（记录日+3自然日），今日到期/最近复盘日提醒
+  - `--dashboard`：生成品牌化胜率仪表盘 `06-dashboard/decision_dashboard.html`
+  - `sync_all.py` 新增第 7 步：自动生成决策仪表盘
+- 🆕 **私有看板 `rebuild.py`**：四层配置面板新增**动态 SVG 金字塔**（数据来自 `D.layers`，底部压舱石→顶部现金）+ 页脚体系图集链接（JS 修正路径兼容桌面/06-dashboard 双副本）
+
+### 修复（代码质量审查，mattpocock 方法）
+- 🐛 **`anchor_to_astrbot.py`**：`os` 未导入 → AstrBot 同步启动即 NameError，补 `import os`
+- 🐛 **`test_calculations.py`**：删除残留同义反复断言（`prefixes` 未定义 + 注释自证「发现不了误计」）
+- ✅ 46 项测试 45 过 1 数据待办（证券+2500 加仓后 total_assets 待用户收盘数据同步，非代码 bug）
+
+### 影响文件
+- 新增：`08-website/diagrams/*.html`（4 张）、`.diagram-design`、`06-dashboard/decision_dashboard.html`（gitignore）、`04-reviews/special/2026-08-21-代码质量审查.md`
+- 修改：`05-scripts/{decision_log,rebuild,sync_all,anchor_to_astrbot,test_calculations}.py`、`08-website/anchor-pro.html`、`.gitignore`
+
+---
+
 ## v3.6.0 — 2026-08-20
 
 ### 新增（数据制度升级：准确性 → 可回溯）

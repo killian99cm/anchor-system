@@ -276,6 +276,8 @@ def main():
         check("公开页含由浅入深 reveal 门控", '.js .reveal' in public_html and '.js .stagger>*' in public_html)
         check("公开页体系图简洁化（闭环总览 + 无 iframe 图）", 'system-loop' in public_html and 'loop-step' in public_html and 'iframe src="diagrams/' not in public_html and 'diagram-links' in public_html)
         check("公开页 copy 含打字机文案", '"hero_typed"' in public_html and '"hero_sub"' in public_html)
+        # v3.10.0 演进时间线横向 Pin
+        check("公开页演进时间线横向 pin（GSAP 招牌技法）", 'pin-shell' in public_html and 'pin-stage' in public_html and 'evo-track' in public_html and 'getBoundingClientRect().top' in public_html)
 
     print("\n[6b] GitHub Pages 示例首页")
     check("示例首页存在", EXAMPLE_HTML_PATH.exists())

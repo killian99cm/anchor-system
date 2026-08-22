@@ -5,6 +5,21 @@
 
 ---
 
+## v3.10.0 — 2026-08-22
+
+### 公开页演进时间线横向 Pin（GSAP 招牌技法 · 原生零依赖实现，anchor-pro.html）
+
+**背景**：用户要求学习 demos.gsap.com 的设计创意与思路方法，找出适合 Anchor 的效果，把公开页升级为高级动态展示网站。GSAP demo 招牌技法中 **pin 固定 + 横向滚动**（ScrollTrigger pin + x 动画）最具冲击力；`#evolution` 六张版本卡（v3.0→v3.5，分数 80→96）是天然的横向叙事素材——把「体系逐版本进化」的推进感视觉化。用户确认：**原生 ES5 零依赖重实现**，只做此一个效果。
+
+- 📌 **演进时间线横向 pin**：`#evoStrip` 外层加 `pin-shell`（JS 定高）/ `pin-stage`（`position:sticky;top:0;height:100vh`，天然实现 pin）/ `evo-track`（flex 横排，`transform:translate3d(-p*dist)` 随滚动进度横向滑动）；右下角「继续滚动探索 ↓」脉冲提示条
+- 🧮 **滚动进度驱动**：`p=(0-shell.top)/(shell.height-100vh)` 映射到横向位移，rAF 节流 + passive，与既有 scroll 模块同构；resize/orientationchange/load 重测
+- 📱 **优雅降级**：`(max-width:980px)` 或 `prefers-reduced-motion` 由 JS 加 `no-pin` 类回退原静态 grid（980px→3 列、640px→2 列保留）；noscript 无 `.js` 门控不触发 flex，时间线保持原排版
+- 🎨 **卡片放大**：卡宽 `clamp(240px,24vw,380px)`，桌面任意宽度均保证横向滑距；stage 全屏出血（`width:100vw`），时间线横贯视口更富电影感
+- ✅ **验证**：`python gen_anchor_pro.py` + `python smoke_test.py` → **73 通过 / 0 失败**（新增 1 项检查：演进时间线横向 pin）
+- 📁 影响文件：`08-website/anchor-pro.html`（HTML 包裹 + CSS pin/回退 + JS 模块）、`05-scripts/smoke_test.py`（新检查）、CLAUDE.md、会话检查点、system_version → v3.10.0
+
+---
+
 ## v3.9.2 — 2026-08-22
 
 ### 体系可视化简洁化：Diagrams 区 → 单一系统闭环总览（anchor-pro.html）

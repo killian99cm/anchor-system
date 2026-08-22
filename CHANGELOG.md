@@ -5,6 +5,21 @@
 
 ---
 
+## v3.9.2 — 2026-08-22
+
+### 体系可视化简洁化：Diagrams 区 → 单一系统闭环总览（anchor-pro.html）
+
+**背景**：用户连续两次反馈「体系可视化有点复杂，简洁一点，一目了然」「这块区域不够简洁」，并明确选择方案 A（单一系统闭环总览图）。
+
+- 🔄 **Diagrams 区 3 张 iframe 图 → 单一系统闭环总览**：`#diagrams` 从「数据管道/决策闭环/系统架构」三张密集 iframe（均为 min-width:980px SVG 塞进 ~400px 卡片导致文字不可读）收敛为一张 HTML/CSS 内联四步闭环：**数据输入 → 规则处理 → 可视化输出 → 复盘迭代**（回流条标注「复盘结论回流规则与数据」）
+- 📎 **详情保留为链接**：三张详细图改为底部胶囊链接（新标签打开），内容不丢失
+- 📱 **响应式**：桌面四步横排箭头串联；移动端纵向堆叠、箭头旋转 ↓；reduced-motion 静态、stagger 交错进场保留
+- 🧹 每步大字标题 + 一句话说明（图标 + 编号 + 顶边主题色），扫一眼即懂体系
+- ✅ **验证**：`python gen_anchor_pro.py` + `python smoke_test.py` → **72 通过 / 0 失败**（新增 1 项检查：体系图简洁化——含 system-loop/loop-step、无 iframe 图）
+- 📁 影响文件：`08-website/anchor-pro.html`（Diagrams 区重构）、`05-scripts/smoke_test.py`（新检查）、CLAUDE.md、会话检查点、system_version → v3.9.2
+
+---
+
 ## v3.9.1 — 2026-08-22
 
 ### 公开页背景交互 + 体系可视化简洁化（anchor-pro.html）

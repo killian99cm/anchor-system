@@ -56,6 +56,20 @@ button,a{font:inherit}button{cursor:pointer}
 #cursorGlow.on{opacity:1}
 .wrap,.footer{position:relative;z-index:2}
 .section{scroll-margin-top:74px}
+/* ===== 演进时间线横向 Pin (v3.10.0 · GSAP 招牌技法原生实现) ===== */
+.js .pin-shell{position:relative;width:100vw;margin-left:calc(50% - 50vw)}
+.js .pin-stage{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:center}
+.js .evo-track{display:flex;align-items:stretch;gap:20px;width:max-content;padding:0 max(10vw,64px);will-change:transform}
+.js .evo-track .timeline-item{flex:0 0 clamp(240px,24vw,380px)}
+.js .pin-hint{position:absolute;right:6vw;bottom:34px;z-index:3;color:var(--dim);font:10px var(--mono);letter-spacing:2px;opacity:.85;animation:pinHint 1.8s ease-in-out infinite;pointer-events:none}
+@keyframes pinHint{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
+.js .no-pin .pin-shell{width:auto;margin-left:0}
+.js .no-pin .pin-stage{position:static;height:auto;overflow:visible;display:block}
+.js .no-pin .evo-track{display:grid;width:auto;transform:none!important;column-gap:0;row-gap:0;padding:0}
+.js .no-pin .evo-track .timeline-item{flex:1 1 auto}
+.js .no-pin .pin-hint{display:none}
+@media(max-width:980px){.js .pin-shell{width:auto;margin-left:0}.js .pin-stage{position:static;height:auto;overflow:visible;display:block}.js .evo-track{display:grid;grid-template-columns:repeat(3,1fr);width:auto;transform:none!important;column-gap:0;row-gap:25px;padding:0}.js .evo-track .timeline-item{flex:1 1 auto}.js .pin-hint{display:none}}
+@media(max-width:640px){.js .evo-track{grid-template-columns:1fr 1fr}}
 /* ===== 体系可视化简洁化：单一闭环总览 (v3.9.2) ===== */
 .system-loop{display:flex;align-items:stretch;flex-wrap:nowrap;max-width:1040px;margin:0 auto}
 .loop-step{flex:1;position:relative;padding:24px 18px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(160deg,rgba(13,30,51,.85),rgba(7,17,32,.78));overflow:hidden;text-align:center;transition:.25s}
@@ -128,7 +142,7 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>六条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid stagger" id="rulesGrid"></div></section>
 <section class="section reveal" id="forbidden"><div class="section-head"><div><div class="section-kicker">Guardrails</div><h2>永久<em>禁用操作</em></h2></div><p>底线比预测更可靠：明确不做什么，才能给真正重要的动作留下空间。</p></div><div class="forbidden-grid stagger" id="forbiddenGrid"></div></section>
 <section class="section reveal" id="noise"><div class="section-head"><div><div class="section-kicker">Noise audit</div><h2>市场噪声，<em>量化审计</em></h2></div><p>信号是否有效，用数据说话：每次触发都被记录、归因、评分——假信号直接变成规则优化的素材，而不是"运气不好"。</p></div><div class="section-rule"></div><div class="noise-grid stagger"><div class="noise-card"><div class="noise-index">01</div><h3>DDX 准确率</h3><p>主力资金信号触发后跟踪真实命中率；不准确就调整阈值，直到数据证明有效。</p></div><div class="noise-card"><div class="noise-index">02</div><h3>虚惊指数</h3><p>记录"差一点触发"的盘中干扰，衡量规则被市场噪声晃动的频率。</p></div><div class="noise-card"><div class="noise-index">03</div><h3>每周评分卡</h3><p>准确率 / 虚惊 / 盘中振幅 / 操作时机四项加权评分，高噪声一目了然。</p></div><div class="noise-card"><div class="noise-index">04</div><h3>三问优化</h3><p>能阻止哪段错误？与现有规则冲突吗？一个月内能验证吗？三问全过才吸收。</p></div></div></section>
-<section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="timeline" id="evoStrip"></div><div class="flow stagger"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
+<section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="pin-shell"><div class="pin-stage"><div class="timeline evo-track" id="evoStrip" aria-label="Anchor 体系进化时间线"></div><div class="pin-hint">继续滚动探索 ↓</div></div></div><div class="flow stagger"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
 <section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip stagger"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div><div class="data-item"><strong>06 · 实时同步</strong>保存即重建</div></div></section>
 <section class="section reveal" id="diagrams"><div class="section-head"><div><div class="section-kicker">System map</div><h2>一套体系，<em>闭环运转</em></h2></div><p>数据输入 → 规则处理 → 可视化输出 → 复盘校准，四步闭环，一眼看懂。以下均为体系示意，不含真实持仓与金额。</p></div><div class="section-rule"></div><div class="system-loop stagger" role="img" aria-label="Anchor 体系四步闭环：数据输入、规则处理、可视化输出、复盘迭代"><div class="loop-step ls-in"><div class="loop-num">01</div><div class="loop-icon">📥</div><h3>数据输入</h3><p>唯一权威持仓 + mx-data 行情</p></div><div class="loop-arrow">→</div><div class="loop-step ls-rule"><div class="loop-num">02</div><div class="loop-icon">🧭</div><h3>规则处理</h3><p>四层金字塔 + 数据管道四层规范</p></div><div class="loop-arrow">→</div><div class="loop-step ls-out"><div class="loop-num">03</div><div class="loop-icon">📊</div><h3>可视化输出</h3><p>看板 / 报告 / 公开页 · 脱敏展示</p></div><div class="loop-arrow">→</div><div class="loop-step ls-review"><div class="loop-num">04</div><div class="loop-icon">🔁</div><h3>复盘迭代</h3><p>T+3 回填 · 胜率校准纪律</p></div></div><div class="loop-back">复盘结论回流规则与数据 · 体系持续进化</div><div class="diagram-links"><span>想看细节？</span><a href="diagrams/data-pipeline.html" target="_blank" rel="noreferrer">数据管道 · 四层规范</a><a href="diagrams/decision-loop.html" target="_blank" rel="noreferrer">决策闭环 · T+3 复盘</a><a href="diagrams/architecture.html" target="_blank" rel="noreferrer">系统架构 · 数据流</a></div></section>
 <section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html" data-link-pages="index.html" data-link-local="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
@@ -966,6 +980,34 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   function loop(){raf=requestAnimationFrame(loop);draw()}
   document.addEventListener("visibilitychange",function(){if(document.hidden){if(raf){cancelAnimationFrame(raf);raf=0}}else if(!raf){loop()}});
   loop();
+})();
+
+/* ===== 演进时间线横向 Pin (v3.10.0 · GSAP 招牌技法原生实现) ===== */
+(function(){
+  var shell=document.querySelector(".pin-shell"),stage=shell&&shell.querySelector(".pin-stage"),track=stage&&stage.querySelector(".evo-track");
+  if(!track)return;
+  var mqM=window.matchMedia&&window.matchMedia("(max-width:980px)");
+  var rm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)");
+  var dist=0,enabled=false,raf=false,pad=48;
+  function disable(){shell.classList.add("no-pin");shell.style.height="auto";track.style.transform="none";enabled=false}
+  function measure(){
+    if((mqM&&mqM.matches)||(rm&&rm.matches)){disable();return}
+    var tw=track.scrollWidth,vh=window.innerHeight;dist=Math.max(tw-vh+pad,0);
+    if(dist<=0){disable();return}
+    shell.classList.remove("no-pin");shell.style.height=(vh+dist)+"px";enabled=true;render();
+  }
+  function render(){
+    if(!enabled)return;
+    var sh=shell.offsetHeight,vh=window.innerHeight,top=shell.getBoundingClientRect().top;
+    var p=(0-top)/(sh-vh);if(p<0)p=0;if(p>1)p=1;
+    track.style.transform="translate3d("+(-p*dist)+"px,0,0)";raf=false;
+  }
+  function onScroll(){if(!enabled||raf)return;raf=true;requestAnimationFrame(render)}
+  measure();
+  window.addEventListener("scroll",onScroll,{passive:true});
+  window.addEventListener("resize",measure);
+  window.addEventListener("orientationchange",measure);
+  window.addEventListener("load",measure);
 })();
 </script>
 </body>

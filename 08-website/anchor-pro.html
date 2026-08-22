@@ -44,18 +44,46 @@ button,a{font:inherit}button{cursor:pointer}
 .to-top{position:fixed;right:22px;bottom:22px;z-index:40;width:44px;height:44px;border:1px solid rgba(57,135,229,.5);border-radius:12px;background:rgba(7,17,32,.92);color:var(--blue);font-size:18px;opacity:0;transform:translateY(12px);pointer-events:none;transition:.3s;box-shadow:0 12px 30px rgba(0,0,0,.3)}.to-top.show{opacity:1;transform:none;pointer-events:auto}.to-top:hover{background:var(--blue-soft)}
 .noscript-note{max-width:1240px;margin:0 auto;padding:14px 28px;border:1px solid rgba(250,178,25,.3);background:rgba(250,178,25,.08);color:var(--amber);font-size:12px;text-align:center}.cta{padding:90px 0 100px;text-align:center}.cta h2{font-size:clamp(30px,5vw,58px);letter-spacing:-3px;margin-bottom:13px}.cta p{max-width:560px;margin:0 auto 28px;color:var(--muted);font-size:13px}.footer{border-top:1px solid var(--line-soft);padding:26px 28px 34px;text-align:center;color:var(--dim);font:10px var(--mono);line-height:2}.reveal{opacity:1;transform:translateY(18px);transition:opacity .7s,transform .7s}.reveal.in{transform:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes sweep{0%,28%{transform:translateX(-100%)}52%,100%{transform:translateX(100%)}}
+/* ===== Command Center 高冲击升级 (v3.9.0) ===== */
+.scrollbar{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--green-bright));box-shadow:0 0 12px rgba(57,135,229,.55);pointer-events:none}
+.hero{overflow:hidden}
+#heroCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
+.hero-copy,.command-card{position:relative;z-index:1}
+.hero-glow{position:absolute;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(620px 420px at var(--gx,50%) var(--gy,30%),rgba(57,135,229,.18),transparent 65%);opacity:0;transition:opacity .4s}
+.hero-glow.on{opacity:1}
+.typing{display:inline-block;white-space:pre-wrap}
+.typing:after{content:"";display:inline-block;width:3px;height:.78em;margin-left:3px;vertical-align:-.06em;background:var(--amber);box-shadow:0 0 10px rgba(250,178,25,.75);animation:blink .9s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.big,.count-up{font-variant-numeric:tabular-nums}
+.command-card:after{content:"";position:absolute;top:-1px;left:-1px;right:-1px;bottom:-1px;border-radius:23px;padding:1px;background:linear-gradient(120deg,rgba(57,135,229,.95),rgba(85,201,214,.5),rgba(57,135,229,.95));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.6;pointer-events:none}
+.kpi,.rule-card,.holding-card,.evidence-card,.noise-card{transform-style:preserve-3d;will-change:transform}
+.kpi:hover,.rule-card:hover,.holding-card:hover,.evidence-card:hover,.noise-card:hover{box-shadow:0 18px 40px rgba(0,0,0,.28)}
+.btn-primary{position:relative;overflow:hidden}
+.btn-primary:after{content:"";position:absolute;top:0;bottom:0;left:-70%;width:55%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.3),transparent);transform:skewX(-18deg);animation:shine 3.4s infinite}
+@keyframes shine{0%,55%{left:-70%}100%{left:135%}}
+.pyr-row .pyr-fill{animation:growX 1.1s cubic-bezier(.22,.61,.36,1) both}
+@keyframes growX{from{width:38%}to{width:var(--pyr-w)}}
+.bar-mark{animation:rise .9s cubic-bezier(.22,.61,.36,1) both}
+@keyframes rise{from{height:3px}to{height:var(--bar-height)}}
+.timeline-item:before{animation:nodePulse 2.8s ease-in-out infinite}
+@keyframes nodePulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px rgba(57,135,229,.28)}}
+.typing .t-seg:first-child{color:var(--amber)}
+.js .stagger>*{opacity:0;transform:translateY(18px);transition:opacity .6s,transform .6s}
+.js .stagger.in>*{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.typing:after,.command-card:after,.btn-primary:after,.pyr-row .pyr-fill,.bar-mark,.timeline-item:before{animation:none}.command-card:after,.btn-primary:after{opacity:0}.js .stagger>*{opacity:1;transform:none;transition:none}}
 @media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.diagram-grid{grid-template-columns:1fr}.timeline{grid-template-columns:repeat(3,1fr)}.timeline-item:nth-child(3n){border-right:0}.timeline-item:nth-child(4){border-top:1px solid var(--line-soft);padding-top:25px}.nav-links{display:none}}
 @media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid{grid-template-columns:1fr}.calc-tabs{grid-template-columns:repeat(2,1fr)}.calc-controls{flex-direction:column}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(even){border-right:0}.timeline-item:nth-child(3),.timeline-item:nth-child(5){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
 </style>
 </head>
 <body>
+<div class="scrollbar" id="scrollBar"></div>
 <nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v3.5</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><span class="nav-demo">示例数据 · 公开页</span></div></nav>
 <main class="wrap">
-<section class="hero reveal" id="top"><div class="hero-copy"><div class="eyebrow">Investment operating system</div><h1><em>Anchor</em><br><i>不靠预测</i>，靠纪律</h1><div class="hero-title">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
-<section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row" id="kpiRow"></div></section>
+<section class="hero reveal" id="top"><canvas id="heroCanvas"></canvas><div class="hero-glow" id="heroGlow"></div><div class="hero-copy"><div class="eyebrow" id="heroKicker">Investment operating system</div><h1><em>Anchor</em><br><span class="typing"><span class="t-seg" data-w="不靠预测">不靠预测</span><span class="t-seg" data-w="，靠纪律">，靠纪律</span></span></h1><div class="hero-title" id="heroSub">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big count-up" data-count="96">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
+<section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row stagger" id="kpiRow"></div></section>
 <section class="section reveal in" id="architecture"><div class="section-head"><div><div class="section-kicker">Architecture</div><h2>四层<em>金字塔</em></h2></div><p>层级决定职责，职责决定动作。目标比例是组合的导航，不是静态名单。</p></div><div class="arch-grid"><div class="architecture"><h3>金字塔结构 · 宽度 = 目标配比</h3><div class="pyramid-stack" id="pyramidViz"></div><div class="pyr-tip">示例数据仅演示结构与目标配比；真实看板展示每层实际占比、偏离与按资产新高动态计算的回撤线。</div></div><div class="architecture"><h3>目标配比 · 风险平价</h3><div class="allocation" id="allocationViz"></div><div class="allocation-note">四层目标（风险平价）：压舱石 45% / 核心增长 20% / 卫星进攻 20% / 现金预备 15%。公开示例仅演示目标配比；真实看板展示实际占比、偏离与再平衡触发。</div></div></div></section>
-<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="filter-row" id="layerFilters"><button class="filter-btn active" data-layer="all">全部层级</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心增长</button><button class="filter-btn" data-layer="sat">卫星进攻</button><button class="filter-btn" data-layer="cash">现金预备</button><span class="filter-status" id="filterStatus"></span></div><div class="holdings-grid" id="holdingsGrid"></div>
+<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="filter-row" id="layerFilters"><button class="filter-btn active" data-layer="all">全部层级</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心增长</button><button class="filter-btn" data-layer="sat">卫星进攻</button><button class="filter-btn" data-layer="cash">现金预备</button><span class="filter-status" id="filterStatus"></span></div><div class="holdings-grid stagger" id="holdingsGrid"></div>
 <div class="calc-panel">
   <div class="calc-head"><h3>⚡ 互动试算 · 按总资产与风险偏好生成四层分配</h3><span>同款工具：05-scripts/anchor_calculator.html</span></div>
   <div class="calc-controls">
@@ -70,14 +98,14 @@ button,a{font:inherit}button{cursor:pointer}
   </div>
   <div class="calc-out" id="calcOut"></div>
 </div></section>
-<section class="section reveal" id="evidence"><div class="section-head"><div><div class="section-kicker">Evidence</div><h2>从“感觉”到<em>状态机</em></h2></div><p>公开示例保留原有前后对比栏目，同时用卡片和表格双通道呈现，文字不依赖颜色才能读懂。</p></div><div class="evidence-grid"><div class="evidence-cards" id="evidenceCards"></div><div class="table-wrap"><table><thead><tr><th>维度</th><th>使用前</th><th>使用后</th><th>变化</th></tr></thead><tbody id="cmpBody"></tbody></table></div></div></section>
+<section class="section reveal" id="evidence"><div class="section-head"><div><div class="section-kicker">Evidence</div><h2>从“感觉”到<em>状态机</em></h2></div><p>公开示例保留原有前后对比栏目，同时用卡片和表格双通道呈现，文字不依赖颜色才能读懂。</p></div><div class="evidence-grid"><div class="evidence-cards stagger" id="evidenceCards"></div><div class="table-wrap"><table><thead><tr><th>维度</th><th>使用前</th><th>使用后</th><th>变化</th></tr></thead><tbody id="cmpBody"></tbody></table></div></div></section>
 <section class="section reveal" id="performance"><div class="section-head"><div><div class="section-kicker">Sample performance</div><h2>示例<em>盈亏走势</em></h2></div><p>脱敏样本只用来演示记录方式。柱状图的数值直接可见，hover 只提供额外上下文。</p></div><div class="performance"><div class="chart-card"><div class="chart-legend"><span class="legend-key"><i style="--key:var(--red)"></i>示例盈利月</span><span class="legend-key"><i style="--key:var(--green-bright)"></i>示例亏损月</span></div><div class="bar-chart" id="monthlyChart"></div><div class="chart-foot"><span id="monthlySum"></span><span>柱状图 · 单一数值轴</span></div></div><div class="chart-summary"><h3>读图摘要</h3><div id="performanceSummary"></div></div></div></section>
-<section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>六条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid" id="rulesGrid"></div></section>
-<section class="section reveal" id="forbidden"><div class="section-head"><div><div class="section-kicker">Guardrails</div><h2>永久<em>禁用操作</em></h2></div><p>底线比预测更可靠：明确不做什么，才能给真正重要的动作留下空间。</p></div><div class="forbidden-grid" id="forbiddenGrid"></div></section>
-<section class="section reveal" id="noise"><div class="section-head"><div><div class="section-kicker">Noise audit</div><h2>市场噪声，<em>量化审计</em></h2></div><p>信号是否有效，用数据说话：每次触发都被记录、归因、评分——假信号直接变成规则优化的素材，而不是"运气不好"。</p></div><div class="section-rule"></div><div class="noise-grid"><div class="noise-card"><div class="noise-index">01</div><h3>DDX 准确率</h3><p>主力资金信号触发后跟踪真实命中率；不准确就调整阈值，直到数据证明有效。</p></div><div class="noise-card"><div class="noise-index">02</div><h3>虚惊指数</h3><p>记录"差一点触发"的盘中干扰，衡量规则被市场噪声晃动的频率。</p></div><div class="noise-card"><div class="noise-index">03</div><h3>每周评分卡</h3><p>准确率 / 虚惊 / 盘中振幅 / 操作时机四项加权评分，高噪声一目了然。</p></div><div class="noise-card"><div class="noise-index">04</div><h3>三问优化</h3><p>能阻止哪段错误？与现有规则冲突吗？一个月内能验证吗？三问全过才吸收。</p></div></div></section>
-<section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="timeline" id="evoStrip"></div><div class="flow"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
-<section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div><div class="data-item"><strong>06 · 实时同步</strong>保存即重建</div></div></section>
-<section class="section reveal" id="diagrams"><div class="section-head"><div><div class="section-kicker">Diagrams</div><h2>体系<em>可视化</em></h2></div><p>以下为体系示意，均不含真实持仓与真实金额，可安全对外展示。</p></div><div class="diagram-grid"><div class="diagram-card"><h3>数据管道 · 四层规范</h3><iframe src="diagrams/data-pipeline.html" loading="lazy" title="数据管道四层规范示意图"></iframe></div><div class="diagram-card"><h3>决策闭环 · T+3 复盘</h3><iframe src="diagrams/decision-loop.html" loading="lazy" title="决策闭环T+3复盘示意图"></iframe></div><div class="diagram-card"><h3>系统架构 · 数据流</h3><iframe src="diagrams/architecture.html" loading="lazy" title="系统架构数据流示意图"></iframe></div></div></section>
+<section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>六条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid stagger" id="rulesGrid"></div></section>
+<section class="section reveal" id="forbidden"><div class="section-head"><div><div class="section-kicker">Guardrails</div><h2>永久<em>禁用操作</em></h2></div><p>底线比预测更可靠：明确不做什么，才能给真正重要的动作留下空间。</p></div><div class="forbidden-grid stagger" id="forbiddenGrid"></div></section>
+<section class="section reveal" id="noise"><div class="section-head"><div><div class="section-kicker">Noise audit</div><h2>市场噪声，<em>量化审计</em></h2></div><p>信号是否有效，用数据说话：每次触发都被记录、归因、评分——假信号直接变成规则优化的素材，而不是"运气不好"。</p></div><div class="section-rule"></div><div class="noise-grid stagger"><div class="noise-card"><div class="noise-index">01</div><h3>DDX 准确率</h3><p>主力资金信号触发后跟踪真实命中率；不准确就调整阈值，直到数据证明有效。</p></div><div class="noise-card"><div class="noise-index">02</div><h3>虚惊指数</h3><p>记录"差一点触发"的盘中干扰，衡量规则被市场噪声晃动的频率。</p></div><div class="noise-card"><div class="noise-index">03</div><h3>每周评分卡</h3><p>准确率 / 虚惊 / 盘中振幅 / 操作时机四项加权评分，高噪声一目了然。</p></div><div class="noise-card"><div class="noise-index">04</div><h3>三问优化</h3><p>能阻止哪段错误？与现有规则冲突吗？一个月内能验证吗？三问全过才吸收。</p></div></div></section>
+<section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="timeline" id="evoStrip"></div><div class="flow stagger"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
+<section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip stagger"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div><div class="data-item"><strong>06 · 实时同步</strong>保存即重建</div></div></section>
+<section class="section reveal" id="diagrams"><div class="section-head"><div><div class="section-kicker">Diagrams</div><h2>体系<em>可视化</em></h2></div><p>以下为体系示意，均不含真实持仓与真实金额，可安全对外展示。</p></div><div class="diagram-grid stagger"><div class="diagram-card"><h3>数据管道 · 四层规范</h3><iframe src="diagrams/data-pipeline.html" loading="lazy" title="数据管道四层规范示意图"></iframe></div><div class="diagram-card"><h3>决策闭环 · T+3 复盘</h3><iframe src="diagrams/decision-loop.html" loading="lazy" title="决策闭环T+3复盘示意图"></iframe></div><div class="diagram-card"><h3>系统架构 · 数据流</h3><iframe src="diagrams/architecture.html" loading="lazy" title="系统架构数据流示意图"></iframe></div></div></section>
 <section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html" data-link-pages="index.html" data-link-local="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
 </main>
 <div class="chart-tooltip" id="chartTooltip"></div>
@@ -85,6 +113,7 @@ button,a{font:inherit}button{cursor:pointer}
 <button class="to-top" id="toTop" aria-label="返回顶部">↑</button>
 <footer class="footer">⚓ Anchor Investment System v3.5 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
 <script>
+document.documentElement.className+=" js";
 // ===== PUBLIC EXAMPLE DATA =====
 var D={
   "update": "2026-08-06",
@@ -256,7 +285,11 @@ var D={
     "forbidden_lead": "每一条禁令都对应常见错误操作。这些不是建议，是底线。",
     "cta_title": "用复盘成本换来的规则",
     "cta_text": "多笔样本交易 · 多只清仓样本 · 多月记录 · 开源 · 免费 · 永不收费",
-    "monthly_sum_prefix": "样本合计"
+    "monthly_sum_prefix": "样本合计",
+    "hero_kicker": "Investment operating system",
+    "hero_typed": "不靠预测，靠纪律",
+    "hero_sub": "四层金字塔投资纪律系统",
+    "score_animated": true
   },
   "pyramid": [
     {
@@ -644,11 +677,12 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 })();
 
 (function(){
-  var box=document.getElementById("evoStrip"),tones=["var(--amber)","var(--green-bright)","var(--green-bright)","var(--blue)"];(D.evo||[]).forEach(function(e,i){var item=make("article","timeline-item");item.style.setProperty("--tone",tones[i%tones.length]);append(item,"div","timeline-version",e.v);append(item,"div","timeline-score",e.s);append(item,"div","timeline-desc",e.d);box.appendChild(item)})
+  var box=document.getElementById("evoStrip"),tones=["var(--amber)","var(--green-bright)","var(--green-bright)","var(--blue)"];(D.evo||[]).forEach(function(e,i){var item=make("article","timeline-item");item.style.setProperty("--tone",tones[i%tones.length]);append(item,"div","timeline-version",e.v);var sc=append(item,"div","timeline-score count-up",e.s);sc.setAttribute("data-count",e.s);append(item,"div","timeline-desc",e.d);box.appendChild(item)})
 })();
 
 (function(){
-  var sections=document.querySelectorAll(".reveal");if(!("IntersectionObserver" in window)){sections.forEach(function(s){s.classList.add("in")});return}var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}})},{threshold:.08});sections.forEach(function(s){io.observe(s)})
+  function reveal(t){t.classList.add("in");if(t.classList.contains("stagger")){var kids=t.children;for(var i=0;i<kids.length;i++){kids[i].style.transitionDelay=(i*70)+"ms"}}}
+  var els=document.querySelectorAll(".reveal, .stagger");if(!("IntersectionObserver" in window)){els.forEach(reveal);return}var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){reveal(e.target);io.unobserve(e.target)}})},{threshold:.08});els.forEach(function(s){io.observe(s)})
 })();
 
 (function(){
@@ -697,6 +731,157 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   // 页面互链路径自适应：本地（08-website/06-dashboard 子目录）用相对路径，GitHub Pages（站点根）用根级路径
   function isLocal(){var h=(location.href||"").replace(/\\/g,"/");return /\/08-website\/|\/06-dashboard\//.test(h)}
   document.querySelectorAll("[data-link-pages]").forEach(function(a){a.href=isLocal()?a.getAttribute("data-link-local"):a.getAttribute("data-link-pages")});
+})();
+
+// ===== Command Center 高冲击模块 (v3.9.0) =====
+(function(){
+  // 顶部滚动进度条
+  var bar=document.getElementById("scrollBar");if(!bar)return;
+  var ticking=false;
+  function update(){var d=document.documentElement,max=d.scrollHeight-d.clientHeight;bar.style.width=(max>0?((window.scrollY||d.scrollTop)/max)*100:0)+"%";ticking=false}
+  window.addEventListener("scroll",function(){if(!ticking){ticking=true;requestAnimationFrame(update)}},{passive:true});
+  update();
+})();
+
+(function(){
+  // Hero 粒子资金流：蓝色/青色浮点 + 邻近连线，reduced-motion 单帧静态，移动端减半
+  var canvas=document.getElementById("heroCanvas");if(!canvas||!("getContext" in canvas))return;
+  var ctx=canvas.getContext("2d"),hero=canvas.parentElement;
+  var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var mobile=window.matchMedia&&window.matchMedia("(max-width:640px)").matches;
+  var W=0,H=0,ps=[],raf=0;
+  function build(){
+    W=canvas.width=hero.offsetWidth||720;H=canvas.height=hero.offsetHeight||420;
+    var n=reduced?0:(mobile?28:Math.min(72,Math.max(30,Math.round(W/14))));
+    ps=[];for(var i=0;i<n;i++){ps.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.7+.7,vx:(Math.random()-.5)*.34,vy:(Math.random()-.5)*.34,a:Math.random()*.3+.18,c:Math.random()<.18})}
+  }
+  window.addEventListener("resize",build,{passive:true});build();
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    var d=Math.min(W,H)*.16+34;
+    for(var i=0;i<ps.length;i++){
+      var p=ps[i];
+      for(var j=i+1;j<ps.length;j++){
+        var q=ps[j],dx=p.x-q.x,dy=p.y-q.y,dist=Math.sqrt(dx*dx+dy*dy);
+        if(dist<d){ctx.strokeStyle="rgba(57,135,229,"+(0.16*(1-dist/d)).toFixed(3)+")";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke()}
+      }
+    }
+    for(var k=0;k<ps.length;k++){
+      var o=ps[k];o.x+=o.vx;o.y+=o.vy;
+      if(o.x<-24)o.x=W+24;else if(o.x>W+24)o.x=-24;
+      if(o.y<-24)o.y=H+24;else if(o.y>H+24)o.y=-24;
+      ctx.beginPath();ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+      ctx.fillStyle=(o.c?"rgba(85,201,214,":"rgba(57,135,229,")+o.a.toFixed(3)+")";ctx.fill();
+    }
+  }
+  if(reduced){draw();return}
+  function loop(){raf=requestAnimationFrame(loop);draw()}
+  document.addEventListener("visibilitychange",function(){if(document.hidden){if(raf){cancelAnimationFrame(raf);raf=0}}else if(!raf){loop()}});
+  loop();
+})();
+
+(function(){
+  // Hero 鼠标径向光晕跟随（仅 pointer:fine，rAF 节流）
+  var glow=document.getElementById("heroGlow"),hero=document.getElementById("top");
+  if(!glow||!hero)return;
+  if(!window.matchMedia||!window.matchMedia("(pointer: fine)").matches)return;
+  var raf=0;
+  hero.addEventListener("pointermove",function(e){
+    glow.classList.add("on");
+    if(raf)return;raf=requestAnimationFrame(function(){
+      var r=hero.getBoundingClientRect();
+      glow.style.setProperty("--gx",((e.clientX-r.left)/r.width*100).toFixed(1)+"%");
+      glow.style.setProperty("--gy",((e.clientY-r.top)/r.height*100).toFixed(1)+"%");
+      raf=0;
+    });
+  },{passive:true});
+  hero.addEventListener("pointerleave",function(){glow.classList.remove("on")});
+})();
+
+(function(){
+  // 打字机标题：copy 驱动文案 → 逐字打出，reduced-motion 全文直显
+  var el=document.querySelector(".typing");if(!el)return;
+  var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(D.copy){
+    var kicker=document.getElementById("heroKicker"),sub=document.getElementById("heroSub");
+    if(D.copy.hero_kicker&&kicker)kicker.textContent=D.copy.hero_kicker;
+    if(D.copy.hero_sub&&sub)sub.textContent=D.copy.hero_sub;
+    if(D.copy.hero_typed){
+      var segs0=el.querySelectorAll(".t-seg"),parts=String(D.copy.hero_typed).split("，");
+      if(segs0.length===2&&parts.length===2){segs0[0].textContent=parts[0];segs0[1].textContent="，"+parts[1]}
+    }
+  }
+  if(reduced)return;
+  var segs=el.querySelectorAll(".t-seg");if(!segs.length)return;
+  var finals=[];segs.forEach(function(s){finals.push(s.textContent)});
+  var text=finals.join(""),bounds=[],acc=0;
+  finals.forEach(function(f){bounds.push([acc,acc+f.length]);acc+=f.length});
+  segs.forEach(function(s){s.textContent=""});
+  var t=0;
+  function tick(){
+    t++;
+    for(var i=0;i<segs.length;i++){var b=bounds[i];
+      if(t>=b[1])segs[i].textContent=text.slice(b[0],b[1]);
+      else if(t>b[0])segs[i].textContent=text.slice(b[0],t)}
+    if(t<text.length)setTimeout(tick,52+Math.random()*46);
+  }
+  setTimeout(tick,650);
+})();
+
+(function(){
+  // count-up 数字滚动：1.2s 缓出，IO 触发，reduced-motion 直接终值
+  var els=document.querySelectorAll(".count-up");if(!els.length)return;
+  var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function run(el){
+    var target=parseFloat(el.getAttribute("data-count"));if(isNaN(target))target=parseFloat(el.textContent)||0;
+    if(reduced){el.textContent=Math.round(target);return}
+    var dur=1200,t0=null;
+    function frame(ts){
+      if(t0===null)t0=ts;
+      var p=Math.min((ts-t0)/dur,1),e=1-Math.pow(1-p,3);
+      el.textContent=Math.round(target*e);
+      if(p<1)requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+  if("IntersectionObserver" in window&&!reduced){
+    var io=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){run(en.target);io.unobserve(en.target)}})},{threshold:.4});
+    els.forEach(function(el){io.observe(el)});
+  }else{els.forEach(run)}
+})();
+
+(function(){
+  // 卡片 3D tilt：±7°X/±9°Y + translateZ，仅桌面 pointer:fine，reduced-motion 关闭
+  if(!window.matchMedia||!window.matchMedia("(pointer: fine)").matches)return;
+  if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  var cards=document.querySelectorAll(".kpi,.rule-card,.holding-card,.evidence-card,.noise-card");
+  cards.forEach(function(card){
+    card.addEventListener("pointerenter",function(){card.style.transition="transform .12s ease, box-shadow .25s ease"});
+    card.addEventListener("pointermove",function(e){
+      var r=card.getBoundingClientRect();
+      var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+      card.style.transform="perspective(760px) rotateX("+(-y*7).toFixed(2)+"deg) rotateY("+(x*9).toFixed(2)+"deg) translateZ(6px)";
+    });
+    card.addEventListener("pointerleave",function(){card.style.transition="";card.style.transform=""});
+  });
+})();
+
+(function(){
+  // Hero 滚动视差：内容上移 + 淡出，rAF 节流
+  var hero=document.getElementById("top"),copy=document.querySelector(".hero-copy"),cmd=document.querySelector(".command-card");
+  if(!hero)return;
+  var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduced)return;
+  var ticking=false;
+  function onScroll(){
+    var y=window.scrollY||document.documentElement.scrollTop,h=hero.offsetHeight||600;
+    var p=Math.min(Math.max(y/h,0),1);
+    if(copy)copy.style.transform="translateY("+(p*44).toFixed(1)+"px)";
+    if(cmd)cmd.style.transform="translateY("+(p*70).toFixed(1)+"px)";
+    hero.style.opacity=Math.max(1-p*1.5,0).toFixed(2);
+    ticking=false;
+  }
+  window.addEventListener("scroll",function(){if(!ticking){ticking=true;requestAnimationFrame(onScroll)}},{passive:true});
 })();
 </script>
 </body>

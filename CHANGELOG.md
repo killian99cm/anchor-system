@@ -5,6 +5,24 @@
 
 ---
 
+## v3.9.0 — 2026-08-22
+
+### 公开页首页 Command Center 高冲击重构（anchor-pro.html）
+
+**背景**：用户「首页可以做成高端动态页面吗？」→ 方案确认方向为**高冲击 Command Center**（指挥中心观感），本次只重构公开页首页模板，私有看板 rebuild.py 不动。
+
+- 🎨 **Hero 粒子资金流**：Canvas 蓝色/青色浮点 + 邻近连线（桌面 ≤72 / 移动 28，`prefers-reduced-motion` 单帧静态，`visibilitychange` 自动暂停）
+- ⌨️ **打字机标题**：「不靠预测，靠纪律」逐字打出 + 琥珀光标；文案由 `D.copy.hero_typed` 驱动（copy 扩展 `hero_kicker`/`hero_typed`/`hero_sub`/`score_animated`）
+- 🔢 **count-up 数字滚动**：Command Center 评分 96 + 时间线 6 版本分数从 0 滚动至终值（IntersectionObserver 触发，1.2s 缓出）
+- ✨ **鼠标光晕 + 滚动视差 + 顶部进度条**：Hero 径向光晕跟随（仅 pointer:fine）、Hero 内容上移淡出、渐变滚动进度条（均 rAF 节流 + passive 监听）
+- 🎴 **卡片 3D tilt**：KPI/规则/持仓/证据/噪声卡 ±7°X/±9°Y + translateZ 抬升（仅桌面 pointer:fine）
+- 🎢 **stagger 交错进场**：9 个数据容器子卡片 70ms 级联入场；`.js` 门控（`documentElement.className+= " js"`）保证 noscript 不隐藏静态内容
+- 🛡️ **无障碍/性能**：全部动效走 transform/opacity；`prefers-reduced-motion` 全静态兜底（打字机全文直显、count-up 直接终值、粒子单帧、tilt 关闭）
+- ✅ **验证**：`python gen_anchor_pro.py` + `python smoke_test.py` → **69 通过 / 0 失败**（含新增 7 项 Command Center 结构检查）
+- 📁 影响文件：`08-website/anchor-pro.html`（模板重构）、`05-scripts/gen_anchor_pro.py`（copy 字段扩展）、`05-scripts/smoke_test.py`（新结构检查）、`06-dashboard/portfolio_analysis_example.html`（数据块同步）、CLAUDE.md、会话检查点、system_version → v3.9.0
+
+---
+
 ## v3.8.5 — 2026-08-21
 
 ### 8/21 收盘持仓同步 + 止损硬Deadline 修正（8/22 周六休市 → 8/25）

@@ -272,6 +272,8 @@ def main():
         check("公开页含 3D tilt", 'pointer: fine' in public_html and 'rotateX' in public_html)
         check("公开页含滚动进度条", 'id="scrollBar"' in public_html)
         check("公开页含光晕跟随", 'id="heroGlow"' in public_html)
+        check("公开页含全页交互背景粒子场", 'id="bgCanvas"' in public_html and 'bgCanvas' in public_html and 'mx>-9000' in public_html)
+        check("公开页含由浅入深 reveal 门控", '.js .reveal' in public_html and '.js .stagger>*' in public_html)
         check("公开页 copy 含打字机文案", '"hero_typed"' in public_html and '"hero_sub"' in public_html)
 
     print("\n[6b] GitHub Pages 示例首页")

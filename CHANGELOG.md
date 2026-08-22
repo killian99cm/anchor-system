@@ -5,6 +5,21 @@
 
 ---
 
+## v3.9.1 — 2026-08-22
+
+### 公开页背景交互 + 体系可视化简洁化（anchor-pro.html）
+
+**背景**：用户在 v3.9.0 基础上提出两点新要求——「① 鼠标滑动时背景内容可交互、画面随鼠标变化且符合主题；② 切换顺滑、由浅入深有代入感」，随后反馈「体系可视化有点复杂，简洁一点，一目了然」。
+
+- 🖱️ **全页交互背景粒子场**：`#bgCanvas` 固定全屏 Canvas，资金流粒子随鼠标**推开形成涟漪**（rAF 节流 + passive，仅桌面 pointer:fine，移动端关闭，reduced-motion 静态）；配合既有 Hero 粒子**牵引**形成双层交互纵深
+- 💡 **全页鼠标跟随光晕**：`#cursorGlow` 固定层低透明度泛光（z-index 夹在背景与内容之间），鼠标滑过全页光影随之变化
+- 🎢 **由浅入深 reveal 门控**：`.js` 门控 fade + translateY(26px) + scale(.985) 深度入场（cubic-bezier 缓出），`.js .stagger>*` 交错保留；`.section` 加 `scroll-margin-top` 修正锚点定位；reduced-motion 全静态兜底
+- 🧹 **体系可视化简洁化**：架构区从「金字塔 + 配比米尺」双栏收敛为**单一居中金字塔**（行宽即目标配比，每行只留一句话纪律 rule）；两段长注合并为一句隐私说明；`#allocationViz` 渲染移除（smoke/gen 均无引用，确认安全）
+- ✅ **验证**：`python gen_anchor_pro.py` + `python smoke_test.py` → **71 通过 / 0 失败**（新增 2 项检查：全页交互背景粒子场、reveal 门控）
+- 📁 影响文件：`08-website/anchor-pro.html`（背景交互 + 简洁化）、`05-scripts/smoke_test.py`（新检查）、CLAUDE.md、会话检查点、system_version → v3.9.1
+
+---
+
 ## v3.9.0 — 2026-08-22
 
 ### 公开页首页 Command Center 高冲击重构（anchor-pro.html）

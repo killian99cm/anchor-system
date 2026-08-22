@@ -265,6 +265,14 @@ def main():
         check("公开页不写死持仓数量", '10只基金 + 1只股票 + 余额宝' not in public_html and '10只活跃持仓' not in public_html)
         check("公开页不写死层级市值", '18626' not in public_html and '5875' not in public_html and '5428' not in public_html)
         check("公开页无实盘历史文案", not any(contains_token(public_html, token) for token in ['109笔实盘交易', '109笔交易', '28只清仓基金', '13个月数据', '¥2,343', '实盘持仓']))
+        # v3.9.0 Command Center 高冲击结构
+        check("公开页含 Hero 粒子画布", '<canvas id="heroCanvas">' in public_html)
+        check("公开页含打字机标题", 'class="typing"' in public_html and 't-seg' in public_html)
+        check("公开页含 count-up 数字", 'count-up' in public_html and 'data-count' in public_html)
+        check("公开页含 3D tilt", 'pointer: fine' in public_html and 'rotateX' in public_html)
+        check("公开页含滚动进度条", 'id="scrollBar"' in public_html)
+        check("公开页含光晕跟随", 'id="heroGlow"' in public_html)
+        check("公开页 copy 含打字机文案", '"hero_typed"' in public_html and '"hero_sub"' in public_html)
 
     print("\n[6b] GitHub Pages 示例首页")
     check("示例首页存在", EXAMPLE_HTML_PATH.exists())

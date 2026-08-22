@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚓ Anchor · 投资纪律操作系统 v3.5</title>
+<title>⚓ Anchor · 投资纪律操作系统 v4.0.0</title>
 <meta name="description" content="Anchor 四层金字塔投资纪律操作系统。规则驱动、数据验证、公开页面仅使用脱敏示例数据。">
 <meta name="keywords" content="投资纪律,四层金字塔,资产配置,规则驱动,个人投资,回撤控制,噪声审计">
 <meta property="og:type" content="website">
@@ -15,7 +15,7 @@
 <style>
 :root{
   --bg:#02070f;--surface:#071120;--surface-2:#0b1729;--surface-3:#0f1e34;
-  --line:#18304d;--line-soft:rgba(154,188,225,.14);--text:#edf4ff;--muted:#91a4bd;--dim:#536a85;
+  --line:#18304d;--line-soft:rgba(154,188,225,.14);--text:#edf4ff;--muted:#91a4bd;--dim:#6a809e; /* v4.0.0 修复：3.62:1→5.00:1 达 WCAG AA */
   --blue:#3987e5;--blue-soft:rgba(57,135,229,.14);--green:#0ca30c;--green-bright:#36d39c;
   --amber:#fab219;--red:#e66767;--purple:#9085e9;--cyan:#55c9d6;
   --shadow:0 24px 80px rgba(0,0,0,.34);--mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;
@@ -111,13 +111,49 @@ button,a{font:inherit}button{cursor:pointer}
 @media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.diagram-grid{grid-template-columns:1fr}.timeline{grid-template-columns:repeat(3,1fr)}.timeline-item:nth-child(3n){border-right:0}.timeline-item:nth-child(4){border-top:1px solid var(--line-soft);padding-top:25px}.nav-links{display:none}}
 @media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid{grid-template-columns:1fr}.calc-tabs{grid-template-columns:repeat(2,1fr)}.calc-controls{flex-direction:column}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(even){border-right:0}.timeline-item:nth-child(3),.timeline-item:nth-child(5){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal,.js .reveal{opacity:1;transform:none}.js .stagger>*{opacity:1}}
+/* ===== v4.0.0 GSAP 模式中和块：解锁内容、关闭原生重复动效，交还给 GSAP 驱动 ===== */
+.js.gsap .reveal,.js.gsap .reveal.in{opacity:1;transform:none;transition:none}
+.js.gsap .stagger>*{opacity:1;transform:none;transition:none}
+.js.gsap .pyr-row .pyr-fill,.js.gsap .bar-mark{animation:none}
+.js.gsap .bar-mark{transition:none}
+.js.gsap .pin-stage{position:relative;top:auto}
+.js.gsap .nav{position:fixed;top:0;left:0;right:0}
+.js.gsap html{scroll-behavior:auto!important}
+.js.gsap #smooth-content{position:relative;min-height:100vh}
+.js.gsap .split-chars{display:inline-block}
+/* v4.0.0 修复：GSAP 已加载 + 桌面 + prefers-reduced-motion → 演进时间线回退网格（防 100vh 裁切，后几个版本不可达） */
+@media (prefers-reduced-motion: reduce){
+  .js.gsap .pin-shell{width:auto;margin-left:0}
+  .js.gsap .pin-stage{position:static;height:auto;overflow:visible;display:block}
+  .js.gsap .evo-track{display:grid;grid-template-columns:repeat(3,1fr);width:auto;transform:none!important;column-gap:0;row-gap:25px;padding:0}
+  .js.gsap .evo-track .timeline-item{flex:1 1 auto}
+  .js.gsap .pin-hint{display:none}
+}
+/* v4.0.0 修复：移动端导航（≤980px .nav-links 隐藏 → 汉堡菜单展开下拉） */
+.nav-toggle{display:none;background:none;border:1px solid var(--line);color:var(--muted);border-radius:9px;width:38px;height:34px;font-size:16px;line-height:1;place-items:center;margin-left:auto;transition:.2s}
+.nav-toggle:hover{color:#fff;border-color:var(--blue);background:var(--blue-soft)}
+@media(max-width:980px){
+  .nav-toggle{display:inline-grid}
+  .nav.open .nav-links{display:flex;flex-direction:column;position:absolute;top:100%;left:0;right:0;margin-left:0;background:rgba(2,7,15,.97);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);padding:12px 28px 16px;gap:4px;border-bottom:1px solid var(--line-soft);box-shadow:0 18px 40px rgba(0,0,0,.35);z-index:31}
+  .nav.open .nav-links a{font-size:13px;letter-spacing:.6px;padding:8px 0;border-bottom:1px solid rgba(154,188,225,.06)}
+  .nav.open .nav-links a:last-child{border-bottom:0}
+}
 </style>
+<!-- ===== GSAP 全家桶 CDN (v4.0.0) · 必须在内联 script 之前加载 ===== -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollSmoother.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrambleTextPlugin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/ScrollToPlugin.min.js"></script>
 </head>
 <body>
 <div class="scrollbar" id="scrollBar"></div>
 <div id="cursorGlow"></div>
 <canvas id="bgCanvas"></canvas>
-<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v3.5</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><span class="nav-demo">示例数据 · 公开页</span></div></nav>
+<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v4.0.0</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><button type="button" class="nav-toggle" id="navToggle" aria-label="打开导航" aria-expanded="false">☰</button><span class="nav-demo">示例数据 · 公开页</span></div></nav>
+<div id="smooth-wrapper">
+<div id="smooth-content">
 <main class="wrap">
 <section class="hero reveal" id="top"><canvas id="heroCanvas"></canvas><div class="hero-glow" id="heroGlow"></div><div class="hero-copy"><div class="eyebrow" id="heroKicker">Investment operating system</div><h1><em>Anchor</em><br><span class="typing"><span class="t-seg" data-w="不靠预测">不靠预测</span><span class="t-seg" data-w="，靠纪律">，靠纪律</span></span></h1><div class="hero-title" id="heroSub">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big count-up" data-count="96">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
 <section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row stagger" id="kpiRow"></div></section>
@@ -147,12 +183,18 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="section reveal" id="diagrams"><div class="section-head"><div><div class="section-kicker">System map</div><h2>一套体系，<em>闭环运转</em></h2></div><p>数据输入 → 规则处理 → 可视化输出 → 复盘校准，四步闭环，一眼看懂。以下均为体系示意，不含真实持仓与金额。</p></div><div class="section-rule"></div><div class="system-loop stagger" role="img" aria-label="Anchor 体系四步闭环：数据输入、规则处理、可视化输出、复盘迭代"><div class="loop-step ls-in"><div class="loop-num">01</div><div class="loop-icon">📥</div><h3>数据输入</h3><p>唯一权威持仓 + mx-data 行情</p></div><div class="loop-arrow">→</div><div class="loop-step ls-rule"><div class="loop-num">02</div><div class="loop-icon">🧭</div><h3>规则处理</h3><p>四层金字塔 + 数据管道四层规范</p></div><div class="loop-arrow">→</div><div class="loop-step ls-out"><div class="loop-num">03</div><div class="loop-icon">📊</div><h3>可视化输出</h3><p>看板 / 报告 / 公开页 · 脱敏展示</p></div><div class="loop-arrow">→</div><div class="loop-step ls-review"><div class="loop-num">04</div><div class="loop-icon">🔁</div><h3>复盘迭代</h3><p>T+3 回填 · 胜率校准纪律</p></div></div><div class="loop-back">复盘结论回流规则与数据 · 体系持续进化</div><div class="diagram-links"><span>想看细节？</span><a href="diagrams/data-pipeline.html" target="_blank" rel="noreferrer">数据管道 · 四层规范</a><a href="diagrams/decision-loop.html" target="_blank" rel="noreferrer">决策闭环 · T+3 复盘</a><a href="diagrams/architecture.html" target="_blank" rel="noreferrer">系统架构 · 数据流</a></div></section>
 <section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html" data-link-pages="index.html" data-link-local="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
 </main>
-<div class="chart-tooltip" id="chartTooltip"></div>
 <noscript><div class="noscript-note">本页面的数据面板需要 JavaScript 渲染；请启用 JS 查看完整内容。</div></noscript>
+<footer class="footer">⚓ Anchor Investment System v4.0.0 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
+</div><!-- /smooth-content -->
+</div><!-- /smooth-wrapper -->
+<div class="chart-tooltip" id="chartTooltip"></div>
 <button class="to-top" id="toTop" aria-label="返回顶部">↑</button>
-<footer class="footer">⚓ Anchor Investment System v3.5 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
 <script>
 document.documentElement.className+=" js";
+// ===== v4.0.0 GSAP 门控：CDN 就绪 → gsap 类 + 注册插件；失败 → no-gsap 全原生降级 =====
+var gsapOk=window.gsap&&window.ScrollTrigger&&window.ScrollSmoother&&window.SplitText&&window.ScrambleTextPlugin&&window.ScrollToPlugin; /* v4.0.0 修复：6 插件全校验，任一 CDN 失败→no-gsap 全原生，防整页脚本终止 */
+document.documentElement.className+=gsapOk?" gsap":" no-gsap";
+if(gsapOk){gsap.registerPlugin(ScrollTrigger,ScrollSmoother,SplitText,ScrambleTextPlugin,ScrollToPlugin);}
 // ===== PUBLIC EXAMPLE DATA =====
 var D={
   "update": "2026-08-06",
@@ -625,11 +667,13 @@ function tintFor(key){return {bedrock:"rgba(57,135,229,.10)",core:"rgba(54,211,1
 function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
-  var box=document.getElementById("heroMetrics"), cards=[
-    ["LAYER MODEL","4 层","职责隔离"],["RULES","6 条","硬边界"],["HOLDINGS","动态","数据驱动"],["PUBLIC DATA","DEMO","已脱敏"]
-  ];
-  cards.forEach(function(c){var m=make("div","metric");append(m,"div","metric-label",c[0]);append(m,"div","metric-value",c[1]);append(m,"div","metric-sub",c[2]);box.appendChild(m)})
-  document.getElementById("heroDate").textContent="示例更新时间 · "+(D.update||"未提供");
+  /* v4.0.0 修复：Command Center 指标由 D.hero 数据块驱动（数据合同一一对应，示例数据重生成即跟随） */
+  var box=document.getElementById("heroMetrics"),subs=["脱敏演示","四层结构","综合评分","纪律执行"];
+  if(box&&D.hero&&D.hero.length){D.hero.forEach(function(h,i){var m=make("div","metric");append(m,"div","metric-label",h.l||"");append(m,"div","metric-value",h.v!=null?h.v:"");append(m,"div","metric-sub",subs[i%subs.length]||"");box.appendChild(m)})}
+  var hd=document.getElementById("heroDate");if(hd)hd.textContent="示例更新时间 · "+(D.update||"未提供");
+  /* v4.0.0 修复：体系评分大数字由 D.hero 评分项驱动，示例数据变更即跟随 */
+  var big=document.querySelector(".command-score .big.count-up"),score=null;
+  if(big&&D.hero){for(var i=0;i<D.hero.length;i++){if(/评分/.test(D.hero[i].l||"")){score=D.hero[i].v;break}}if(score!=null)big.setAttribute("data-count",score)}
 })();
 
 (function(){
@@ -675,6 +719,9 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
       if(!items.length)append(list,"div","empty","示例数据未配置市值，结构保留");
       card.appendChild(list);grid.appendChild(card)
     });
+    /* v4.0.0 修复：render() 重建卡片后重绑 3D tilt（原生/GSAP 双模式） */
+    if(window.__bindTilt)window.__bindTilt(grid);
+    if(window.__bindGsapTilt)window.__bindGsapTilt(grid);
     status.textContent=(counts.active_label||"暂无持仓")+" · "+visible+"层";
   }
   document.querySelectorAll("[data-layer]").forEach(function(btn){
@@ -714,6 +761,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 })();
 
 (function(){
+  if(gsapOk)return; /* v4.0.0 GSAP ScrollTrigger.batch 接管 reveal */
   function reveal(t){t.classList.add("in");if(t.classList.contains("stagger")){var kids=t.children;for(var i=0;i<kids.length;i++){kids[i].style.transitionDelay=(i*70)+"ms"}}}
   var els=document.querySelectorAll(".reveal, .stagger");if(!("IntersectionObserver" in window)){els.forEach(reveal);return}var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){reveal(e.target);io.unobserve(e.target)}})},{threshold:.08});els.forEach(function(s){io.observe(s)})
 })();
@@ -722,7 +770,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   var btn=document.getElementById("toTop");if(!btn)return;
   function onScroll(){btn.classList.toggle("show",(window.scrollY||document.documentElement.scrollTop)>600)}
   window.addEventListener("scroll",onScroll,{passive:true});onScroll();
-  btn.addEventListener("click",function(){window.scrollTo({top:0,behavior:"smooth"})});
+  btn.addEventListener("click",function(){if(gsapOk)return;window.scrollTo({top:0,behavior:"smooth"})}); /* v4.0.0 GSAP smoother.scrollTo 接管点击 */
 })();
 
 (function(){
@@ -730,6 +778,15 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   var ids=Object.keys(map);if(!ids.length||!("IntersectionObserver" in window))return;
   var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){var a=map[e.target.id];if(a){links.forEach(function(x){x.style.color=""});a.style.color="#fff"}}})},{rootMargin:"-40% 0px -55% 0px"});
   ids.forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el)});
+})();
+
+(function(){
+  /* v4.0.0 修复：移动端导航汉堡菜单（≤980px .nav-links 默认隐藏，点按展开下拉） */
+  var toggle=document.getElementById("navToggle"),nav=document.querySelector(".nav");
+  if(!toggle||!nav)return;
+  function close(){nav.classList.remove("open");toggle.setAttribute("aria-expanded","false");toggle.textContent="☰"}
+  toggle.addEventListener("click",function(){var open=nav.classList.toggle("open");toggle.setAttribute("aria-expanded",open?"true":"false");toggle.textContent=open?"✕":"☰"});
+  nav.querySelectorAll(".nav-links a").forEach(function(a){a.addEventListener("click",close)});
 })();
 
 (function(){
@@ -823,6 +880,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
   // Hero 鼠标径向光晕跟随（仅 pointer:fine，rAF 节流）
+  if(gsapOk)return; /* v4.0.0 GSAP quickTo 深度视差接管 */
   var glow=document.getElementById("heroGlow"),hero=document.getElementById("top");
   if(!glow||!hero)return;
   if(!window.matchMedia||!window.matchMedia("(pointer: fine)").matches)return;
@@ -848,10 +906,12 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
     if(D.copy.hero_kicker&&kicker)kicker.textContent=D.copy.hero_kicker;
     if(D.copy.hero_sub&&sub)sub.textContent=D.copy.hero_sub;
     if(D.copy.hero_typed){
+      /* v4.0.0 加固：按段数动态填充，不再要求恰好一个全角逗号 */
       var segs0=el.querySelectorAll(".t-seg"),parts=String(D.copy.hero_typed).split("，");
-      if(segs0.length===2&&parts.length===2){segs0[0].textContent=parts[0];segs0[1].textContent="，"+parts[1]}
+      for(var si=0;si<segs0.length;si++){if(si<parts.length){segs0[si].textContent=(si>0?"，":"")+parts[si]}else{segs0[si].textContent=""}}
     }
   }
+  if(gsapOk)return; /* v4.0.0 GSAP SplitText 接管逐字；D.copy 绑定已保留 */
   if(reduced)return;
   var segs=el.querySelectorAll(".t-seg");if(!segs.length)return;
   var finals=[];segs.forEach(function(s){finals.push(s.textContent)});
@@ -871,6 +931,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
   // count-up 数字滚动：1.2s 缓出，IO 触发，reduced-motion 直接终值
+  if(gsapOk)return; /* v4.0.0 GSAP snap 滚动触发接管 */
   var els=document.querySelectorAll(".count-up");if(!els.length)return;
   var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   function run(el){
@@ -893,22 +954,28 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
   // 卡片 3D tilt：±7°X/±9°Y + translateZ，仅桌面 pointer:fine，reduced-motion 关闭
+  if(gsapOk)return; /* v4.0.0 GSAP quickTo 顺滑 tilt 接管 */
   if(!window.matchMedia||!window.matchMedia("(pointer: fine)").matches)return;
   if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;
-  var cards=document.querySelectorAll(".kpi,.rule-card,.holding-card,.evidence-card,.noise-card");
-  cards.forEach(function(card){
-    card.addEventListener("pointerenter",function(){card.style.transition="transform .12s ease, box-shadow .25s ease"});
-    card.addEventListener("pointermove",function(e){
-      var r=card.getBoundingClientRect();
-      var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
-      card.style.transform="perspective(760px) rotateX("+(-y*7).toFixed(2)+"deg) rotateY("+(x*9).toFixed(2)+"deg) translateZ(6px)";
+  function bind(scope){
+    var cards=(scope||document).querySelectorAll(".kpi,.rule-card,.holding-card,.evidence-card,.noise-card");
+    cards.forEach(function(card){
+      card.addEventListener("pointerenter",function(){card.style.transition="transform .12s ease, box-shadow .25s ease"});
+      card.addEventListener("pointermove",function(e){
+        var r=card.getBoundingClientRect();
+        var x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;
+        card.style.transform="perspective(760px) rotateX("+(-y*7).toFixed(2)+"deg) rotateY("+(x*9).toFixed(2)+"deg) translateZ(6px)";
+      });
+      card.addEventListener("pointerleave",function(){card.style.transition="";card.style.transform=""});
     });
-    card.addEventListener("pointerleave",function(){card.style.transition="";card.style.transform=""});
-  });
+  }
+  window.__bindTilt=bind; /* v4.0.0 修复：holdings render() 重建卡片后可重绑，仅绑定新节点防重复监听 */
+  bind(document);
 })();
 
 (function(){
   // Hero 滚动视差：内容上移 + 淡出，rAF 节流
+  if(gsapOk)return; /* v4.0.0 GSAP ScrollTrigger scrub 接管 */
   var hero=document.getElementById("top"),copy=document.querySelector(".hero-copy"),cmd=document.querySelector(".command-card");
   if(!hero)return;
   var reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -927,6 +994,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 (function(){
   // 全页鼠标跟随光晕：固定层低透明度泛光，内容在上层 z-index:1，仅 pointer:fine，rAF 节流
+  if(gsapOk)return; /* v4.0.0 GSAP quickTo 顺滑接管 */
   var glow=document.getElementById("cursorGlow");if(!glow)return;
   if(!window.matchMedia||!window.matchMedia("(pointer: fine)").matches)return;
   var raf=0;
@@ -984,6 +1052,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 
 /* ===== 演进时间线横向 Pin (v3.10.0 · GSAP 招牌技法原生实现) ===== */
 (function(){
+  if(gsapOk)return; /* v4.0.0 GSAP ScrollTrigger pin 接管；本模块保留为 no-gsap 原生降级 */
   var shell=document.querySelector(".pin-shell"),stage=shell&&shell.querySelector(".pin-stage"),track=stage&&stage.querySelector(".evo-track");
   if(!track)return;
   var mqM=window.matchMedia&&window.matchMedia("(max-width:980px)");
@@ -1008,6 +1077,188 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   window.addEventListener("resize",measure);
   window.addEventListener("orientationchange",measure);
   window.addEventListener("load",measure);
+})();
+
+/* =========================================================
+   v4.0.0 · GSAP 深度交互模块（20 项效果，最大程度使用 gsapskills）
+   全部桌面效果包在 matchMedia 内：(min-width:981px) + 无减弱动效
+   移动端 / prefers-reduced-motion → 零动画，内容经 .js.gsap CSS 解锁静态可见
+   ========================================================= */
+if(gsapOk)(function(){
+  var mm=gsap.matchMedia();
+  var smoother=null;
+  mm.add("(min-width:981px) and (prefers-reduced-motion: no-preference)",function(){
+    /* 0 · ScrollSmoother 全页惯性滚动（原生滚动保留，内容 transform 追尾） */
+    smoother=ScrollSmoother.create({wrapper:"#smooth-wrapper",content:"#smooth-content",smooth:1.2,effects:false});
+    var hero=document.getElementById("top"),copy=document.querySelector(".hero-copy"),glow=document.getElementById("heroGlow"),cmdCard=document.querySelector(".command-card");
+
+    /* 01 · Hero 进场：em 逐字 + kicker 解码 + 内容阶梯（由浅入深代入感） */
+    var heroEm=document.querySelector(".hero h1 em");
+    if(heroEm){
+      var hs=SplitText.create(heroEm,{type:"chars"});
+      gsap.from(hs.chars,{yPercent:110,autoAlpha:0,stagger:.035,duration:.8,ease:"power3.out",delay:.1});
+    }
+    var kicker=document.getElementById("heroKicker");
+    if(kicker){gsap.fromTo(kicker,{autoAlpha:.15},{autoAlpha:1,duration:1,scrambleText:{text:kicker.textContent,chars:"#$%&ANCHOR0123456789OS",speed:.7},delay:.05})}
+    gsap.fromTo(".hero-copy>*",{autoAlpha:0,y:24},{autoAlpha:1,y:0,duration:.7,ease:"power3.out",stagger:.09,delay:.2});
+
+    /* 02 · Command Card 3D 翻入 */
+    if(cmdCard){gsap.fromTo(cmdCard,{rotationY:22,autoAlpha:0},{rotationY:0,autoAlpha:1,duration:1,ease:"power3.out",delay:.3})}
+
+    /* 03 · 鼠标深度视差（quickTo 多深度；入场已占 rotationY，深度独占 x） */
+    if(hero&&copy&&cmdCard){
+      var copyX=gsap.quickTo(copy,"x",{duration:.5,ease:"power2.out"});
+      var cmdX=gsap.quickTo(cmdCard,"x",{duration:.65,ease:"power2.out"});
+      var glowX=gsap.quickTo(glow,"x",{duration:.7,ease:"power2.out"});
+      var glowGx=gsap.quickTo(glow,"--gx",{duration:.45,ease:"power2.out"});
+      var glowGy=gsap.quickTo(glow,"--gy",{duration:.45,ease:"power2.out"});
+      hero.addEventListener("pointermove",function(e){
+        var r=hero.getBoundingClientRect();
+        var nx=(e.clientX-r.left)/r.width-.5,ny=(e.clientY-r.top)/r.height-.5;
+        copyX(nx*80);cmdX(nx*112);glowX(nx*-150);
+        glow.classList.add("on");glowGx((nx*.5+.5)*100);glowGy((ny*.5+.5)*100);
+      });
+      hero.addEventListener("pointerleave",function(){glow.classList.remove("on")});
+    }
+
+    /* 04 · cursorGlow 顺滑跟手（quickTo 写 CSS 变量，替代 rAF） */
+    var cg=document.getElementById("cursorGlow");
+    if(cg){
+      var cgX=gsap.quickTo(cg,"--cx",{duration:.35,ease:"power2.out"});
+      var cgY=gsap.quickTo(cg,"--cy",{duration:.35,ease:"power2.out"});
+      window.addEventListener("pointermove",function(e){cg.classList.add("on");cgX(e.clientX+"px");cgY(e.clientY+"px")});
+    }
+
+    /* 05 · 标题逐字揭示（SplitText · em 高亮单独淡入，不拆坏） */
+    document.querySelectorAll(".section-head h2").forEach(function(h2){
+      var s=SplitText.create(h2,{type:"chars",ignore:"em",smartWrap:true});
+      gsap.from(s.chars,{autoAlpha:0,y:20,rotationX:-26,transformPerspective:600,stagger:.016,duration:.7,ease:"power3.out",scrollTrigger:{trigger:h2,start:"top 85%",once:true}});
+      var em=h2.querySelector("em");
+      if(em){gsap.fromTo(em,{autoAlpha:0},{autoAlpha:1,duration:.5,delay:.35,ease:"power2.out",scrollTrigger:{trigger:h2,start:"top 85%",once:true}})}
+    });
+
+    /* 06 · kicker 乱码解码（ScrambleText） */
+    document.querySelectorAll(".section-kicker").forEach(function(k){
+      gsap.fromTo(k,{autoAlpha:.2},{autoAlpha:1,duration:1,scrambleText:{text:k.textContent,chars:"#$%&ANCHOR0123456789",speed:.65},scrollTrigger:{trigger:k,start:"top 88%",once:true}});
+    });
+
+    /* 07 · 分隔线生长 */
+    gsap.utils.toArray(".section-rule").forEach(function(rule){
+      gsap.fromTo(rule,{scaleX:0},{scaleX:1,duration:1,ease:"power3.inOut",transformOrigin:"left center",scrollTrigger:{trigger:rule,start:"top 92%",once:true}});
+    });
+
+    /* 08 · 卡片网格 batch 入场（分批 + 错峰，视觉反馈强） */
+    var batchSel=".kpi-row>*,.holdings-grid>*,.evidence-cards>*,.rules-grid>*,.forbidden-grid>*,.noise-grid>*,.flow>*,.data-strip>*";
+    gsap.set(batchSel,{autoAlpha:0,y:26});
+    ScrollTrigger.batch(batchSel,{start:"top 88%",end:"bottom 20%",once:true,interval:.1,batchMax:4,onEnter:function(batch){gsap.fromTo(batch,{autoAlpha:0,y:26},{autoAlpha:1,y:0,stagger:.08,duration:.6,ease:"power3.out",overwrite:"auto"})}});
+
+    /* 09 · 金字塔从地基建造（行滑入 + 填充居中生长） */
+    var pyrEl=document.getElementById("pyramidViz");
+    if(pyrEl){
+      gsap.fromTo(pyrEl.querySelectorAll(".pyr-row"),{autoAlpha:0,x:-24},{autoAlpha:1,x:0,duration:.7,ease:"power3.out",stagger:.06,scrollTrigger:{trigger:pyrEl,start:"top 80%",once:true}});
+      gsap.fromTo(pyrEl.querySelectorAll(".pyr-fill"),{scaleX:0},{scaleX:1,duration:1.2,ease:"power3.inOut",transformOrigin:"center center",stagger:.08,scrollTrigger:{trigger:pyrEl,start:"top 78%",once:true}});
+    }
+
+    /* 10 · 演进时间线横向 Pin（GSAP 招牌技法） */
+    var shell=document.querySelector(".pin-shell"),stage=shell&&shell.querySelector(".pin-stage"),track=stage&&stage.querySelector(".evo-track");
+    if(shell&&stage&&track){
+      var dist=function(){return Math.max(track.scrollWidth-window.innerWidth+48,0)};
+      gsap.to(track,{x:function(){return -dist()},ease:"none",scrollTrigger:{trigger:shell,start:"top top",end:function(){return "+="+(dist()+window.innerHeight)},pin:stage,scrub:1,anticipatePin:1,invalidateOnRefresh:true}});
+      var pinHint=document.querySelector(".pin-hint");
+      if(pinHint){gsap.fromTo(pinHint,{autoAlpha:1},{autoAlpha:0,y:-10,duration:.3,scrollTrigger:{trigger:shell,start:"top top",end:"top top+=120",scrub:true}})}
+    }
+
+    /* 11 · 月度柱状图生长 + hover 微交互 */
+    var monthChart=document.getElementById("monthlyChart");
+    if(monthChart){
+      var bars=monthChart.querySelectorAll(".bar-mark");
+      gsap.fromTo(bars,{scaleY:0},{scaleY:1,duration:1.1,ease:"power2.out",transformOrigin:"bottom center",stagger:.05,scrollTrigger:{trigger:monthChart,start:"top 80%",once:true}});
+      bars.forEach(function(bar){
+        bar.addEventListener("mouseenter",function(){gsap.to(bar,{scaleY:1.16,scaleX:1.08,duration:.25,ease:"power2.out"})});
+        bar.addEventListener("mouseleave",function(){gsap.to(bar,{scaleY:1,scaleX:1,duration:.3,ease:"power2.out"})});
+      });
+    }
+
+    /* 12 · count-up 滚动触发（hero 独立 + pin 段共用一个 trigger 防测量失真） */
+    function runCount(el){
+      var t=parseFloat(el.getAttribute("data-count"));if(isNaN(t))t=parseFloat(el.textContent)||0;
+      gsap.fromTo(el,{innerText:0},{innerText:t,duration:1.2,ease:"power1.out",snap:{innerText:1}});
+    }
+    var heroBig=document.querySelector(".command-score .big.count-up");
+    if(heroBig){gsap.delayedCall(1.2,function(){runCount(heroBig)})}
+    var pinCounts=document.querySelectorAll(".pin-stage .count-up");
+    if(pinCounts.length&&shell){
+      pinCounts.forEach(function(el){gsap.set(el,{innerText:0})});
+      ScrollTrigger.create({trigger:shell,start:"top 70%",once:true,onEnter:function(){pinCounts.forEach(function(el){runCount(el)})}});
+    }
+
+    /* 13 · 锚点平滑（smoother 优先 · ScrollToPlugin 兜底 · 补偿固定导航） */
+    var navEl=document.querySelector(".nav"),navOff=navEl?navEl.offsetHeight+8:0;
+    function smoothScrollTo(target){
+      if(smoother){
+        if(target===0){smoother.scrollTo(0,true)}
+        else{smoother.scrollTo(target,true,"top top+="+navOff)}
+      }else if(target===0){gsap.to(window,{duration:.9,scrollTo:0,ease:"power3.inOut"})}
+      else{gsap.to(window,{duration:.9,scrollTo:{y:target,offsetY:navOff},ease:"power3.inOut"})}
+    }
+    document.querySelectorAll(".nav-links a,.btn[href^='#']").forEach(function(a){
+      a.addEventListener("click",function(e){
+        var id=a.getAttribute("href");
+        if(!id||id.charAt(0)!=="#")return;
+        var t=document.querySelector(id);if(!t)return;
+        e.preventDefault();smoothScrollTo(t);
+      });
+    });
+
+    /* 14 · toTop 平滑回顶（show/hide 由原生模块负责，GSAP 接管点击） */
+    var toTop=document.getElementById("toTop");
+    if(toTop){toTop.addEventListener("click",function(){smoothScrollTo(0)})}
+
+    /* 15 · Hero 滚动视差（y 上移 + 淡出） */
+    if(hero&&copy&&cmdCard){
+      ScrollTrigger.create({trigger:hero,start:"top top",end:"bottom 15%",scrub:true,onUpdate:function(self){var p=self.progress;gsap.set(copy,{y:p*44});gsap.set(cmdCard,{y:p*70});gsap.set(hero,{opacity:1-p*1.2})}});
+    }
+
+    /* 16 · 闭环总览联动揭示（step→arrow→step 按序） */
+    if(document.querySelector(".system-loop")){
+      gsap.fromTo(".system-loop>*,.loop-back,.diagram-links",{autoAlpha:0,y:18,scale:.97},{autoAlpha:1,y:0,scale:1,stagger:.14,duration:.6,ease:"power3.out",scrollTrigger:{trigger:".system-loop",start:"top 80%",once:true}});
+    }
+
+    /* 17 · CTA 标题逐字 + 链接微交互 */
+    var ctaH2=document.querySelector(".cta h2");
+    if(ctaH2){
+      var cs=SplitText.create(ctaH2,{type:"chars",smartWrap:true});
+      gsap.from(cs.chars,{autoAlpha:0,y:22,rotationX:-30,transformPerspective:600,stagger:.025,duration:.7,ease:"power3.out",scrollTrigger:{trigger:ctaH2,start:"top 85%",once:true}});
+    }
+    document.querySelectorAll(".diagram-links a,.cta .btn").forEach(function(a){
+      a.addEventListener("mouseenter",function(){gsap.to(a,{x:5,duration:.3,ease:"power2.out"})});
+      a.addEventListener("mouseleave",function(){gsap.to(a,{x:0,duration:.4,ease:"power2.out"})});
+    });
+
+    /* 18 · 卡片 3D tilt 升级（quickTo 顺滑）+ hover 抬升 */
+    function bindGsapTilt(scope){
+      (scope||document).querySelectorAll(".kpi,.rule-card,.holding-card,.evidence-card,.noise-card,.flow-step,.pyr-row").forEach(function(card){
+        gsap.set(card,{transformPerspective:760});
+        var rx=gsap.quickTo(card,"rotationX",{duration:.4,ease:"power2.out"});
+        var ry=gsap.quickTo(card,"rotationY",{duration:.4,ease:"power2.out"});
+        card.addEventListener("pointerenter",function(){gsap.to(card,{scale:1.02,duration:.3,ease:"power2.out"})});
+        card.addEventListener("pointermove",function(e){
+          var r=card.getBoundingClientRect();
+          var nx=(e.clientX-r.left)/r.width-.5,ny=(e.clientY-r.top)/r.height-.5;
+          rx(-ny*7);ry(nx*9);
+        });
+        card.addEventListener("pointerleave",function(){rx(0);ry(0);gsap.to(card,{scale:1,duration:.3,ease:"power2.out"})});
+      });
+    }
+    window.__bindGsapTilt=bindGsapTilt; /* v4.0.0 修复：holdings render() 重建卡片后可重绑 */
+    bindGsapTilt(document);
+
+    /* 19 · 字体加载后刷新（防 SplitText / Pin 错位） */
+    if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){ScrollTrigger.refresh()})}
+
+    /* 20 · 离开桌面 / 减弱动效时清理 smoother */
+    return function(){if(smoother){smoother.kill();smoother=null}};
+  });
 })();
 </script>
 </body>

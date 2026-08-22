@@ -278,6 +278,13 @@ def main():
         check("公开页 copy 含打字机文案", '"hero_typed"' in public_html and '"hero_sub"' in public_html)
         # v3.10.0 演进时间线横向 Pin
         check("公开页演进时间线横向 pin（GSAP 招牌技法）", 'pin-shell' in public_html and 'pin-stage' in public_html and 'evo-track' in public_html and 'getBoundingClientRect().top' in public_html)
+        # v4.0.0 GSAP 深度重构
+        check("公开页 GSAP CDN 在 head 且内联脚本在后", 'gsap@3.13.0/dist/gsap.min.js' in public_html and public_html.index('gsap@3.13.0') < public_html.index('<script>'))
+        check("公开页 ScrollSmoother 结构", 'id="smooth-wrapper"' in public_html and 'id="smooth-content"' in public_html)
+        check("公开页 GSAP 插件齐全", all(k in public_html for k in ['ScrollSmoother','ScrollTrigger','SplitText','ScrambleTextPlugin','ScrollToPlugin']))
+        check("公开页注册与门控", 'gsap.registerPlugin(' in public_html and 'gsap.matchMedia(' in public_html)
+        check("公开页关键 GSAP API", 'gsap.quickTo(' in public_html and 'ScrollTrigger.batch(' in public_html and 'SplitText.create(' in public_html and 'scrambleText:' in public_html)
+        check("公开页 gsap/no-gsap 降级", '.js.gsap' in public_html and ' no-gsap' in public_html)
 
     print("\n[6b] GitHub Pages 示例首页")
     check("示例首页存在", EXAMPLE_HTML_PATH.exists())

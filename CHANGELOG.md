@@ -5,6 +5,21 @@
 
 ---
 
+## v4.0.0 — 2026-08-22
+
+### 公开页 GSAP 深度重构（最大程度使用 gsapskills · 架构大改，anchor-pro.html）
+
+**背景**：用户要求「最大程度的使用 gsapskills，深度重构页面……有创意，流畅，视觉反馈强烈，深度交互能力」「优化每一个细节，不放过每一个角落」。v3.9/v3.10 的原生 canvas 粒子、打字机、3D tilt、演进时间线 sticky-pin 保留为降级路径，本次引入 **GSAP 全家桶**（ScrollSmoother + ScrollTrigger + SplitText + ScrambleText + ScrollToPlugin，全部免费）做架构级重构，对标 demos.gsap.com。
+
+- 🔧 **架构**：6 个 GSAP CDN 外链全部放 `<head>`（内联 script 之前，满足 smoke 正则）；`body` 重构为 ScrollSmoother 要求的 `smooth-wrapper`/`smooth-content`（nav 外移到 wrapper 外、fixed 图层留在外）；CSS 末尾追加 `.js.gsap` 中和块；boot 加 `gsapOk` 六插件全校验 + `gsap`/`no-gsap` 类 + `registerPlugin`
+- 🎬 **20 项 GSAP 效果**（`gsap.matchMedia` 桌面 + no-preference 门控，移动/reduced-motion 零动画静态可见）：① ScrollSmoother 全页惯性滚动 ② Hero h1 逐字进场（SplitText chars） ③ Command Card 3D 翻入 ④ 鼠标深度视差（quickTo 多深度 + 轴分离） ⑤ cursorGlow 顺滑跟手 ⑥ 标题逐字揭示（SplitText `ignore:"em"` 保住高亮） ⑦ kicker ScrambleText 乱码解码 ⑧ 分隔线生长 ⑨ 卡片网格 ScrollTrigger.batch stagger ⑩ 金字塔从地基建造 ⑪ 演进时间线 GSAP 横向 pin ⑫ 月度柱状图 scrub 生长 + hover ⑬ count-up 滚动触发 ⑭ 导航激活 + 锚点平滑 ⑮ 滚动进度条 ⑯ toTop ⑰ Hero 滚动视差 ⑱ 闭环总览联动揭示 ⑲ CTA/按钮微交互 ⑳ 卡片 3D tilt quickTo 顺滑升级
+- 🛡️ **完整降级**：任一插件 CDN 失败 → `gsapOk=false` → `.no-gsap` 全原生（reveal/IO/原生 tilt/演进 sticky-pin/打字机），四路径运行时零报错
+- 🔧 **对抗性复核 9 条确认修复**（20 子代理工作流，840k tokens）：① [HIGH] reduced-motion+GSAP 时演进时间线被 100vh/overflow 永久裁切 → 新增 reduced-motion CSS grid 回退（pin-stage static/auto/visible）② GSAP/原生 tilt 在持仓筛选 render() 重建卡片后失效 → 抽取 `bind`/`bindGsapTilt(scope)` + `window.__*` 重绑 ③ 移动端导航无汉堡 → 新增 nav-toggle 下拉 ④ gsapOk 缺插件检查 → 6 插件全校验 ⑤ Command Center 指标硬编码 vs D.hero 死字段 → 改为 D.hero 驱动（含体系评分大数字） ⑥ `--dim` 对比度 3.62:1→5.00:1（WCAG AA）⑦ 删死规则 `will-change` ⑧ batch `overwrite:true`→`"auto"`（保住 tilt 的 rotationX/Y） ⑨ 打字机按段数动态填充加固
+- ✅ **验证**：`gen_anchor_pro.py` + `smoke_test.py` → **79 通过 / 0 失败**（新增 6 项检查：CDN-in-head/ScrollSmoother 结构/插件齐全/注册门控/关键 API/gsap-no-gsap 降级）；Edge headless 四路径（gsap 桌面 / no-gsap / 移动 390px / reduced-motion）全部零控制台错误；关键修复逐项运行时证实（reduced-motion 演进网格回退 pinH 805→286px、SplitText aria-label+aria-hidden、tilt 重建双模式生效、heroMetrics=D.hero、汉堡导航）
+- 📁 影响文件：`08-website/anchor-pro.html`（架构重构 + 20 项效果 + 9 项修复）、`05-scripts/smoke_test.py`（6 项新检查）、CLAUDE.md、会话检查点、system_version → v4.0.0
+
+---
+
 ## v3.10.0 — 2026-08-22
 
 ### 公开页演进时间线横向 Pin（GSAP 招牌技法 · 原生零依赖实现，anchor-pro.html）

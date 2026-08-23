@@ -20,6 +20,20 @@
 
 ---
 
+## v4.0.1 — 2026-08-23
+
+### 公开页修复与进化区重构（anchor-pro.html）
+
+**背景**：用户反馈两个问题——① 首页 hero 有「固定界限」，文字遇到边界会消失；② 「体系持续进化」区块展示过于复杂，希望「简洁一些，或者增加讲述内容」。用户选定「简洁骨架 + 讲述」结合方案。
+
+- 🐛 **① hero 固定界限修复**：`.hero{overflow:hidden}`（v3.9 为容纳 inset:-20% 光晕而加）在鼠标深度视差（`cmdX ±112px`）把 command-card 推出 hero 边界时**硬裁切右侧文字** → 移除 overflow:hidden + `.hero-glow` `inset:-20%→inset:0` + 视差幅度收敛（copyX 56 / cmdX 80 / glowX 110）。修复后 1366px 视口下 card 越界 61px < 侧边距 63px，**不再越出视口**，深度交互保留
+- 🎨 **② 进化区「简洁骨架 + 讲述」重构**：6 卡横向 pin（v3.10.0/v4.0.0）→ **4 章节叙事**（地基/边界/自动化/下一站），各带一句话「为什么」故事；开头一句总述「规则不是设计出来的，是复盘长出来的」；横向连线生长 + 章节错峰入场（GSAP）替代长滚动 pin；分数仍由 `D.evo` 权威回填（数据驱动）
+- 🧹 **同步清理**：删除 pin-shell/pin-stage/evo-track/pin-hint/timeline 全部 CSS+JS（原生 pin IIFE、GSAP pin 模块、reduced-motion 回退块）；count-up 目标 `.pin-stage .count-up`→`.evo-wrap .count-up`；smoke 检查「演进横向 pin」→「进化叙事章节」
+- ✅ **验证**：gen + smoke → **79 通过 / 0 失败**；Edge headless 四路径（gsap/no-gsap/移动 390px/reduced-motion）全部零错误；chapters=4、D.evo 回填 80/96/96、heroOv=visible、移动 1 列
+- 📁 影响文件：`08-website/anchor-pro.html`、`05-scripts/smoke_test.py`、CLAUDE.md、会话检查点、system_version → v4.0.1
+
+---
+
 ## v3.10.0 — 2026-08-22
 
 ### 公开页演进时间线横向 Pin（GSAP 招牌技法 · 原生零依赖实现，anchor-pro.html）

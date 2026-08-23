@@ -276,8 +276,8 @@ def main():
         check("公开页含由浅入深 reveal 门控", '.js .reveal' in public_html and '.js .stagger>*' in public_html)
         check("公开页体系图简洁化（闭环总览 + 无 iframe 图）", 'system-loop' in public_html and 'loop-step' in public_html and 'iframe src="diagrams/' not in public_html and 'diagram-links' in public_html)
         check("公开页 copy 含打字机文案", '"hero_typed"' in public_html and '"hero_sub"' in public_html)
-        # v3.10.0 演进时间线横向 Pin
-        check("公开页演进时间线横向 pin（GSAP 招牌技法）", 'pin-shell' in public_html and 'pin-stage' in public_html and 'evo-track' in public_html and 'getBoundingClientRect().top' in public_html)
+        # v4.0.1 进化叙事章节（v3.10.0 横向 pin 已由「简洁骨架+讲述」章节重构替代）
+        check("公开页进化叙事章节（简洁骨架+讲述）", 'evo-chapter' in public_html and 'data-version' in public_html and 'evo-next' in public_html and 'evo-line' in public_html)
         # v4.0.0 GSAP 深度重构
         check("公开页 GSAP CDN 在 head 且内联脚本在后", 'gsap@3.13.0/dist/gsap.min.js' in public_html and public_html.index('gsap@3.13.0') < public_html.index('<script>'))
         check("公开页 ScrollSmoother 结构", 'id="smooth-wrapper"' in public_html and 'id="smooth-content"' in public_html)

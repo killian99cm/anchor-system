@@ -38,7 +38,7 @@ button,a{font:inherit}button{cursor:pointer}
 .evidence-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.evidence-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}.evidence-card{padding:18px;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.evidence-card .ec-label{color:var(--dim);font:10px var(--mono);letter-spacing:.7px}.evidence-card .ec-before{font-size:12px;color:var(--red);margin-top:10px}.evidence-card .ec-arrow{color:var(--dim);margin:6px 0}.evidence-card .ec-after{font-size:13px;color:var(--green-bright);font-weight:700}.evidence-card .ec-change{font-size:10px;color:var(--muted);margin-top:9px}.table-wrap{border:1px solid var(--line-soft);border-radius:15px;overflow:auto;background:rgba(7,17,32,.78)}table{width:100%;border-collapse:collapse;min-width:560px}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid var(--line-soft);font-size:11px}th{background:rgba(255,255,255,.035);font:10px var(--mono);letter-spacing:.7px;color:var(--dim)}td{color:var(--muted)}tr:last-child td{border-bottom:0}tr:hover td{background:rgba(57,135,229,.04)}.good{color:var(--green-bright);font-weight:700}.bad{color:var(--red);font-weight:700}
 .performance{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(250px,.8fr);gap:16px}.chart-card,.chart-summary{padding:22px;border:1px solid var(--line-soft);border-radius:16px;background:rgba(7,17,32,.78)}.chart-card{position:relative}.chart-axis{height:1px;background:var(--line);margin:5px 0 20px}.bar-chart{height:210px;display:flex;align-items:end;gap:9px;padding:16px 10px 0;border-bottom:1px solid var(--line);background:repeating-linear-gradient(0deg,transparent 0,transparent 51px,rgba(145,164,189,.09) 52px)}.bar-col{height:100%;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:end;gap:7px;min-width:20px}.bar-value{font:10px var(--mono);color:var(--muted);white-space:nowrap}.bar-mark{width:min(30px,72%);height:var(--bar-height);min-height:3px;border-radius:4px 4px 1px 1px;background:var(--bar-color);transition:.2s;cursor:pointer}.bar-mark:hover,.bar-mark:focus{filter:brightness(1.28);transform:scaleX(1.12)}.bar-label{font:10px var(--mono);color:var(--dim)}.chart-legend{display:flex;gap:16px;align-items:center;font-size:10px;color:var(--muted);margin-bottom:10px}.legend-key{display:inline-flex;align-items:center;gap:6px}.legend-key i{width:9px;height:9px;border-radius:3px;background:var(--key);display:inline-block}.chart-foot{display:flex;justify-content:space-between;gap:12px;color:var(--dim);font:10px var(--mono);margin-top:14px}.chart-summary h3{font-size:13px;margin-bottom:14px}.summary-stat{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid var(--line-soft)}.summary-stat:last-child{border:0}.summary-stat span{font-size:11px;color:var(--muted)}.summary-stat strong{font:700 18px var(--mono);color:#fff}.chart-tooltip{position:fixed;z-index:50;display:none;pointer-events:none;min-width:125px;padding:10px 12px;border:1px solid rgba(57,135,229,.55);border-radius:9px;background:#071120;box-shadow:0 14px 35px rgba(0,0,0,.35);font-size:11px;color:#fff}.chart-tooltip small{display:block;color:var(--muted);margin-bottom:3px}
 .rules-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}.rule-card{position:relative;min-height:190px;padding:21px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(145deg,rgba(13,30,51,.85),rgba(7,17,32,.78));overflow:hidden;transition:.25s}.rule-card:hover{transform:translateY(-4px);border-color:rgba(57,135,229,.5)}.rule-index{font:700 36px var(--mono);color:rgba(255,255,255,.08);position:absolute;right:13px;top:9px}.rule-icon{font-size:22px;margin-bottom:15px}.rule-card h3{font-size:14px;margin-bottom:7px}.rule-cost{font-size:10px;color:var(--red);margin-bottom:12px}.rule-desc{font-size:11px;color:var(--muted);line-height:1.7}.forbidden-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.forbidden-card{padding:21px;border:1px solid rgba(230,103,103,.25);border-radius:15px;background:linear-gradient(145deg,rgba(62,22,34,.44),rgba(7,17,32,.8));transition:.25s}.forbidden-card:hover{transform:translateY(-3px);border-color:rgba(230,103,103,.62)}.forbidden-index{font:700 28px var(--mono);color:rgba(230,103,103,.35)}.forbidden-action{font-size:14px;font-weight:800;color:#fff;margin:9px 0 5px}.forbidden-cost{font-size:11px;color:var(--red)}.forbidden-alt{font-size:11px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid rgba(230,103,103,.15)}
-.timeline{display:grid;grid-template-columns:repeat(6,1fr);gap:0;border-top:1px solid var(--line);position:relative}.timeline:before{content:"";position:absolute;top:-4px;left:0;right:0;height:7px;background:linear-gradient(90deg,var(--amber),var(--green-bright),var(--blue));border-radius:99px;opacity:.55}.timeline-item{position:relative;padding:26px 15px 0;border-right:1px solid var(--line-soft)}.timeline-item:last-child{border-right:0}.timeline-item:before{content:"";position:absolute;top:-8px;left:15px;width:14px;height:14px;border:3px solid var(--bg);border-radius:50%;background:var(--tone);box-shadow:0 0 0 1px var(--tone)}.timeline-version{font:700 13px var(--mono);color:#fff}.timeline-score{font:700 35px var(--mono);color:var(--tone);letter-spacing:-2px;margin:10px 0 4px}.timeline-desc{white-space:pre-line;color:var(--muted);font-size:11px;line-height:1.6}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px}.flow-step{padding:18px;text-align:center;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.flow-step b{display:block;color:var(--blue);font:700 20px var(--mono);margin-bottom:8px}.flow-step span{font-size:11px;color:var(--muted)}
+.evo-wrap{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:34px;padding-top:44px}.evo-line{position:absolute;top:36px;left:9%;right:9%;height:2px;background:linear-gradient(90deg,var(--amber),var(--green-bright),var(--blue),rgba(57,135,229,.18));border-radius:99px;opacity:.5;pointer-events:none;z-index:0}.evo-chapter{position:relative;z-index:1;padding:18px;border:1px solid var(--line-soft);border-radius:14px;background:linear-gradient(145deg,rgba(13,30,51,.85),rgba(7,17,32,.78));transition:.25s}.evo-chapter:hover{transform:translateY(-4px);border-color:rgba(57,135,229,.5);box-shadow:0 12px 28px rgba(0,0,0,.18)}.evo-chapter:before{content:"";position:absolute;top:-14px;left:50%;transform:translateX(-50%);width:13px;height:13px;border:3px solid var(--bg);border-radius:50%;background:var(--tone,var(--blue));box-shadow:0 0 0 1px var(--tone,var(--blue))}.evo-chapter:after{content:"";position:absolute;top:0;left:0;right:0;height:2px;border-radius:99px;background:var(--tone,var(--blue));opacity:.8}.evo-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}.evo-version{font:700 13px var(--mono);color:var(--tone,var(--blue))}.evo-score{font:700 28px var(--mono);letter-spacing:-2px;color:var(--tone,var(--blue))}.evo-chapter h3{font-size:15px;font-weight:800;color:#fff;margin-bottom:6px}.evo-chapter p{font-size:11px;color:var(--muted);line-height:1.7}.evo-next{border-style:dashed;border-color:rgba(145,164,189,.32);background:rgba(7,17,32,.45)}.evo-next .evo-version,.evo-next .evo-score{color:var(--dim)}.flow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:26px}.flow-step{padding:18px;text-align:center;border:1px solid var(--line-soft);border-radius:13px;background:rgba(7,17,32,.78)}.flow-step b{display:block;color:var(--blue);font:700 20px var(--mono);margin-bottom:8px}.flow-step span{font-size:11px;color:var(--muted)}
 .data-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(128px,1fr));gap:9px}.data-item{padding:15px 10px;text-align:center;border:1px solid var(--line-soft);border-radius:12px;background:rgba(7,17,32,.75);font-size:10px;color:var(--muted)}.data-item strong{display:block;color:#fff;font-size:12px;margin-bottom:5px}.diagram-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.diagram-card{padding:16px;border:1px solid var(--line-soft);border-radius:14px;background:rgba(7,17,32,.78)}.diagram-card h3{font-size:12px;color:#fff;margin-bottom:12px}.diagram-card iframe{width:100%;height:300px;border:1px solid rgba(145,164,189,.15);border-radius:10px;background:#02070f;display:block}
 .noise-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:12px}.noise-card{position:relative;padding:21px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(145deg,rgba(15,34,58,.85),rgba(7,17,32,.78));overflow:hidden;transition:.25s}.noise-card:hover{transform:translateY(-4px);border-color:rgba(85,201,214,.5)}.noise-card .noise-index{font:700 30px var(--mono);color:rgba(85,201,214,.22);position:absolute;right:13px;top:8px}.noise-card h3{font-size:13px;margin-bottom:8px;color:#fff}.noise-card p{font-size:11px;color:var(--muted);line-height:1.7}
 .to-top{position:fixed;right:22px;bottom:22px;z-index:40;width:44px;height:44px;border:1px solid rgba(57,135,229,.5);border-radius:12px;background:rgba(7,17,32,.92);color:var(--blue);font-size:18px;opacity:0;transform:translateY(12px);pointer-events:none;transition:.3s;box-shadow:0 12px 30px rgba(0,0,0,.3)}.to-top.show{opacity:1;transform:none;pointer-events:auto}.to-top:hover{background:var(--blue-soft)}
@@ -46,30 +46,17 @@ button,a{font:inherit}button{cursor:pointer}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}@keyframes sweep{0%,28%{transform:translateX(-100%)}52%,100%{transform:translateX(100%)}}
 /* ===== Command Center 高冲击升级 (v3.9.0) ===== */
 .scrollbar{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;background:linear-gradient(90deg,var(--blue),var(--cyan),var(--green-bright));box-shadow:0 0 12px rgba(57,135,229,.55);pointer-events:none}
-.hero{overflow:hidden}
+/* v4.0.1 移除 .hero{overflow:hidden}：鼠标深度视差使 command-card 越界 ±112px，右侧文字被边界硬裁切 */
 #heroCanvas{position:absolute;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 .hero-copy,.command-card{position:relative;z-index:1}
-.hero-glow{position:absolute;inset:-20%;z-index:0;pointer-events:none;background:radial-gradient(620px 420px at var(--gx,50%) var(--gy,30%),rgba(57,135,229,.18),transparent 65%);opacity:0;transition:opacity .4s}
+.hero-glow{position:absolute;inset:0;z-index:0;pointer-events:none;background:radial-gradient(620px 420px at var(--gx,50%) var(--gy,30%),rgba(57,135,229,.18),transparent 65%);opacity:0;transition:opacity .4s}
 .hero-glow.on{opacity:1}
 #bgCanvas{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none}
 #cursorGlow{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(560px circle at var(--cx,50%) var(--cy,50%),rgba(57,135,229,.13),transparent 62%);opacity:0;transition:opacity .35s}
 #cursorGlow.on{opacity:1}
 .wrap,.footer{position:relative;z-index:2}
 .section{scroll-margin-top:74px}
-/* ===== 演进时间线横向 Pin (v3.10.0 · GSAP 招牌技法原生实现) ===== */
-.js .pin-shell{position:relative;width:100vw;margin-left:calc(50% - 50vw)}
-.js .pin-stage{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;align-items:center}
-.js .evo-track{display:flex;align-items:stretch;gap:20px;width:max-content;padding:0 max(10vw,64px);will-change:transform}
-.js .evo-track .timeline-item{flex:0 0 clamp(240px,24vw,380px)}
-.js .pin-hint{position:absolute;right:6vw;bottom:34px;z-index:3;color:var(--dim);font:10px var(--mono);letter-spacing:2px;opacity:.85;animation:pinHint 1.8s ease-in-out infinite;pointer-events:none}
-@keyframes pinHint{0%,100%{transform:translateY(0)}50%{transform:translateY(7px)}}
-.js .no-pin .pin-shell{width:auto;margin-left:0}
-.js .no-pin .pin-stage{position:static;height:auto;overflow:visible;display:block}
-.js .no-pin .evo-track{display:grid;width:auto;transform:none!important;column-gap:0;row-gap:0;padding:0}
-.js .no-pin .evo-track .timeline-item{flex:1 1 auto}
-.js .no-pin .pin-hint{display:none}
-@media(max-width:980px){.js .pin-shell{width:auto;margin-left:0}.js .pin-stage{position:static;height:auto;overflow:visible;display:block}.js .evo-track{display:grid;grid-template-columns:repeat(3,1fr);width:auto;transform:none!important;column-gap:0;row-gap:25px;padding:0}.js .evo-track .timeline-item{flex:1 1 auto}.js .pin-hint{display:none}}
-@media(max-width:640px){.js .evo-track{grid-template-columns:1fr 1fr}}
+/* v4.0.1 演进横向 pin 移除：章节化「简洁骨架+讲述」替代（见 .evo-wrap） */
 /* ===== 体系可视化简洁化：单一闭环总览 (v3.9.2) ===== */
 .system-loop{display:flex;align-items:stretch;flex-wrap:nowrap;max-width:1040px;margin:0 auto}
 .loop-step{flex:1;position:relative;padding:24px 18px;border:1px solid var(--line-soft);border-radius:15px;background:linear-gradient(160deg,rgba(13,30,51,.85),rgba(7,17,32,.78));overflow:hidden;text-align:center;transition:.25s}
@@ -102,33 +89,24 @@ button,a{font:inherit}button{cursor:pointer}
 @keyframes growX{from{width:38%}to{width:var(--pyr-w)}}
 .bar-mark{animation:rise .9s cubic-bezier(.22,.61,.36,1) both}
 @keyframes rise{from{height:3px}to{height:var(--bar-height)}}
-.timeline-item:before{animation:nodePulse 2.8s ease-in-out infinite}
+.evo-next:before{animation:nodePulse 2.8s ease-in-out infinite}
 @keyframes nodePulse{0%,100%{box-shadow:0 0 0 0 transparent}50%{box-shadow:0 0 0 6px rgba(57,135,229,.28)}}
 .typing .t-seg:first-child{color:var(--amber)}
 .js .stagger>*{opacity:0;transform:translateY(18px);transition:opacity .6s,transform .6s}
 .js .stagger.in>*{opacity:1;transform:none}
-@media(prefers-reduced-motion:reduce){.typing:after,.command-card:after,.btn-primary:after,.pyr-row .pyr-fill,.bar-mark,.timeline-item:before{animation:none}.command-card:after,.btn-primary:after{opacity:0}.js .stagger>*{opacity:1;transform:none;transition:none}}
-@media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.diagram-grid{grid-template-columns:1fr}.timeline{grid-template-columns:repeat(3,1fr)}.timeline-item:nth-child(3n){border-right:0}.timeline-item:nth-child(4){border-top:1px solid var(--line-soft);padding-top:25px}.nav-links{display:none}}
-@media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid{grid-template-columns:1fr}.calc-tabs{grid-template-columns:repeat(2,1fr)}.calc-controls{flex-direction:column}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.timeline{grid-template-columns:1fr 1fr;row-gap:25px}.timeline-item:nth-child(even){border-right:0}.timeline-item:nth-child(3),.timeline-item:nth-child(5){border-top:1px solid var(--line-soft);padding-top:25px}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
+@media(prefers-reduced-motion:reduce){.typing:after,.command-card:after,.btn-primary:after,.pyr-row .pyr-fill,.bar-mark,.evo-next:before{animation:none}.command-card:after,.btn-primary:after{opacity:0}.js .stagger>*{opacity:1;transform:none;transition:none}}
+@media(max-width:980px){.hero{grid-template-columns:1fr;gap:34px;min-height:auto;padding-top:62px}.hero-copy{max-width:720px}.arch-grid,.evidence-grid,.performance{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(2,1fr)}.rules-grid{grid-template-columns:repeat(2,1fr)}.data-strip{grid-template-columns:repeat(3,1fr)}.diagram-grid{grid-template-columns:1fr}.evo-wrap{grid-template-columns:repeat(2,1fr);padding-top:0}.evo-line,.evo-chapter:before{display:none}.nav-links{display:none}}
+@media(max-width:640px){.wrap{padding:0 15px}.nav-inner{padding:12px 15px}.nav-demo{margin-left:auto}.hero h1{letter-spacing:-3px}.section{padding:62px 0}.section-head{display:block}.section-head p{margin-top:16px}.kpi-row,.holdings-grid,.evidence-cards,.rules-grid,.forbidden-grid,.flow,.noise-grid,.evo-wrap{grid-template-columns:1fr}.calc-tabs{grid-template-columns:repeat(2,1fr)}.calc-controls{flex-direction:column}.data-strip{grid-template-columns:repeat(2,1fr)}.allocation-row{grid-template-columns:82px 1fr 64px}.command-row{grid-template-columns:1fr 1fr}.bar-chart{gap:4px;padding-left:2px;padding-right:2px}.bar-mark{width:70%}.chart-foot{display:block;line-height:1.8}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal,.js .reveal{opacity:1;transform:none}.js .stagger>*{opacity:1}}
 /* ===== v4.0.0 GSAP 模式中和块：解锁内容、关闭原生重复动效，交还给 GSAP 驱动 ===== */
 .js.gsap .reveal,.js.gsap .reveal.in{opacity:1;transform:none;transition:none}
 .js.gsap .stagger>*{opacity:1;transform:none;transition:none}
 .js.gsap .pyr-row .pyr-fill,.js.gsap .bar-mark{animation:none}
 .js.gsap .bar-mark{transition:none}
-.js.gsap .pin-stage{position:relative;top:auto}
 .js.gsap .nav{position:fixed;top:0;left:0;right:0}
 .js.gsap html{scroll-behavior:auto!important}
 .js.gsap #smooth-content{position:relative;min-height:100vh}
 .js.gsap .split-chars{display:inline-block}
-/* v4.0.0 修复：GSAP 已加载 + 桌面 + prefers-reduced-motion → 演进时间线回退网格（防 100vh 裁切，后几个版本不可达） */
-@media (prefers-reduced-motion: reduce){
-  .js.gsap .pin-shell{width:auto;margin-left:0}
-  .js.gsap .pin-stage{position:static;height:auto;overflow:visible;display:block}
-  .js.gsap .evo-track{display:grid;grid-template-columns:repeat(3,1fr);width:auto;transform:none!important;column-gap:0;row-gap:25px;padding:0}
-  .js.gsap .evo-track .timeline-item{flex:1 1 auto}
-  .js.gsap .pin-hint{display:none}
-}
 /* v4.0.0 修复：移动端导航（≤980px .nav-links 隐藏 → 汉堡菜单展开下拉） */
 .nav-toggle{display:none;background:none;border:1px solid var(--line);color:var(--muted);border-radius:9px;width:38px;height:34px;font-size:16px;line-height:1;place-items:center;margin-left:auto;transition:.2s}
 .nav-toggle:hover{color:#fff;border-color:var(--blue);background:var(--blue-soft)}
@@ -178,7 +156,7 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="section reveal" id="rules"><div class="section-head"><div><div class="section-kicker">Rules & guardrails</div><h2>六条<em>铁律</em></h2></div><p>规则不是口号，而是对错误路径的提前设防。每张卡片都说明它阻止什么。</p></div><div class="rules-grid stagger" id="rulesGrid"></div></section>
 <section class="section reveal" id="forbidden"><div class="section-head"><div><div class="section-kicker">Guardrails</div><h2>永久<em>禁用操作</em></h2></div><p>底线比预测更可靠：明确不做什么，才能给真正重要的动作留下空间。</p></div><div class="forbidden-grid stagger" id="forbiddenGrid"></div></section>
 <section class="section reveal" id="noise"><div class="section-head"><div><div class="section-kicker">Noise audit</div><h2>市场噪声，<em>量化审计</em></h2></div><p>信号是否有效，用数据说话：每次触发都被记录、归因、评分——假信号直接变成规则优化的素材，而不是"运气不好"。</p></div><div class="section-rule"></div><div class="noise-grid stagger"><div class="noise-card"><div class="noise-index">01</div><h3>DDX 准确率</h3><p>主力资金信号触发后跟踪真实命中率；不准确就调整阈值，直到数据证明有效。</p></div><div class="noise-card"><div class="noise-index">02</div><h3>虚惊指数</h3><p>记录"差一点触发"的盘中干扰，衡量规则被市场噪声晃动的频率。</p></div><div class="noise-card"><div class="noise-index">03</div><h3>每周评分卡</h3><p>准确率 / 虚惊 / 盘中振幅 / 操作时机四项加权评分，高噪声一目了然。</p></div><div class="noise-card"><div class="noise-index">04</div><h3>三问优化</h3><p>能阻止哪段错误？与现有规则冲突吗？一个月内能验证吗？三问全过才吸收。</p></div></div></section>
-<section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则由复盘触发，通过三问评估后才进入系统；版本是决策过程的可视化记录。</p></div><div class="pin-shell"><div class="pin-stage"><div class="timeline evo-track" id="evoStrip" aria-label="Anchor 体系进化时间线"></div><div class="pin-hint">继续滚动探索 ↓</div></div></div><div class="flow stagger"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
+<section class="section reveal" id="evolution"><div class="section-head"><div><div class="section-kicker">Evolution</div><h2>体系<em>持续进化</em></h2></div><p>规则不是设计出来的，是复盘长出来的——每次复盘催生一条规则，规则沉淀成一个版本。</p></div><div class="evo-wrap stagger"><span class="evo-line" aria-hidden="true"></span><article class="evo-chapter" style="--tone:var(--amber)" data-version="v3.0"><div class="evo-top"><span class="evo-version">v3.0</span><span class="evo-score count-up" data-count="80">80</span></div><h3>地基</h3><p>四层金字塔，把每一笔钱放进清晰的职责、边界与复盘流程。</p></article><article class="evo-chapter" style="--tone:var(--blue)" data-version="v3.3"><div class="evo-top"><span class="evo-version">v3.3</span><span class="evo-score count-up" data-count="96">96</span></div><h3>边界</h3><p>状态机与负面清单，让每一笔交易都关进「该不该买」的硬约束。</p></article><article class="evo-chapter" style="--tone:var(--cyan)" data-version="v3.5"><div class="evo-top"><span class="evo-version">v3.5</span><span class="evo-score count-up" data-count="96">96</span></div><h3>自动化</h3><p>行情→决策→复盘全链路实时同步，系统自己盯盘、自己交作业。</p></article><article class="evo-chapter evo-next" style="--tone:var(--green-bright)" data-version="v4.0"><div class="evo-top"><span class="evo-version">v4.0</span><span class="evo-score">下一站</span></div><h3>归因</h3><p>盈利能力月度归因——从「规则对错」走向「每一笔钱的去向」。</p></article></div><div class="flow stagger"><div class="flow-step"><b>Q1</b><span>能阻止哪段历史错误？</span></div><div class="flow-step"><b>Q2</b><span>与现有规则冲突吗？</span></div><div class="flow-step"><b>Q3</b><span>一个月内能验证吗？</span></div><div class="flow-step"><b>3/3</b><span>全通过才吸收</span></div></div></section>
 <section class="section reveal" id="data-engine"><div class="section-head"><div><div class="section-kicker">Data engine</div><h2>数据是<em>决策地基</em></h2></div><p>公开页展示数据管线，不接触真实投资账户。私有看板才消费本地真实数据。</p></div><div class="data-strip stagger"><div class="data-item"><strong>01 · mx-data</strong>行情首选</div><div class="data-item"><strong>02 · mx-search</strong>官方底层</div><div class="data-item"><strong>03 · AKShare</strong>开源补位</div><div class="data-item"><strong>04 · WebSearch</strong>兜底校验</div><div class="data-item"><strong>05 · App 截图</strong>最终核对</div><div class="data-item"><strong>06 · 实时同步</strong>保存即重建</div></div></section>
 <section class="section reveal" id="diagrams"><div class="section-head"><div><div class="section-kicker">System map</div><h2>一套体系，<em>闭环运转</em></h2></div><p>数据输入 → 规则处理 → 可视化输出 → 复盘校准，四步闭环，一眼看懂。以下均为体系示意，不含真实持仓与金额。</p></div><div class="section-rule"></div><div class="system-loop stagger" role="img" aria-label="Anchor 体系四步闭环：数据输入、规则处理、可视化输出、复盘迭代"><div class="loop-step ls-in"><div class="loop-num">01</div><div class="loop-icon">📥</div><h3>数据输入</h3><p>唯一权威持仓 + mx-data 行情</p></div><div class="loop-arrow">→</div><div class="loop-step ls-rule"><div class="loop-num">02</div><div class="loop-icon">🧭</div><h3>规则处理</h3><p>四层金字塔 + 数据管道四层规范</p></div><div class="loop-arrow">→</div><div class="loop-step ls-out"><div class="loop-num">03</div><div class="loop-icon">📊</div><h3>可视化输出</h3><p>看板 / 报告 / 公开页 · 脱敏展示</p></div><div class="loop-arrow">→</div><div class="loop-step ls-review"><div class="loop-num">04</div><div class="loop-icon">🔁</div><h3>复盘迭代</h3><p>T+3 回填 · 胜率校准纪律</p></div></div><div class="loop-back">复盘结论回流规则与数据 · 体系持续进化</div><div class="diagram-links"><span>想看细节？</span><a href="diagrams/data-pipeline.html" target="_blank" rel="noreferrer">数据管道 · 四层规范</a><a href="diagrams/decision-loop.html" target="_blank" rel="noreferrer">决策闭环 · T+3 复盘</a><a href="diagrams/architecture.html" target="_blank" rel="noreferrer">系统架构 · 数据流</a></div></section>
 <section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html" data-link-pages="index.html" data-link-local="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
@@ -757,7 +735,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 })();
 
 (function(){
-  var box=document.getElementById("evoStrip"),tones=["var(--amber)","var(--green-bright)","var(--green-bright)","var(--blue)"];(D.evo||[]).forEach(function(e,i){var item=make("article","timeline-item");item.style.setProperty("--tone",tones[i%tones.length]);append(item,"div","timeline-version",e.v);var sc=append(item,"div","timeline-score count-up",e.s);sc.setAttribute("data-count",e.s);append(item,"div","timeline-desc",e.d);box.appendChild(item)})
+  (function(){var byV={};(D.evo||[]).forEach(function(e){byV[e.v]=e});document.querySelectorAll(".evo-chapter[data-version]").forEach(function(ch){var hit=byV[ch.getAttribute("data-version")];if(hit){var sc=ch.querySelector(".evo-score");if(sc&&sc.hasAttribute("data-count")){sc.setAttribute("data-count",hit.s);sc.textContent=hit.s}}})})(); /* v4.0.1 进化章节：D.evo 权威分数回填，叙事文案在 HTML */
 })();
 
 (function(){
@@ -1050,34 +1028,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   loop();
 })();
 
-/* ===== 演进时间线横向 Pin (v3.10.0 · GSAP 招牌技法原生实现) ===== */
-(function(){
-  if(gsapOk)return; /* v4.0.0 GSAP ScrollTrigger pin 接管；本模块保留为 no-gsap 原生降级 */
-  var shell=document.querySelector(".pin-shell"),stage=shell&&shell.querySelector(".pin-stage"),track=stage&&stage.querySelector(".evo-track");
-  if(!track)return;
-  var mqM=window.matchMedia&&window.matchMedia("(max-width:980px)");
-  var rm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)");
-  var dist=0,enabled=false,raf=false,pad=48;
-  function disable(){shell.classList.add("no-pin");shell.style.height="auto";track.style.transform="none";enabled=false}
-  function measure(){
-    if((mqM&&mqM.matches)||(rm&&rm.matches)){disable();return}
-    var tw=track.scrollWidth,vh=window.innerHeight;dist=Math.max(tw-vh+pad,0);
-    if(dist<=0){disable();return}
-    shell.classList.remove("no-pin");shell.style.height=(vh+dist)+"px";enabled=true;render();
-  }
-  function render(){
-    if(!enabled)return;
-    var sh=shell.offsetHeight,vh=window.innerHeight,top=shell.getBoundingClientRect().top;
-    var p=(0-top)/(sh-vh);if(p<0)p=0;if(p>1)p=1;
-    track.style.transform="translate3d("+(-p*dist)+"px,0,0)";raf=false;
-  }
-  function onScroll(){if(!enabled||raf)return;raf=true;requestAnimationFrame(render)}
-  measure();
-  window.addEventListener("scroll",onScroll,{passive:true});
-  window.addEventListener("resize",measure);
-  window.addEventListener("orientationchange",measure);
-  window.addEventListener("load",measure);
-})();
+/* v4.0.1 演进横向 pin 原生实现已移除：进化区改为章节化叙事（GSAP/no-GSAP 共用 .evo-wrap） */
 
 /* =========================================================
    v4.0.0 · GSAP 深度交互模块（20 项效果，最大程度使用 gsapskills）
@@ -1115,7 +1066,8 @@ if(gsapOk)(function(){
       hero.addEventListener("pointermove",function(e){
         var r=hero.getBoundingClientRect();
         var nx=(e.clientX-r.left)/r.width-.5,ny=(e.clientY-r.top)/r.height-.5;
-        copyX(nx*80);cmdX(nx*112);glowX(nx*-150);
+        /* v4.0.1 幅度收敛：原 ±112px 越界裁切；现 ±56/±80/∓110，深度保留且 ≥1366px 不出视口 */
+        copyX(nx*56);cmdX(nx*80);glowX(nx*-110);
         glow.classList.add("on");glowGx((nx*.5+.5)*100);glowGy((ny*.5+.5)*100);
       });
       hero.addEventListener("pointerleave",function(){glow.classList.remove("on")});
@@ -1159,13 +1111,11 @@ if(gsapOk)(function(){
       gsap.fromTo(pyrEl.querySelectorAll(".pyr-fill"),{scaleX:0},{scaleX:1,duration:1.2,ease:"power3.inOut",transformOrigin:"center center",stagger:.08,scrollTrigger:{trigger:pyrEl,start:"top 78%",once:true}});
     }
 
-    /* 10 · 演进时间线横向 Pin（GSAP 招牌技法） */
-    var shell=document.querySelector(".pin-shell"),stage=shell&&shell.querySelector(".pin-stage"),track=stage&&stage.querySelector(".evo-track");
-    if(shell&&stage&&track){
-      var dist=function(){return Math.max(track.scrollWidth-window.innerWidth+48,0)};
-      gsap.to(track,{x:function(){return -dist()},ease:"none",scrollTrigger:{trigger:shell,start:"top top",end:function(){return "+="+(dist()+window.innerHeight)},pin:stage,scrub:1,anticipatePin:1,invalidateOnRefresh:true}});
-      var pinHint=document.querySelector(".pin-hint");
-      if(pinHint){gsap.fromTo(pinHint,{autoAlpha:1},{autoAlpha:0,y:-10,duration:.3,scrollTrigger:{trigger:shell,start:"top top",end:"top top+=120",scrub:true}})}
+    /* 10 · 进化章节叙事（v4.0.1：简洁骨架 + 讲述；连线生长 + 章节错峰入场） */
+    var evoWrap=document.querySelector(".evo-wrap");
+    if(evoWrap){
+      gsap.fromTo(evoWrap.querySelector(".evo-line"),{scaleX:0},{scaleX:1,transformOrigin:"left center",duration:1.1,ease:"power2.inOut",scrollTrigger:{trigger:evoWrap,start:"top 82%",once:true}});
+      gsap.fromTo(evoWrap.querySelectorAll(".evo-chapter"),{autoAlpha:0,y:28},{autoAlpha:1,y:0,stagger:.14,duration:.7,ease:"power3.out",scrollTrigger:{trigger:evoWrap,start:"top 80%",once:true}});
     }
 
     /* 11 · 月度柱状图生长 + hover 微交互 */
@@ -1186,10 +1136,10 @@ if(gsapOk)(function(){
     }
     var heroBig=document.querySelector(".command-score .big.count-up");
     if(heroBig){gsap.delayedCall(1.2,function(){runCount(heroBig)})}
-    var pinCounts=document.querySelectorAll(".pin-stage .count-up");
-    if(pinCounts.length&&shell){
-      pinCounts.forEach(function(el){gsap.set(el,{innerText:0})});
-      ScrollTrigger.create({trigger:shell,start:"top 70%",once:true,onEnter:function(){pinCounts.forEach(function(el){runCount(el)})}});
+    var evoCounts=document.querySelectorAll(".evo-wrap .count-up");
+    if(evoCounts.length){
+      evoCounts.forEach(function(el){gsap.set(el,{innerText:0})});
+      ScrollTrigger.create({trigger:".evo-wrap",start:"top 78%",once:true,onEnter:function(){evoCounts.forEach(function(el){runCount(el)})}});
     }
 
     /* 13 · 锚点平滑（smoother 优先 · ScrollToPlugin 兜底 · 补偿固定导航） */

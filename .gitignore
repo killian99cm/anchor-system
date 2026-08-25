@@ -71,5 +71,8 @@ __pycache__/
 # API 缓存
 05-scripts/mx_cache/
 
+# mx-data 精确输出（行情/个股研究临时快照，非公开内容不提交）
+_mx_precise/
+
 # 技能临时文件
 .superpowers/

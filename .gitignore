@@ -63,6 +63,8 @@ setup.py
 06-dashboard/decision_log.json
 # 决策胜率仪表盘（由决策日志生成，含隐私，不提交）
 06-dashboard/decision_dashboard.html
+# 当日指挥中心（聚合全部入口，内联私有持仓数据，不提交）
+06-dashboard/daily_hub.html
 
 # Python
 __pycache__/

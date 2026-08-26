@@ -5,6 +5,21 @@
 
 ---
 
+## v4.2.0 — 2026-08-26
+
+### 优化建议采纳落地：买点评分卡强制纳入 + 信号脚本编码修复 + 止盈档位回测
+
+**背景**：用户评估「深度优化建议书.html + 优化执行报告.md」后拍板三项决策：①买点评分卡（5维≥3/5）强制纳入 14:30 盘中建议流程 ②贷款残留 ¥7,023.77 维持「8/31 归因后再定」（拒绝建议书 P0 的配置债券垫方向）③补齐变更管理五步 + 修 gen_intraday_signal 编码 bug。
+
+- 🃏 **买点评分卡（5维≥3/5）强制纳入**：`daily_advice.py` SYSTEM_PROMPT 新增第 6 条硬性规则——输出任何「买入/加仓」建议前必须附 5 维打分（①估值锚 ②回调日 ③恐慌强度 ④资金确认 ⑤试探仓位），每 ✓ 记 1 分；**总分 <3 分 → 必须标注「追高型买入 · 按打分卡放弃」，不输出买入指令**；卖出/减仓/持有/等待建议不需打分。审计实证：8/7 半导体加仓 2/5 分（追高型）应被拦截
+- 🐛 **gen_intraday_signal.py 编码修复**：Windows 控制台默认 GBK 无法编码 ¥（`UnicodeEncodeError: 'gbk' codec can't encode character '\xa5'`）→ 加 `sys.stdout.reconfigure(encoding="utf-8")`，直接运行（不加 PYTHONIOENCODING）输出合法 JSON ✅（建议书「实测输出合法 JSON」此前未测出此问题）
+- 📊 **stop_profit_backtest.py 新增**：止盈档位回测脚本（读数据不硬编码金额，可复跑），9 只已清仓基金 + 31 笔卖出流水复盘——结论 **v3.4 档位设计成立无需回滚**（更早更小锁利 + 奔跑仓 + 止损硬Deadline 双引擎）；额外发现半导体 17+ 笔反复小额进出坐实过度交易弱点
+- 🔍 **优化执行报告**：`04-reviews/special/2026-08-26-优化执行报告.md` 完成 T+3 检查/止盈回测/规则冲突扫描/打分卡审计；3 处规则模糊点（时间止损vs恐慌豁免 / 奔跑仓14天vs20日线破线 / 事件驱动A4vs打分卡A1）建议 8/31 归因评审仲裁
+- ⏳ **贷款残留处置维持原框架**：`_meta.liabilities.in_cash ¥7,023.77` 不动用，8/31 归因后再定（现金 22.1% 超配定向留给进攻层，不追防御）
+- 📁 影响文件：`05-scripts/gen_intraday_signal.py`（编码修复）、`05-scripts/daily_advice.py`（打分卡规则）、`05-scripts/stop_profit_backtest.py`（新增）、`04-reviews/special/2026-08-26-优化执行报告.md`（新增）、CLAUDE.md、会话检查点、system_version → v4.2.0
+
+---
+
 ## v4.1.0 — 2026-08-25
 
 ### 当日指挥中心 Daily Hub（`06-dashboard/daily_hub.html` + `05-scripts/gen_daily_hub.py`）

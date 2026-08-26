@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚓ Anchor · 投资纪律操作系统 v4.0.2</title>
+<title>⚓ Anchor · 投资纪律操作系统 v4.2.0</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚓</text></svg>">
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚓</text></svg>">
+
 <meta name="description" content="Anchor 四层金字塔投资纪律操作系统。规则驱动、数据验证、公开页面仅使用脱敏示例数据。">
 <meta name="keywords" content="投资纪律,四层金字塔,资产配置,规则驱动,个人投资,回撤控制,噪声审计">
 <meta property="og:type" content="website">
@@ -115,6 +119,82 @@ button,a{font:inherit}button{cursor:pointer}
   .nav.open .nav-links a{font-size:13px;letter-spacing:.6px;padding:8px 0;border-bottom:1px solid rgba(154,188,225,.06)}
   .nav.open .nav-links a:last-child{border-bottom:0}
 }
+/* ===== v4.2.1 顶级审美：玻璃拟态 + 排版节奏 + 光效 ===== */
+:root{
+  --glass-1:rgba(13,26,46,.60);--glass-2:rgba(10,20,36,.74);--glass-3:rgba(7,17,32,.88);
+  --blur-s:blur(12px);--blur-m:blur(20px);--blur-l:blur(32px);
+  --edge:0 0 0 1px rgba(57,135,229,.20);
+  --hi:inset 0 1px 0 rgba(255,255,255,.06);
+  --grad-edge:linear-gradient(120deg,rgba(57,135,229,.55),rgba(85,201,214,.30),transparent);
+}
+/* 背景：径向光 3→5 团（补 amber/purple 低频） */
+body:before{background:radial-gradient(circle at 12% -6%,rgba(57,135,229,.22),transparent 36%),radial-gradient(circle at 88% 12%,rgba(85,201,214,.12),transparent 30%),radial-gradient(circle at 18% 90%,rgba(250,178,25,.07),transparent 26%),radial-gradient(circle at 82% 74%,rgba(144,133,233,.09),transparent 28%),linear-gradient(180deg,#02070f 0%,#04101c 48%,#02070f 100%)}
+body:after{opacity:.22}
+/* 排版升级 */
+.hero h1{font-weight:920;letter-spacing:-6px}
+.section-head h2{font-weight:850;letter-spacing:-3px}
+.eyebrow,.section-kicker{font-size:11px;letter-spacing:2.4px}
+/* L1 玻璃：命令卡/闭环步 */
+.command-card,.loop-step{background:linear-gradient(145deg,var(--glass-1),var(--glass-3));-webkit-backdrop-filter:var(--blur-m);backdrop-filter:var(--blur-m);box-shadow:var(--shadow),0 0 70px rgba(57,135,229,.08),var(--edge),var(--hi)}
+/* L2 玻璃：数据卡/面板 */
+.kpi,.rule-card,.holding-card,.evidence-card,.noise-card,.architecture,.pyr-shape,.flow-step,.calc-panel,.chart-card,.chart-summary,.table-wrap,.data-item,.diagram-card,.evo-chapter,.calc-tab{background:var(--glass-2);-webkit-backdrop-filter:var(--blur-s);backdrop-filter:var(--blur-s);box-shadow:var(--hi)}
+/* hover 泛蓝光 */
+.kpi:hover,.rule-card:hover,.holding-card:hover,.evidence-card:hover,.noise-card:hover,.architecture:hover,.flow-step:hover,.loop-step:hover,.evo-chapter:hover,.diagram-card:hover{box-shadow:0 18px 44px rgba(0,0,0,.30),0 0 28px -6px rgba(57,135,229,.38),var(--hi)}
+/* 分隔线强化 */
+.section-rule{height:2px;background:linear-gradient(90deg,var(--blue),rgba(57,135,229,0) 70%,rgba(85,201,214,.25));opacity:.8}
+/* glare 扫光钩子（JS tilt 驱动 --gx/--gy） */
+.tilt-glare{position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(240px circle at var(--gx,50%) var(--gy,50%),rgba(255,255,255,.10),transparent 62%);opacity:0;transition:opacity .3s;z-index:1}
+.kpi:hover .tilt-glare,.rule-card:hover .tilt-glare,.holding-card:hover .tilt-glare,.evidence-card:hover .tilt-glare,.noise-card:hover .tilt-glare,.loop-step:hover .tilt-glare{opacity:1}
+@media(prefers-reduced-motion:reduce){.tilt-glare{display:none}}
+
+/* ===== v4.3.0 design-layer · Anchor 设计系统统一层（DESIGN.md） ===== */
+:root{
+  --font-ui:"Inter","SF Pro Text","Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  --mono:"JetBrains Mono","Cascadia Code",Consolas,monospace;
+  --glass-1:rgba(13,26,46,.60);--glass-2:rgba(10,20,36,.74);--glass-3:rgba(7,17,32,.88);
+  --blur-s:blur(12px);--blur-m:blur(20px);--blur-l:blur(32px);
+  --edge:0 0 0 1px rgba(57,135,229,.20);
+  --hi:inset 0 1px 0 rgba(255,255,255,.06);
+  --grad-edge:linear-gradient(120deg,rgba(57,135,229,.55),rgba(85,201,214,.30),transparent);
+  --glow-blue:0 0 70px rgba(57,135,229,.08);
+  --glow-hover:0 18px 44px rgba(0,0,0,.30),0 0 28px -6px rgba(57,135,229,.38);
+}
+/* 顶栏毛玻璃（sticky 导航，长页随时跳转） */
+.topbar,.hub-top,.nav{position:sticky!important;top:0!important;z-index:100!important;
+  backdrop-filter:var(--blur-l) saturate(1.3);-webkit-backdrop-filter:var(--blur-l) saturate(1.3);
+  background:rgba(2,7,15,.78)!important;border-bottom:1px solid rgba(57,135,229,.18)!important}
+/* KPI 数字增强：mono + 字重 + 字距 */
+.kpi b,.kpi strong,.stat b,.stat strong,.metric b,.metric strong,.num,td:not(:first-child),.amt{
+  font-family:var(--mono)!important;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* 渐变眉题工具类（章节逻辑标号） */
+.grad-kicker{display:inline-flex;align-items:center;gap:.4rem;font-size:.6875rem;font-weight:600;
+  letter-spacing:.15em;text-transform:uppercase;color:var(--blue,#3987e5)}
+.grad-kicker::before{content:"";width:1.4rem;height:1px;background:linear-gradient(90deg,var(--blue,#3987e5),transparent)}
+/* 卡片 hover 上浮 + 蓝光（深度层级） */
+.card,.panel,.kpi,.hold,.block,.grid-card{transition:transform .25s ease,box-shadow .25s ease}
+.card:hover,.panel:hover,.kpi:hover,.hold:hover,.block:hover,.grid-card:hover{
+  transform:translateY(-2px);box-shadow:var(--glow-hover)}
+/* 滚动条美化（Windows 深色） */
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:#060d18}
+::-webkit-scrollbar-thumb{background:#1b3352;border-radius:5px;border:2px solid #060d18}
+::-webkit-scrollbar-thumb:hover{background:#2a6cc0}
+/* 返回顶部按钮 */
+#wb2top{position:fixed;right:20px;bottom:24px;width:42px;height:42px;border-radius:12px;border:1px solid rgba(57,135,229,.4);
+  background:linear-gradient(135deg,var(--glass-2),var(--glass-3));backdrop-filter:var(--blur-m);
+  color:#bcd7f5;font-size:1.05rem;cursor:pointer;z-index:900;opacity:0;pointer-events:none;
+  transition:opacity .3s,transform .3s;box-shadow:0 8px 24px rgba(0,0,0,.35),var(--hi)}
+#wb2top.show{opacity:1;pointer-events:auto}
+#wb2top:hover{transform:translateY(-3px);color:#fff;box-shadow:var(--glow-hover)}
+/* 打印样式 */
+@media print{ .topbar,.hub-top,.nav,#wb2top{display:none!important}
+  body{background:#fff!important;color:#111!important}
+  .card,.panel,.kpi{box-shadow:none!important;border:1px solid #ddd!important;background:#fff!important} }
+/* 深色阅读焦点：选中文本 */
+::selection{background:rgba(57,135,229,.32);color:#fff}
+/* 移动端触控目标增强 */
+@media(max-width:640px){ .btn-primary,.btn-secondary,.btn-ghost,.btn-danger{min-height:44px;display:inline-flex;align-items:center;justify-content:center} }
+
 </style>
 <!-- ===== GSAP 全家桶 CDN (v4.0.0) · 必须在内联 script 之前加载 ===== -->
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
@@ -128,7 +208,7 @@ button,a{font:inherit}button{cursor:pointer}
 <div class="scrollbar" id="scrollBar"></div>
 <div id="cursorGlow"></div>
 <canvas id="bgCanvas"></canvas>
-<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v4.0.0</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><button type="button" class="nav-toggle" id="navToggle" aria-label="打开导航" aria-expanded="false">☰</button><span class="nav-demo">示例数据 · 公开页</span></div></nav>
+<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v4.2.0</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><button type="button" class="nav-toggle" id="navToggle" aria-label="打开导航" aria-expanded="false">☰</button><span class="nav-demo">示例数据 · 公开页</span></div></nav>
 <div id="smooth-wrapper">
 <div id="smooth-content">
 <main class="wrap">
@@ -161,7 +241,7 @@ button,a{font:inherit}button{cursor:pointer}
 <section class="cta"><h2>把纪律做成一个系统</h2><p>Anchor 是一个纯 HTML + Python 的个人投资管理框架：数据输入、规则计算、可视化输出、复盘迭代。</p><div class="hero-actions" style="justify-content:center"><a class="btn btn-primary" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">GitHub 仓库 ↗</a><a class="btn btn-ghost" href="../06-dashboard/portfolio_analysis_example.html" data-link-pages="index.html" data-link-local="../06-dashboard/portfolio_analysis_example.html">查看示例看板 →</a></div></section>
 </main>
 <noscript><div class="noscript-note">本页面的数据面板需要 JavaScript 渲染；请启用 JS 查看完整内容。</div></noscript>
-<footer class="footer">⚓ Anchor Investment System v4.0.2 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
+<footer class="footer">⚓ Anchor Investment System v4.2.0 · 公开页面仅使用脱敏示例数据 · MIT License · 仅供学习参考<br>市场有风险 · 投资需谨慎</footer>
 </div><!-- /smooth-content -->
 </div><!-- /smooth-wrapper -->
 <div class="chart-tooltip" id="chartTooltip"></div>
@@ -1231,6 +1311,68 @@ if(gsapOk)(function(){
     }
     window.__bindGsapTilt=bindGsapTilt; /* v4.0.0 修复：holdings render() 重建卡片后可重绑 */
     bindGsapTilt(document);
+
+    /* 21-28 · v4.2.1 顶级审美动效升级（自包含 + 防御性） */
+    try{
+      /* 21 · 章节叙事分镜：kicker→标题→内容 镜头推进 */
+      document.querySelectorAll('.section').forEach(function(sec){
+        var head=sec.querySelector('.section-head');if(!head)return;
+        gsap.from(head,{y:40,scale:.965,duration:1,ease:'power3.out',
+          scrollTrigger:{trigger:sec,start:'top 74%',toggleActions:'play none none reverse'}});
+      });
+      /* 22 · Hero→金字塔推近：command-card 滚出放大蒙太奇 */
+      var cc=document.querySelector('.command-card');
+      if(cc){gsap.to(cc,{scale:1.16,yPercent:30,autoAlpha:.2,filter:'blur(2px)',ease:'none',
+        scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}})}
+      /* 23 · 磁性按钮（160px 吸附 + 内容反位移） */
+      document.querySelectorAll('.btn-primary,.btn-ghost').forEach(function(b){
+        var xq=gsap.quickTo(b,'x',{duration:.35,ease:'power3.out'}),yq=gsap.quickTo(b,'y',{duration:.35,ease:'power3.out'});
+        b.addEventListener('pointermove',function(e){
+          var r=b.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2);
+          if(Math.hypot(dx,dy)<160){xq(dx*.26);yq(dy*.26)}else{xq(0);yq(0)}
+        });
+        b.addEventListener('pointerleave',function(){xq(0);yq(0)});
+      });
+      /* 24 · tilt 增强：glare 扫光（--gx/--gy 驱动 .tilt-glare） */
+      document.querySelectorAll('.kpi,.rule-card,.holding-card,.evidence-card,.noise-card,.loop-step').forEach(function(card){
+        if(!card.querySelector('.tilt-glare')){var g=document.createElement('i');g.className='tilt-glare';card.appendChild(g)}
+        var gg=card.querySelector('.tilt-glare');
+        var gx=gsap.quickTo(gg,'--gx',{duration:.4,ease:'power2.out'}),gy=gsap.quickTo(gg,'--gy',{duration:.4,ease:'power2.out'});
+        card.addEventListener('pointermove',function(e){
+          var r=card.getBoundingClientRect();
+          gx(((e.clientX-r.left)/r.width*100)+'%');gy(((e.clientY-r.top)/r.height*100)+'%');
+        });
+      });
+      /* 25 · 进化评分：滚动累加定格 */
+      document.querySelectorAll('.evo-score[data-count]').forEach(function(el){
+        var target=Number(el.getAttribute('data-count'))||0,obj={v:0};
+        gsap.to(obj,{v:target,duration:1.2,ease:'power2.out',
+          scrollTrigger:{trigger:el,start:'top 85%'},
+          onUpdate:function(){el.textContent=Math.round(obj.v)}});
+      });
+      /* 26 · 持仓联动：hover 卡上浮，其余降透明 */
+      var hg=document.querySelector('.holdings-grid');
+      if(hg){
+        hg.addEventListener('pointerover',function(e){
+          var card=e.target.closest('.holding-card');if(!card)return;
+          hg.querySelectorAll('.holding-card').forEach(function(c){
+            gsap.to(c,{y:c===card?-6:0,autoAlpha:c===card?1:.4,duration:.35,ease:'power2.out'});
+          });
+        });
+        hg.addEventListener('pointerout',function(){
+          hg.querySelectorAll('.holding-card').forEach(function(c){gsap.to(c,{y:0,autoAlpha:1,duration:.35,ease:'power2.out'})});
+        });
+      }
+      /* 27 · 证据表逐行点亮 */
+      var evTab=document.querySelector('.table-wrap table');
+      if(evTab){var erows=evTab.querySelectorAll('tr');
+        gsap.fromTo(erows,{autoAlpha:.22},{autoAlpha:1,stagger:.14,duration:.45,ease:'power1.out',
+          scrollTrigger:{trigger:evTab,start:'top 78%',once:true}});
+      }
+      /* 28 · 闭环流转光 */
+      var lArr=document.querySelectorAll('.loop-arrow');
+      if(lArr.length){gsap.to(lArr,{opacity:.3,duration:.8,ease:'sine.inOut',repeat:-1,yoyo:true,stagger:.16})}
+    }catch(e){/* v4.2.1 动效防御：任一失败不中断整页 */}
 
     /* 19 · 字体加载后刷新（防 SplitText / Pin 错位） */
     if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){ScrollTrigger.refresh()})}

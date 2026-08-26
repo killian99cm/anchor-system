@@ -5,6 +5,25 @@
 
 ---
 
+## v4.3.0-design — 2026-08-26（设计系统统一升级 · DesignMdArchitect 专家）
+
+### 全部可视化页面按 DESIGN.md 规范统一升级（视觉层，不改变任何数据字段）
+
+**背景**：用户启用「规范范」（DesignMdArchitect）专家，要求优化 Anchor 所有可视化页面——更符合逻辑、更吸引观众、更具艺术感与科技感、更便捷。产出统一设计系统规范 + 4 页幂等升级脚本。
+
+- 📐 **新增 `08-website/design-system/DESIGN.md`**：9 章节完整设计规范（品牌混搭：Linear 排版 × Stripe 色彩 × Tesla 未来感），双 AI（WorkBuddy + Claude）可消费，280+ 行精确到 HEX/CSS 变量
+- 🎨 **4 页统一注入 v4.3.0 设计层**（`05-scripts/design_v43_upgrade.py`，幂等可复跑）：
+  - 玻璃拟态 tokens（glass-1/2/3 + blur 12-32px + edge 光效环 + 上缘高光）
+  - 顶栏 sticky 毛玻璃导航、卡片 hover 蓝光上浮、深色滚动条、打印样式、选中文本高亮、移动端触控目标 ≥44px
+- 🔢 **3 个私有看板注入章节自动编号**（v4.3.1-dash-enhance）：h2 自动生成 `01 · 02 · 03…` 编号 + 渐变分隔光带 + 表格行 hover 聚焦——信息逻辑一眼可读
+- 🆙 **返回顶部按钮**（4 页，原生 JS 无依赖，滚动 420px 后浮现）
+- 🐛 **修复遗留 bug**：portfolio_analysis.html title/badge 仍为 v3.5（上次版本统一遗漏）→ 已统一 v4.2.0 PRIVATE
+- ✅ **质量验证**：smoke_test 79/79 通过、4 页 0 死链（portfolio 双基准链接除外）、体积受控（60/33/37/106 KB）、桌面副本 md5 一致
+
+**影响文件**：`08-website/design-system/DESIGN.md`（新增）、`05-scripts/design_v43_upgrade.py`（新增）、`06-dashboard/portfolio_analysis.html`、`06-dashboard/daily_hub.html`、`06-dashboard/decision_dashboard.html`、`08-website/anchor-pro.html`、桌面副本 `portfolio_analysis.html`
+
+---
+
 ## v4.2.0-collab — 2026-08-26（WorkBuddy 双 AI 协作接入）
 
 ### WorkBuddy 定时自动化 + 检查点/Viking 双向互通（Claude ↔ WorkBuddy）

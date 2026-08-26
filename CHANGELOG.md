@@ -5,6 +5,46 @@
 
 ---
 
+## v4.3.1-backtest — 2026-08-26（完整执行链回测落地）
+
+### 完整执行链回测 + 仪表盘/对比图 + 仲裁材料第六节（8/31 归因 P1-4 证据闭环）
+
+**背景**：把 Anchor 真实执行链完整建模（替代此前「止盈单维度」实验），为 8/31 月度归因提供最贴近实盘的裁决证据。
+
+- 🧪 **新增 `09-backtest/scripts/full_anchor_backtest.py`**：完整执行链回测脚本——
+  - 建仓 **334 分批**（3:3:4，批间隔 3 交易日，次日开盘执行）
+  - 止损 **-8%**（收盘触发 → 次日开盘清仓，含缓冲语义）
+  - 止盈 **③疏档 +10%/+20%/+35% 各卖 25%** + 剩余 25% 奔跑仓（破 20 日线或自峰值回撤 ≥8% 出清）
+  - 限额 **月操作 ≤4 笔**（自然月）+ 清仓后冷却 5 交易日
+  - 区间 **5 标的 × 3 区间**：full(2021-09~2026-08) / seg1(2021-09~2023-08 跌市) / seg2(2023-09~2026-08 涨市)；信号收盘确认 → 次日开盘执行（无前视）；A股 ETF 100 份手数 + T+1 + 万三双边费
+- 📊 **新增 `09-backtest/scripts/make_full_dashboard.py`**：生成三件套 + 对比图 + 仪表盘——`full_anchor_equity.csv` / `full_anchor_trades.csv` / `full_anchor_summary.json`（三件套）+ `full_anchor_vs_benchmark.png`（策略 vs 满仓对比）+ `index.html`（完整执行链仪表盘）+ `takeprofit_dashboard.html` 更新
+- 📄 **仲裁材料第六节**（`09-backtest/2026-08-26-8月31日仲裁材料.md` 新增「六、完整执行链回测证据」）：
+  - 核心结论 = **回撤保护**：5/5 标的回撤全面改善（9.1~20.1pct），4/5 在跌市（seg1）跑赢或接近满仓（芯片 -22.6% vs 满仓 -39.0%）——334 建仓 + 止损在跌市确实少亏
+  - 涨市（seg2）收益仍被止盈结构拖累（5/5 跑输满仓，与止盈单维回测一致，③疏档未解决趋势市卖飞但回撤受控）
+  - 止损循环 + 月限额协同：纳指 full 26 笔交易（止损 9 + 止盈 17）证明「止损后冷却再入场」机制持续运行，月限额未误伤
+  - 区间依赖确认：「纪律体系 = 少亏型而非暴利型」定位再次验证；8/31 裁决证据链闭环（止盈单维 → 参数扫描 → 档位宽度 → 止损端 → 完整执行链）
+- 📁 影响文件：`09-backtest/scripts/full_anchor_backtest.py`（新增）、`09-backtest/scripts/make_full_dashboard.py`（新增）、`09-backtest/output/full_anchor_equity.csv`（新增）、`09-backtest/output/full_anchor_trades.csv`（新增）、`09-backtest/output/full_anchor_summary.json`（新增）、`09-backtest/output/full_anchor_vs_benchmark.png`（新增）、`09-backtest/output/index.html`（更新）、`09-backtest/output/takeprofit_dashboard.html`（更新）、`09-backtest/2026-08-26-8月31日仲裁材料.md`（第六节）
+- 📌 本轮文档同步：CHANGELOG/CLAUDE.md/会话检查点 全部版本统一为 **v4.3.1**
+
+---
+
+## v4.3.1-design — 2026-08-26（示例页自洽化三修）
+
+### 示例持仓地图移除 + smoke 更新 + 示例数据自洽化（消除「资产0却有盈亏」矛盾）
+
+**背景**：v4.3.0 后公开页示例数据自相矛盾（hero 显示资产 ¥0 却有月度盈亏）+ 持仓地图无真实数据支撑。三连修收尾 v4.3.1。
+
+- 🗺️ **① 示例持仓地图整体移除**（`08-website/anchor-pro.html`）：删除持仓卡渲染 JS（31 行）+ `holdingsGrid` 容器；章节改为互动试算「试算你的配置方案」；导航「示例地图」→「配置试算」
+- 🧪 **② smoke_test 2 项过时检查更新**（`05-scripts/smoke_test.py`）：持仓地图移除后，「使用动态持仓标签」→「数据含动态层级标签」（active_label）；「遍历动态层级」→「金字塔消费动态层级」（pyramidViz）
+- 📐 **③ 示例数据自洽化**（`05-scripts/gen_anchor_pro.py` + `06-dashboard/portfolio_analysis_example.html` + `08-website/anchor-pro.html`）：
+  - hero 示意本金 **0 → ¥50,000**（消除「资产 0 却有盈亏」矛盾）
+  - monthly 改为 **8 个月 6 盈 2 亏**正期望序列（600/-450/800/350/-600/900/250/500）
+  - history_lead 注明「基于示意本金 ¥50,000」
+- 📁 影响文件：`08-website/anchor-pro.html`、`05-scripts/smoke_test.py`、`05-scripts/gen_anchor_pro.py`、`06-dashboard/portfolio_analysis_example.html`（示例数据同步）
+- 📌 本轮文档同步：CHANGELOG/CLAUDE.md/会话检查点 全部版本统一为 **v4.3.1**
+
+---
+
 ## v4.3.0-design — 2026-08-26（设计系统统一升级 · DesignMdArchitect 专家）
 
 ### 全部可视化页面按 DESIGN.md 规范统一升级（视觉层，不改变任何数据字段）
@@ -15,7 +55,7 @@
 - 🎨 **4 页统一注入 v4.3.0 设计层**（`05-scripts/design_v43_upgrade.py`，幂等可复跑）：
   - 玻璃拟态 tokens（glass-1/2/3 + blur 12-32px + edge 光效环 + 上缘高光）
   - 顶栏 sticky 毛玻璃导航、卡片 hover 蓝光上浮、深色滚动条、打印样式、选中文本高亮、移动端触控目标 ≥44px
-- 🔢 **3 个私有看板注入章节自动编号**（v4.3.1-dash-enhance）：h2 自动生成 `01 · 02 · 03…` 编号 + 渐变分隔光带 + 表格行 hover 聚焦——信息逻辑一眼可读
+- 🔢 **3 个私有看板注入章节自动编号**（v4.3.0 内置）：h2 自动生成 `01 · 02 · 03…` 编号 + 渐变分隔光带 + 表格行 hover 聚焦——信息逻辑一眼可读（原误标 v4.3.1-dash-enhance 已更正，实际随 v4.3.0 设计层内置）
 - 🆙 **返回顶部按钮**（4 页，原生 JS 无依赖，滚动 420px 后浮现）
 - 🐛 **修复遗留 bug**：portfolio_analysis.html title/badge 仍为 v3.5（上次版本统一遗漏）→ 已统一 v4.2.0 PRIVATE
 - ✅ **质量验证**：smoke_test 79/79 通过、4 页 0 死链（portfolio 双基准链接除外）、体积受控（60/33/37/106 KB）、桌面副本 md5 一致

@@ -76,5 +76,8 @@ __pycache__/
 # mx-data 精确输出（行情/个股研究临时快照，非公开内容不提交）
 _mx_precise/
 
+# mx-data 临时输出目录（ETF 行情 .xlsx/.txt/_raw.json 等临时文件，不提交）
+05-scripts/mx_out/
+
 # 技能临时文件
 .superpowers/

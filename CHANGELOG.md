@@ -5,6 +5,21 @@
 
 ---
 
+## v4.2.0-collab — 2026-08-26（WorkBuddy 双 AI 协作接入）
+
+### WorkBuddy 定时自动化 + 检查点/Viking 双向互通（Claude ↔ WorkBuddy）
+
+**背景**：用户要求「深度学习 Claude 运行方式并与 Claude 运行数据互通，让 Anchor 更好用」。WorkBuddy 已配置 4 个定时自动化（8/26 17:30 起 ACTIVE），本次打通自动化成果回流到 Claude 上下文的通道。
+
+- 🤖 **4 个 WorkBuddy 自动化**：①每日 21:00 收盘复盘（sync_all 9 步 + smoke 79 项 + 摘要 + Viking 沉淀 + 检查点回写）②工作日 14:30 盘中信号（含买点评分卡 5 维强制打分）③周五 17:00 周报骨架 ④每月 1 日 09:00 月度归因（八步清单核对表）
+- 🔄 **检查点双向互通**：A1 复盘完成后回写 `00-system/会话检查点.md`（追加 `## {date} WorkBuddy 自动复盘` 记录 + 更新 `*最后更新*` 行）；Claude 会话读检查点即可见自动化产出，避免重复执行
+- 🧠 **Viking 语义记忆共用**：WorkBuddy 每晚写 `viking://anchor/review/{date}`，Claude 可 viking_search 检索——双方共用同一记忆层
+- 📋 **协作协议文档**：新增 `07-memory/reference-workbuddy-collab.md`（自动化清单/分工边界/冲突规避），MEMORY.md 索引置顶；CLAUDE.md 新增「WorkBuddy 自动化协作」章节
+- 🛡️ **冲突规避**：WorkBuddy 只写 `{date}-收盘复盘报告.md`，Claude 手写 `{date}-深度复盘.md`；检查点只追加不覆盖；真实盈亏铁律双方共同遵守
+- 📁 影响文件：CLAUDE.md（+协作章节）、07-memory/reference-workbuddy-collab.md（新增）、07-memory/MEMORY.md（索引）、00-system/会话检查点.md（WorkBuddy 回写约定）、WorkBuddy automation（4 条，非仓库文件）。未 bump system_version（由下次 Claude 会话按需处理）
+
+---
+
 ## v4.2.0 — 2026-08-26
 
 ### 优化建议采纳落地：买点评分卡强制纳入 + 信号脚本编码修复 + 止盈档位回测

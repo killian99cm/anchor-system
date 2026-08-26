@@ -15,6 +15,10 @@ import sys
 import os
 from collections import defaultdict
 
+# Windows 原生控制台默认 GBK：强制 stdout 为 UTF-8，避免中文输出崩溃（与 gen_intraday_signal.py 同款修复）
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 DESKTOP = r"C:\Users\lenovo\Desktop"

@@ -1,0 +1,206 @@
+{
+  "meta": [
+    {
+      "strategy_name": "止盈档位旧档v3.3",
+      "symbol": "sz159995",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位新档v3.4",
+      "symbol": "sz159995",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位旧档v3.3",
+      "symbol": "sh512880",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位新档v3.4",
+      "symbol": "sh512880",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位旧档v3.3",
+      "symbol": "sh515180",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位新档v3.4",
+      "symbol": "sh515180",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位旧档v3.3",
+      "symbol": "sh518880",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位新档v3.4",
+      "symbol": "sh518880",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位旧档v3.3",
+      "symbol": "sh513100",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    },
+    {
+      "strategy_name": "止盈档位新档v3.4",
+      "symbol": "sh513100",
+      "start": "2021-09-01",
+      "end": "2026-08-26",
+      "initial_cash": 100000.0,
+      "market": "china_a"
+    }
+  ],
+  "summary": [
+    {
+      "strategy": "旧档v3.3",
+      "total_return_pct": 25.91,
+      "annual_return_pct": 4.93,
+      "max_drawdown_pct": -58.81,
+      "sharpe": 0.31,
+      "win_rate_pct": 100.0,
+      "total_trades": 3,
+      "final_value": 125912.42,
+      "symbol": "sz159995",
+      "symbol_name": "芯片ETF华夏(半导体)"
+    },
+    {
+      "strategy": "新档v3.4",
+      "total_return_pct": 24.68,
+      "annual_return_pct": 4.71,
+      "max_drawdown_pct": -58.81,
+      "sharpe": 0.3,
+      "win_rate_pct": 100.0,
+      "total_trades": 4,
+      "final_value": 124678.13,
+      "symbol": "sz159995",
+      "symbol_name": "芯片ETF华夏(半导体)"
+    },
+    {
+      "strategy": "旧档v3.3",
+      "total_return_pct": 1.99,
+      "annual_return_pct": 0.41,
+      "max_drawdown_pct": -39.98,
+      "sharpe": 0.14,
+      "win_rate_pct": 50.0,
+      "total_trades": 2,
+      "final_value": 101988.18,
+      "symbol": "sh512880",
+      "symbol_name": "证券ETF"
+    },
+    {
+      "strategy": "新档v3.4",
+      "total_return_pct": 3.81,
+      "annual_return_pct": 0.78,
+      "max_drawdown_pct": -39.98,
+      "sharpe": 0.15,
+      "win_rate_pct": 66.7,
+      "total_trades": 3,
+      "final_value": 103814.76,
+      "symbol": "sh512880",
+      "symbol_name": "证券ETF"
+    },
+    {
+      "strategy": "旧档v3.3",
+      "total_return_pct": 22.01,
+      "annual_return_pct": 4.24,
+      "max_drawdown_pct": -14.86,
+      "sharpe": 0.46,
+      "win_rate_pct": 100.0,
+      "total_trades": 3,
+      "final_value": 122006.43,
+      "symbol": "sh515180",
+      "symbol_name": "红利ETF易方达"
+    },
+    {
+      "strategy": "新档v3.4",
+      "total_return_pct": 19.36,
+      "annual_return_pct": 3.76,
+      "max_drawdown_pct": -17.05,
+      "sharpe": 0.39,
+      "win_rate_pct": 100.0,
+      "total_trades": 4,
+      "final_value": 119355.23,
+      "symbol": "sh515180",
+      "symbol_name": "红利ETF易方达"
+    },
+    {
+      "strategy": "旧档v3.3",
+      "total_return_pct": 61.88,
+      "annual_return_pct": 10.58,
+      "max_drawdown_pct": -17.99,
+      "sharpe": 1.05,
+      "win_rate_pct": 100.0,
+      "total_trades": 3,
+      "final_value": 161883.1,
+      "symbol": "sh518880",
+      "symbol_name": "黄金ETF"
+    },
+    {
+      "strategy": "新档v3.4",
+      "total_return_pct": 53.46,
+      "annual_return_pct": 9.35,
+      "max_drawdown_pct": -14.93,
+      "sharpe": 1.06,
+      "win_rate_pct": 100.0,
+      "total_trades": 4,
+      "final_value": 153462.93,
+      "symbol": "sh518880",
+      "symbol_name": "黄金ETF"
+    },
+    {
+      "strategy": "旧档v3.3",
+      "total_return_pct": 48.48,
+      "annual_return_pct": 8.61,
+      "max_drawdown_pct": -27.52,
+      "sharpe": 0.56,
+      "win_rate_pct": 100.0,
+      "total_trades": 3,
+      "final_value": 148478.99,
+      "symbol": "sh513100",
+      "symbol_name": "纳指ETF"
+    },
+    {
+      "strategy": "新档v3.4",
+      "total_return_pct": 18.68,
+      "annual_return_pct": 3.64,
+      "max_drawdown_pct": -27.52,
+      "sharpe": 0.3,
+      "win_rate_pct": 100.0,
+      "total_trades": 4,
+      "final_value": 118682.41,
+      "symbol": "sh513100",
+      "symbol_name": "纳指ETF"
+    }
+  ]
+}

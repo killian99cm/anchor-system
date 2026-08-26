@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 513100 518880 159995 512880 515180 最近5个交易日的收盘价
+数据文件路径: C:\Users\lenovo\Desktop\Anchor\09-backtest\data_check\mx_data_513100_518880_159995_512880_515180_最近5个交易日的收盘价.xlsx
+描述文件路径: C:\Users\lenovo\Desktop\Anchor\09-backtest\data_check\mx_data_513100_518880_159995_512880_515180_最近5个交易日的收盘价_description.txt
+数据行数: 6
+表数量: 1
+Sheet 列表: 国泰纳斯达克100(QDII-ETF)(513100.SH)等的收盘价

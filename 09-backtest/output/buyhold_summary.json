@@ -1,0 +1,62 @@
+[
+  {
+    "symbol": "sz159995",
+    "symbol_name": "芯片ETF华夏(半导体)",
+    "strategy": "buy&hold",
+    "total_return_pct": 37.91,
+    "annual_return_pct": 6.94,
+    "max_drawdown_pct": -58.8,
+    "sharpe": 0.37,
+    "initial_cash": 100000.0,
+    "start": "2021-09-01",
+    "end": "2026-08-26"
+  },
+  {
+    "symbol": "sh512880",
+    "symbol_name": "证券ETF",
+    "strategy": "buy&hold",
+    "total_return_pct": -3.01,
+    "annual_return_pct": -0.64,
+    "max_drawdown_pct": -39.96,
+    "sharpe": 0.08,
+    "initial_cash": 100000.0,
+    "start": "2021-09-01",
+    "end": "2026-08-26"
+  },
+  {
+    "symbol": "sh515180",
+    "symbol_name": "红利ETF易方达",
+    "strategy": "buy&hold",
+    "total_return_pct": 33.47,
+    "annual_return_pct": 6.21,
+    "max_drawdown_pct": -22.68,
+    "sharpe": 0.43,
+    "initial_cash": 100000.0,
+    "start": "2021-09-01",
+    "end": "2026-08-26"
+  },
+  {
+    "symbol": "sh518880",
+    "symbol_name": "黄金ETF",
+    "strategy": "buy&hold",
+    "total_return_pct": 157.91,
+    "annual_return_pct": 21.87,
+    "max_drawdown_pct": -30.5,
+    "sharpe": 1.21,
+    "initial_cash": 100000.0,
+    "start": "2021-09-01",
+    "end": "2026-08-26"
+  },
+  {
+    "symbol": "sh513100",
+    "symbol_name": "纳指ETF",
+    "strategy": "buy&hold",
+    "total_return_pct": 111.76,
+    "annual_return_pct": 16.97,
+    "max_drawdown_pct": -27.51,
+    "sharpe": 0.77,
+    "initial_cash": 100000.0,
+    "start": "2021-09-01",
+    "end": "2026-08-26"
+  }
+]

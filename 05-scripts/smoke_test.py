@@ -258,8 +258,8 @@ def main():
         check("公开页示例标签可见", public_embed.get('hero', [{}])[0].get('l') == '示例总资产 ¥',
               f"(label={public_embed.get('hero', [{}])[0].get('l')})")
         check("公开页含动态持仓合同", '"holding_counts"' in public_html and '"layers"' in public_html)
-        check("公开页使用动态持仓标签", 'D.holding_counts' in public_html and 'active_label' in public_html)
-        check("公开页遍历动态层级", 'D.layers' in public_html and 'layers.forEach' in public_html)
+        check("公开页数据含动态层级标签", '"active_label"' in public_html)  # v4.3.1：持仓地图移除，数据键保留
+        check("公开页金字塔消费动态层级", 'D.layers' in public_html and 'pyramidViz' in public_html)  # v4.3.1：改查金字塔渲染
         check("公开页禁令字段完整", '"act"' in public_html and '"cost"' in public_html)
         check("公开页禁令渲染字段", 'f.act' in public_html and 'f.cost' in public_html)
         check("公开页不写死持仓数量", '10只基金 + 1只股票 + 余额宝' not in public_html and '10只活跃持仓' not in public_html)

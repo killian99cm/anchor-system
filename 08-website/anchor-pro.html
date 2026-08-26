@@ -208,14 +208,14 @@ body:after{opacity:.22}
 <div class="scrollbar" id="scrollBar"></div>
 <div id="cursorGlow"></div>
 <canvas id="bgCanvas"></canvas>
-<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v4.2.0</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">示例地图</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><button type="button" class="nav-toggle" id="navToggle" aria-label="打开导航" aria-expanded="false">☰</button><span class="nav-demo">示例数据 · 公开页</span></div></nav>
+<nav class="nav"><div class="nav-inner"><a class="brand" href="#top"><span class="brand-mark">⚓</span><span><em>Anchor</em> OS</span></a><span class="version">v4.2.0</span><div class="nav-links"><a href="#architecture">体系架构</a><a href="#holdings">配置试算</a><a href="#evidence">证据</a><a href="#rules">规则</a><a href="#noise">噪声审计</a><a href="#evolution">进化</a></div><button type="button" class="nav-toggle" id="navToggle" aria-label="打开导航" aria-expanded="false">☰</button><span class="nav-demo">示例数据 · 公开页</span></div></nav>
 <div id="smooth-wrapper">
 <div id="smooth-content">
 <main class="wrap">
 <section class="hero reveal" id="top"><canvas id="heroCanvas"></canvas><div class="hero-glow" id="heroGlow"></div><div class="hero-copy"><div class="eyebrow" id="heroKicker">Investment operating system</div><h1><em>Anchor</em><br><span class="typing"><span class="t-seg" data-w="不靠预测">不靠预测</span><span class="t-seg" data-w="，靠纪律">，靠纪律</span></span></h1><div class="hero-title" id="heroSub">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big count-up" data-count="96">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
 <section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row stagger" id="kpiRow"></div></section>
 <section class="section reveal in" id="architecture"><div class="section-head"><div><div class="section-kicker">Architecture</div><h2>四层<em>金字塔</em></h2></div><p>层级决定职责，职责决定动作；条宽即配比。</p></div><div class="architecture"><h3>四层配比 · 条宽即配比</h3><div class="pyr-layout"><div class="pyr-shape" id="pyramidViz" role="img" aria-label="四层金字塔结构：压舱石 45%，核心增长 20%，卫星进攻 20%，现金预备 15%。"></div><div class="pyr-legend" id="pyramidLegend" role="list"></div></div><div class="pyr-tip">公开示例仅演示结构与配比，不含真实持仓与金额。</div></div></section>
-<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="holdings-grid stagger" id="holdingsGrid"></div>
+<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Try it</div><h2>试算你的<em>配置方案</em></h2></div><p>输入总资产与止损偏好，立即得到四层分配建议（脱敏示例）。</p></div>
 <div class="calc-panel">
   <div class="calc-head"><h3>⚡ 互动试算 · 我的钱怎么分</h3><span>脱敏示例 · 不含真实持仓</span></div>
   <div class="calc-controls">
@@ -784,32 +784,7 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
   for(var j=0;j<rows.length;j++){bind(rows[j])}
 })();
 
-(function(){
-  var grid=document.getElementById("holdingsGrid"), layers=D.layers||[], counts=D.holding_counts||{}, icons={stock:"📈",cash:"💰",fund:"📦"};
-  function render(){
-    grid.textContent="";
-    layers.forEach(function(lyr){
-      var card=make("article","holding-card"), head=make("div","holding-head");
-      var title=make("strong",null,lyr.icon+" "+lyr.label);
-      var meta=make("span",null,"目标 "+lyr.target+"%");
-      head.append(title,meta);card.appendChild(head);
-      var list=make("div","holding-list"), items=(D.holdings||{})[lyr.key]||[];
-      items.forEach(function(it){
-        var row=make("div","holding-item");append(row,"span","holding-name",it.n);
-        var icon=icons[it.type]||"📦";
-        append(row,"span","holding-type",icon+" "+(it.type==="stock"?"股票":it.type==="cash"?"现金":"基金"));
-        list.appendChild(row)
-      });
-      if(!items.length)append(list,"div","empty","示例数据未配置市值，结构保留");
-      card.appendChild(list);grid.appendChild(card)
-    });
-    /* v4.0.0 修复：render() 重建卡片后重绑 3D tilt（原生/GSAP 双模式） */
-    if(window.__bindTilt)window.__bindTilt(grid);
-    if(window.__bindGsapTilt)window.__bindGsapTilt(grid);
-  }
-  document.getElementById("holdingsLead").textContent="四层持仓结构 · "+(counts.active_label||"暂无持仓")+" · 示例 · 更新 "+(D.update||"未提供");
-  render();
-})();
+/* v4.3.1：持仓地图已移除（只留互动试算），金字塔章节独立消费 D.layers */
 
 (function(){
   var cards=document.getElementById("evidenceCards"),table=document.getElementById("cmpBody");(D.comparison||[]).forEach(function(r){

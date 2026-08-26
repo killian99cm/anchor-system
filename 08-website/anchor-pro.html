@@ -215,9 +215,9 @@ body:after{opacity:.22}
 <section class="hero reveal" id="top"><canvas id="heroCanvas"></canvas><div class="hero-glow" id="heroGlow"></div><div class="hero-copy"><div class="eyebrow" id="heroKicker">Investment operating system</div><h1><em>Anchor</em><br><span class="typing"><span class="t-seg" data-w="不靠预测">不靠预测</span><span class="t-seg" data-w="，靠纪律">，靠纪律</span></span></h1><div class="hero-title" id="heroSub">四层金字塔投资纪律系统</div><p class="hero-lead">把每一笔钱放进清晰的职责、边界和复盘流程。公开页面只演示结构与方法，不展示真实持仓。</p><div class="hero-actions"><a class="btn btn-primary" href="#architecture">查看系统架构 <span>↓</span></a><a class="btn btn-ghost" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noreferrer">浏览开源仓库 ↗</a></div><p class="hero-note">PUBLIC DEMO / SANITIZED EXAMPLE / RULES BEFORE SIGNALS</p></div><div class="command-card"><div class="command-head"><strong>ANCHOR COMMAND CENTER</strong><span class="live">公开演示在线</span></div><div class="command-score"><span class="big count-up" data-count="96">96</span><small>体系评分<br>规则驱动 · 可复盘 · 可扩展</small></div><div class="command-row" id="heroMetrics"></div><div class="command-foot"><span id="heroDate">示例数据</span><span>状态：示例安全</span></div></div></section>
 <section class="section reveal in" id="snapshot"><div class="section-head"><div><div class="section-kicker">System snapshot</div><h2>先看边界，再看收益</h2></div><p>四条规则把冲动决策变成可检查的状态：操作次数、冻结时间、单仓止损和动态持仓。</p></div><div class="section-rule"></div><div class="kpi-row stagger" id="kpiRow"></div></section>
 <section class="section reveal in" id="architecture"><div class="section-head"><div><div class="section-kicker">Architecture</div><h2>四层<em>金字塔</em></h2></div><p>层级决定职责，职责决定动作；条宽即配比。</p></div><div class="architecture"><h3>四层配比 · 条宽即配比</h3><div class="pyr-layout"><div class="pyr-shape" id="pyramidViz" role="img" aria-label="四层金字塔结构：压舱石 45%，核心增长 20%，卫星进攻 20%，现金预备 15%。"></div><div class="pyr-legend" id="pyramidLegend" role="list"></div></div><div class="pyr-tip">公开示例仅演示结构与配比，不含真实持仓与金额。</div></div></section>
-<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="filter-row" id="layerFilters"><button class="filter-btn active" data-layer="all">全部层级</button><button class="filter-btn" data-layer="bedrock">压舱石</button><button class="filter-btn" data-layer="core">核心增长</button><button class="filter-btn" data-layer="sat">卫星进攻</button><button class="filter-btn" data-layer="cash">现金预备</button><span class="filter-status" id="filterStatus"></span></div><div class="holdings-grid stagger" id="holdingsGrid"></div>
+<section class="section reveal in" id="holdings"><div class="section-head"><div><div class="section-kicker">Portfolio map</div><h2>示例<em>持仓地图</em></h2></div><p id="holdingsLead">公开示例只展示通用名称与结构。</p></div><div class="holdings-grid stagger" id="holdingsGrid"></div>
 <div class="calc-panel">
-  <div class="calc-head"><h3>⚡ 互动试算 · 按总资产与风险偏好生成四层分配</h3><span>同款工具：05-scripts/anchor_calculator.html</span></div>
+  <div class="calc-head"><h3>⚡ 互动试算 · 我的钱怎么分</h3><span>脱敏示例 · 不含真实持仓</span></div>
   <div class="calc-controls">
     <div class="calc-field"><label>总资产（元）</label><input type="number" id="calcTotal" value="50000" min="0"></div>
     <div class="calc-field"><label>止损线</label><select id="calcSL"><option value="6">-6%</option><option value="8" selected>-8%</option><option value="10">-10%</option></select></div>
@@ -785,14 +785,13 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
 })();
 
 (function(){
-  var current="all", grid=document.getElementById("holdingsGrid"), status=document.getElementById("filterStatus"), layers=D.layers||[], counts=D.holding_counts||{}, byLayer=counts.by_layer||{}, icons={stock:"📈",cash:"💰",fund:"📦"};
+  var grid=document.getElementById("holdingsGrid"), layers=D.layers||[], counts=D.holding_counts||{}, icons={stock:"📈",cash:"💰",fund:"📦"};
   function render(){
-    grid.textContent="";var visible=0;
+    grid.textContent="";
     layers.forEach(function(lyr){
-      if(current!=="all"&&current!==lyr.key)return;visible++;
       var card=make("article","holding-card"), head=make("div","holding-head");
       var title=make("strong",null,lyr.icon+" "+lyr.label);
-      var meta=make("span",null,"目标 "+lyr.target+"% · "+(lyr.count||0)+" 项");
+      var meta=make("span",null,"目标 "+lyr.target+"%");
       head.append(title,meta);card.appendChild(head);
       var list=make("div","holding-list"), items=(D.holdings||{})[lyr.key]||[];
       items.forEach(function(it){
@@ -807,15 +806,8 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
     /* v4.0.0 修复：render() 重建卡片后重绑 3D tilt（原生/GSAP 双模式） */
     if(window.__bindTilt)window.__bindTilt(grid);
     if(window.__bindGsapTilt)window.__bindGsapTilt(grid);
-    status.textContent=(counts.active_label||"暂无持仓")+" · "+visible+"层";
   }
-  document.querySelectorAll("[data-layer]").forEach(function(btn){
-    var lyr=btn.getAttribute("data-layer");
-    var n=lyr==="all"?(counts.active||0):(byLayer[lyr]||0);
-    btn.textContent=btn.textContent+" "+n;
-    btn.addEventListener("click",function(){current=lyr;document.querySelectorAll("[data-layer]").forEach(function(b){b.classList.toggle("active",b===btn)});render()})
-  });
-  document.getElementById("holdingsLead").textContent="动态持仓合同 · "+(counts.active_label||"暂无持仓")+" · 结构示例 · 更新 "+(D.update||"未提供");
+  document.getElementById("holdingsLead").textContent="四层持仓结构 · "+(counts.active_label||"暂无持仓")+" · 示例 · 更新 "+(D.update||"未提供");
   render();
 })();
 
@@ -886,12 +878,10 @@ function pct(v){return Number(v||0).toFixed(Number(v)%1?1:0)}
     var act=document.querySelector(".calc-tab.active");var r=act?act.getAttribute("data-r"):"balanced";
     var s=parseFloat(sl.value)||8,cfg=CFG[r]||CFG.balanced;
     var L=[{n:"压舱石层",c:"bedrock",p:cfg.b,fs:FUNDS.b},{n:"核心增长层",c:"core",p:cfg.c,fs:FUNDS.c},{n:"卫星进攻层",c:"sat",p:cfg.s,fs:FUNDS.s},{n:"现金预备层",c:"cash",p:cfg.h,fs:[]}];
-    var h='<div class="calc-pyramid">';
-    L.forEach(function(l){var a=T*l.p/100;h+='<div class="calc-layer '+l.c+'"><div class="cl-name">'+l.n+'</div><div class="cl-pct">'+l.p+'%</div><div class="cl-amt">¥'+fmt(a)+'</div></div>'});
-    h+='</div><div class="calc-details">';
+    var h='<div class="calc-details">';
     L.forEach(function(l){var a=T*l.p/100,sh="";l.fs.forEach(function(f){var fa=a*f[1];sh+='<div class="cd-row"><span>'+f[0]+'</span><span>¥'+fmt(fa)+'</span></div>'});
-      if(sh){h+='<div class="calc-detail"><h4>'+l.n+' · 建议配置</h4>'+sh+'</div>'}
-      else{h+='<div class="calc-detail"><h4>'+l.n+'</h4><div class="cd-val">¥'+fmt(a)+'</div><div class="cd-note">货币基金 · 仅暴跌时补仓压舱石</div></div>'}});
+      if(sh){h+='<div class="calc-detail"><h4>'+l.n+' · '+l.p+'%</h4>'+sh+'</div>'}
+      else{h+='<div class="calc-detail"><h4>'+l.n+' · '+l.p+'%</h4><div class="cd-val">¥'+fmt(a)+'</div><div class="cd-note">货币基金 · 仅暴跌时补仓压舱石</div></div>'}});
     h+='</div>';
     var ml=T*(cfg.s/100)*(s/100);
     h+='<div class="calc-warn">⚡ <b>风控</b>：卫星单次最大亏损 <b>¥'+fmt(ml)+'</b>（止损-'+s+'%）<br>🔒 <b>纪律</b>：压舱石+核心 <b>'+(cfg.b+cfg.c)+'%</b> 永远不卖 · 卫星≤4只 · 月操作≤4笔<br>📐 <b>规则</b>：浮亏不加仓 · 卖出冻结72h · 每笔带预案</div>';

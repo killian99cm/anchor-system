@@ -31,6 +31,8 @@ jobs:
           cp "06-dashboard/portfolio_data_example.json" _site/
           # Copy anchor-pro page
           cp "08-website/anchor-pro.html" _site/anchor-pro.html
+          # Copy diagrams (anchor-pro 引用 diagrams/*.html 链接)
+          cp -r "08-website/diagrams" _site/diagrams
           # Copy calculator
           cp "05-scripts/anchor_calculator.html" _site/anchor_calculator.html
           # Create redirects from old paths

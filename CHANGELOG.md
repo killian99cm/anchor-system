@@ -2,6 +2,29 @@
 
 > 每次改动必须记录：版本号 + 日期 + 变更内容 + 影响文件
 > 更新时同步：portfolio_data.json / CLAUDE.md / 会话检查点.md / 本文件 / GitHub
+> ⚠️ 版本冻结协议（8/27 启动）：bump 必须 CHANGELOG+JSON+CLAUDE.md 三处一致，否则不进规则手册；用 `05-scripts/version_check.py` 校验
+
+---
+
+## v4.3.2 — 2026-08-27（P0/P1 落地 + 版本冻结启动）
+
+### P0 四项（提升建议优化版执行）
+- 驾驶舱 app.py 补齐（Desktop/app.py，静态服务+AI助手端点），8765 端口 4/4 通过——start.bat 修复（此前 app.py 缺失从未跑通）
+- 数据自动化 MVP：05-scripts/data_auto_fill.py（复用妙想 API，查询回退逻辑），7/7 持仓回填候选成功，守铁律不写 JSON
+- 加仓专项回测：09-backtest/scripts/add_position_backtest.py——回调日维度证据：黄金+2.13pp/红利+1.70pp 有效，芯片-0.54pp/证券-0.14pp 无效 → 打分卡②需联合资金确认
+- 仲裁材料补充：待仲裁项 6（月限额计数口径，预推荐 C：334 建仓计 1 笔）+ 第七节加仓证据
+
+### P1 三项
+- westock 港股代码支持验证（hk00700 正常）——回测扩展基础就绪
+- 2022 熊市压力测试：09-backtest/scripts/stress_test_2022.py——止损在芯片/证券/纳指=回撤减半+收益提升（芯片 MDD 改善 36.2pct），红利误伤/黄金无触发 → 止损=卫星层规则再验证
+- 决策日志扩容 28→51 条（补录 2025-10~2026-06 历史 23 条，样本目标 ≥50 达成）
+
+### 版本冻结协议启动
+- 版本号三处统一 v4.3.2（CHANGELOG/JSON×2/CLAUDE.md）；新增 version_check.py 三处一致校验；A1 自动化内置自检
+- 规则生效期登记表（01-rules/规则生效期登记表.md）：每条规则标生效/失效日，防已废规则引用
+
+### 影响文件
+05-scripts/data_auto_fill.py / 09-backtest/scripts/{add_position_backtest,stress_test_2022}.py / Desktop/app.py / 09-backtest/2026-08-26-8月31日仲裁材料.md（seg2 矛盾句修复+第七节）/ 00-system/提升建议优化版.md / 00-system/规则生效期登记表.md（新）/ 05-scripts/version_check.py（新）/ portfolio_data.json×2 / CLAUDE.md / CHANGELOG.md / 会话检查点.md
 
 ---
 

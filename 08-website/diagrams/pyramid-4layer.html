@@ -45,6 +45,10 @@
     }
     svg { width: 100%; min-width: 900px; display: block; }
     .foot-note { color: var(--color-soft); font-size: 0.8rem; margin-top: 0.6rem; text-align: center; }
+    /* v4.2.1 顶级审美：玻璃光效 + 渐变描边 + 错峰浮现 */
+    .layer { transition: filter .4s ease, opacity .4s ease; }
+    .frame:hover svg .layer { filter: drop-shadow(0 0 16px rgba(57,135,229,.28)) brightness(1.12); }
+    @media (prefers-reduced-motion: reduce){ .layer * { animation: none !important; } }
   </style>
 </head>
 <body>
@@ -59,10 +63,29 @@
         <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
           <circle cx="1" cy="1" r="0.9" fill="rgba(232,241,255,0.06)"/>
         </pattern>
+        <!-- v4.2.1：氛围光 + 渐变描边 -->
+        <radialGradient id="glow" cx="50%" cy="40%" r="62%">
+          <stop offset="0%" stop-color="rgba(57,135,229,0.16)"/>
+          <stop offset="55%" stop-color="rgba(57,135,229,0.06)"/>
+          <stop offset="100%" stop-color="transparent"/>
+        </radialGradient>
+        <linearGradient id="g-base" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#3987e5"/><stop offset="100%" stop-color="#55c9d6"/>
+        </linearGradient>
+        <linearGradient id="g-core" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#36d39c"/><stop offset="100%" stop-color="#55c9d6"/>
+        </linearGradient>
+        <linearGradient id="g-sat" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#fab219"/><stop offset="100%" stop-color="#e66767"/>
+        </linearGradient>
+        <linearGradient id="g-cash" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#9085e9"/><stop offset="100%" stop-color="#3987e5"/>
+        </linearGradient>
       </defs>
 
       <rect width="100%" height="100%" fill="#02070f"/>
       <rect width="100%" height="100%" fill="url(#dots)" opacity="0.5"/>
+      <rect width="100%" height="100%" fill="url(#glow)"/>
 
       <!-- Left axis: liquidity increases upward -->
       <line x1="88" y1="40" x2="88" y2="320" stroke="rgba(232,241,255,0.25)" stroke-width="1"/>
@@ -70,28 +93,44 @@
       <text x="68" y="196" fill="#536a85" font-size="8" font-family="'Cascadia Mono', Consolas, monospace" letter-spacing="0.18em" text-anchor="middle" transform="rotate(-90 68 196)">流动性 · 弹药 ↑</text>
 
       <!-- Layer 1 base: 压舱石 45% (accent focal - the foundation) -->
-      <polygon points="230,300 770,300 830,364 170,364" fill="rgba(57,135,229,0.16)" stroke="#3987e5" stroke-width="1.2"/>
+      <g class="layer">
+        <polygon points="230,300 770,300 830,364 170,364" fill="rgba(57,135,229,0.16)" stroke="url(#g-base)" stroke-width="1.4"/>
+        <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.1s" fill="freeze"/>
+        <animateTransform attributeName="transform" type="translate" from="0 26" to="0 0" dur="0.7s" begin="0.1s" fill="freeze"/>
+      </g>
       <text x="500" y="326" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">压舱石 · 45%</text>
       <text x="500" y="343" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">债券 · 黄金 · 红利｜低波动打底</text>
       <text x="852" y="326" fill="#3987e5" font-size="10" font-family="'Cascadia Mono', monospace">当前 49.6% (+4.6)</text>
       <text x="128" y="326" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">体系基石 · 防崩盘</text>
 
       <!-- Layer 2: 核心 20% -->
-      <polygon points="290,236 710,236 770,300 230,300" fill="rgba(54,211,156,0.12)" stroke="#36d39c" stroke-width="1"/>
+      <g class="layer">
+        <polygon points="290,236 710,236 770,300 230,300" fill="rgba(54,211,156,0.12)" stroke="url(#g-core)" stroke-width="1.2"/>
+        <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.3s" fill="freeze"/>
+        <animateTransform attributeName="transform" type="translate" from="0 26" to="0 0" dur="0.7s" begin="0.3s" fill="freeze"/>
+      </g>
       <text x="500" y="262" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">核心 · 20%</text>
       <text x="500" y="279" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">纳指 · 创新药｜稳健成长</text>
       <text x="852" y="262" fill="#36d39c" font-size="10" font-family="'Cascadia Mono', monospace">当前 12.5% (-7.5)</text>
       <text x="128" y="262" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">穿越周期</text>
 
       <!-- Layer 3: 卫星 20% -->
-      <polygon points="350,172 650,172 710,236 290,236" fill="rgba(250,178,25,0.12)" stroke="#fab219" stroke-width="1"/>
+      <g class="layer">
+        <polygon points="350,172 650,172 710,236 290,236" fill="rgba(250,178,25,0.12)" stroke="url(#g-sat)" stroke-width="1.2"/>
+        <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.5s" fill="freeze"/>
+        <animateTransform attributeName="transform" type="translate" from="0 26" to="0 0" dur="0.7s" begin="0.5s" fill="freeze"/>
+      </g>
       <text x="500" y="198" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">卫星 · 20%</text>
       <text x="500" y="215" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">半导体 · 证券｜进攻弹性</text>
       <text x="852" y="198" fill="#fab219" font-size="10" font-family="'Cascadia Mono', monospace">当前 11.6% (-8.4)</text>
       <text x="128" y="198" fill="#536a85" font-size="8.5" font-family="'Cascadia Mono', monospace">博超额收益</text>
 
       <!-- Apex: 现金 15% -->
-      <polygon points="500,108 650,172 350,172" fill="rgba(144,133,233,0.12)" stroke="#9085e9" stroke-width="1"/>
+      <g class="layer">
+        <polygon points="500,108 650,172 350,172" fill="rgba(144,133,233,0.12)" stroke="url(#g-cash)" stroke-width="1.2"/>
+        <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.7s" fill="freeze"/>
+        <animateTransform attributeName="transform" type="translate" from="0 26" to="0 0" dur="0.7s" begin="0.7s" fill="freeze"/>
+      </g>
       <text x="500" y="140" fill="#e8f1ff" font-size="13" font-weight="600" font-family="'Segoe UI', sans-serif" text-anchor="middle">现金 · 15%</text>
       <text x="500" y="157" fill="#91a4bd" font-size="9.5" font-family="'Cascadia Mono', Consolas, monospace" text-anchor="middle">余额宝｜流动性弹药</text>
       <text x="852" y="140" fill="#9085e9" font-size="10" font-family="'Cascadia Mono', monospace">当前 26.4% (+11.4)</text>

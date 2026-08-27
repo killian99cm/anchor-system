@@ -101,10 +101,13 @@ def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
 
 
 def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "") -> None:
-    """事后复盘回填。outcome: correct/wrong/neutral"""
+    """事后复盘回填。outcome: correct/wrong/neutral。superseded 决策禁止复盘（前提已推翻）。"""
     log = load_log()
     for d in log["decisions"]:
         if d["id"] == did:
+            if not _is_active(d):
+                print(f"❌ #{did} 已被 superseded（→#{d.get('superseded_by')}），前提已推翻，禁止复盘（避免污染统计）；复盘请作用于最终有效决策 #{d.get('superseded_by')}")
+                return
             d["outcome"] = outcome
             d["review_date"] = datetime.now().strftime("%Y-%m-%d")
             d["pnl_pct"] = float(pnl_pct) if pnl_pct not in ("", "0") else 0.0
@@ -121,18 +124,23 @@ def pending_list(days: int = 3) -> list:
     now = datetime.now()
     pend = []
     for d in log["decisions"]:
-        if d["outcome"] is None:
+        if d["outcome"] is None and _is_active(d):
             d_date = datetime.strptime(d["date"], "%Y-%m-%d")
             if (now - d_date).days >= days:
                 pend.append(d)
     return pend
 
 
+def _is_active(d: dict) -> bool:
+    """有效决策判定：排除已被 superseded（前提被推翻/未执行）的记录，防止污染胜率/盈亏比统计"""
+    return not (d.get("superseded_by") or "superseded" in (d.get("tags") or []))
+
+
 def accuracy_report() -> dict:
-    """胜率/准确率统计：按类型 + 总览"""
+    """胜率/准确率统计：按类型 + 总览（superseded 记录不计入）"""
     log = load_log()
     decisions = log["decisions"]
-    reviewed = [d for d in decisions if d["outcome"]]
+    reviewed = [d for d in decisions if d["outcome"] and _is_active(d)]
     total = len(decisions)
 
     # 总览
@@ -188,12 +196,12 @@ def due_date(d: dict) -> str:
 
 
 def due_list() -> list:
-    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日）"""
+    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日；superseded 记录跳过）"""
     log = load_log()
     now = datetime.now().strftime("%Y-%m-%d")
     due = []
     for d in log["decisions"]:
-        if d["outcome"] is None and due_date(d) <= now:
+        if d["outcome"] is None and _is_active(d) and due_date(d) <= now:
             d["due"] = due_date(d)
             due.append(d)
     return due
@@ -205,7 +213,7 @@ def next_due() -> dict:
     nxt = None
     items = []
     for d in log["decisions"]:
-        if d["outcome"] is None:
+        if d["outcome"] is None and _is_active(d):
             dd = due_date(d)
             if nxt is None or dd < nxt:
                 nxt = dd

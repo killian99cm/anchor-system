@@ -28,8 +28,14 @@
 - **collab 协议补护栏描述**：reference-workbuddy-collab.md 数据互通第 4 条——bump 版本号必须三处同步改
 - **CLAUDE.md 主指标同步**：近期重点行旧口径（平均收益率≥+3%）→ 三步法新主指标（盈亏比≥1.5:1｜追高≤20%｜止损执行率100%）；决策日志行同步 28→51 条/准确率 80.0%/口径审计注释
 
+### 8/27 晚间 决策-执行偏差修复（22:2x，不 bump——三处版本仍 v4.3.2）
+- **根因**：8/27 深度复盘把决策 #27「执行止盈」误读为已成交（实为 superseded→#28 延期不卖，纳指从未卖出）；且报告「8月3买2卖」误把未执行 #27 计入卖出数（实际 transactions 权威 = 4 笔 3买1卖）
+- **决策日志防污染（系统性）**：decision_log.py 新增 `_is_active()`（排除 superseded/tags 含 superseded 记录），接入 accuracy_report / pending_list / due_list / next_due / review_decision 五处——superseded 决策不再计入胜率/盈亏比/分桶统计、不再进待复盘/到期提醒、**禁止回填 outcome**（防止 8/29 误标 #27 污染统计）
+- **报告修正 3 处**：2026-08-27-深度复盘.md 的 #27 改为「未执行·用户确认」、月操作额度改为「8月实际执行4笔=3买1卖」、删去 #22 无依据的「卖飞+25」估算
+- 验证：编译通过；--report 统计不变（23 已复盘/80.0%/0.60:1）；review #27 被拦截；pending 排除 #27
+
 ### 影响文件
-05-scripts/data_auto_fill.py / 09-backtest/scripts/{add_position_backtest,stress_test_2022}.py / Desktop/app.py / 09-backtest/2026-08-26-8月31日仲裁材料.md（seg2 矛盾句修复+第七节）/ 00-system/提升建议优化版.md / 00-system/规则生效期登记表.md（新）/ 05-scripts/version_check.py（新）/ 05-scripts/sync_all.py（7.6 步护栏）/ 07-memory/reference-workbuddy-collab.md / portfolio_data.json×2 / CLAUDE.md / CHANGELOG.md / 会话检查点.md
+05-scripts/data_auto_fill.py / 09-backtest/scripts/{add_position_backtest,stress_test_2022}.py / Desktop/app.py / 09-backtest/2026-08-26-8月31日仲裁材料.md（seg2 矛盾句修复+第七节）/ 00-system/提升建议优化版.md / 00-system/规则生效期登记表.md（新）/ 05-scripts/version_check.py（新）/ 05-scripts/sync_all.py（7.6 步护栏）/ 07-memory/reference-workbuddy-collab.md / portfolio_data.json×2 / CLAUDE.md / CHANGELOG.md / 会话检查点.md / **05-scripts/decision_log.py（superseded 防污染）** / **04-reviews/daily/2026-08-27-深度复盘.md（3 处修正）**
 
 ---
 

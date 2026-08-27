@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anchor 投资体系 · 纪律框架</title>
+<style>
+/* ============ Design Tokens (还原自设计稿 / Apple 风格) ============ */
+:root{
+  --ink:#1D1D1F;            /* 正文墨色 */
+  --canvas:#FFFFFF;
+  --parchment:#F5F5F7;
+  --tile-1:#272729;         /* 深 tile 1 */
+  --tile-2:#2A2A2C;         /* 深 tile 2 */
+  --tile-3:#252527;         /* 深 tile 3 */
+  --black:#000000;
+  --blue:#0066CC;           /* 唯一强调色 Action Blue */
+  --blue-hover:#0071E3;
+  --blue-on-dark:#2997FF;   /* 深底上的强调蓝 */
+  --muted:#6E6E73;
+  --muted-dark:#A1A1A6;
+  --muted-dim:#86868B;
+  --muted-dimmest:#7A7A7A;
+  --hairline:#E0E0E0;
+  --white:#FFFFFF;
+  /* 投资语义色（A股惯例：红涨绿跌） */
+  --red:#D64541;            /* 浅底红 */
+  --red-dark:#FF6B57;       /* 深底红 */
+  --red-soft:#FF8A78;       /* 深底淡红 */
+  --green:#46D59B;          /* 深底绿 */
+  /* 风控分级色 */
+  --amber:#A05A00; --amber-bg:#FFF8EA;
+  --orange:#C2452F; --orange-bg:#FDF1EE;
+  --crimson:#B33A2C; --crimson-bg:#FBEAE7;
+  /* 标签底色 */
+  --blue-soft-bg:#EAF2FC; --blue-tag-bg:#123A63;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:#e8e8ed;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+/* ============ 画布：1440 固定原画布 + 等比缩放（JS 驱动） ============ */
+.page{
+  position:absolute;top:0;left:0;
+  width:1440px;
+  transform-origin:top left;
+  background:var(--canvas);
+}
+
+/* ============ 通用 ============ */
+.section{width:100%}
+.container{width:1200px;margin:0 auto}
+a{text-decoration:none;color:inherit}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+.fade-up{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+.fade-up.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+  .fade-up{opacity:1;transform:none}
+}
+
+/* ============ 全局导航（黑 44px，Apple global-nav） ============ */
+.global-nav{
+  position:sticky;top:0;z-index:100;
+  height:44px;background:var(--black);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 72px;
+}
+.nav-brand{display:flex;align-items:center;gap:9px}
+.nav-brand .brand-name{font-size:12px;font-weight:600;color:var(--white)}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a{font-size:12px;font-weight:400;color:#CCCCCC;transition:color .2s}
+.nav-links a:hover{color:var(--white)}
+.nav-actions{display:flex;align-items:center;gap:20px}
+.nav-cta{
+  padding:8px 16px;border-radius:9999px;background:var(--blue);
+  font-size:12px;font-weight:600;color:var(--white);
+  transition:background .2s,transform .15s;
+}
+.nav-cta:hover{background:var(--blue-hover)}
+.nav-cta:active{transform:scale(0.95)}
+
+/* ============ Hero（黑底居中） ============ */
+.hero{background:var(--black);padding:72px 72px 44px;display:flex;flex-direction:column;align-items:center;gap:28px}
+.hero .container{display:flex;flex-direction:column;align-items:center;gap:22px}
+.version-badge{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 14px;border-radius:9999px;
+  background:#1D1D1F;border:1px solid rgba(255,255,255,.16);
+}
+.version-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--blue-on-dark)}
+.version-badge span{font-size:12px;color:var(--muted-dark)}
+.hero h1{
+  font-size:56px;font-weight:600;line-height:1.08;letter-spacing:-0.5px;
+  color:var(--white);text-align:center;white-space:pre-line;
+}
+.hero .sub{
+  font-size:24px;font-weight:300;line-height:1.5;
+  color:var(--muted-dark);text-align:center;max-width:780px;
+}
+.hero-cta-row{display:flex;align-items:center;gap:28px}
+.btn-primary{
+  padding:13px 30px;border-radius:9999px;background:var(--blue);
+  font-size:17px;font-weight:400;color:var(--white);
+  transition:background .2s,transform .15s;
+}
+.btn-primary:hover{background:var(--blue-hover)}
+.btn-primary:active{transform:scale(0.95)}
+.text-link-on-dark{font-size:17px;color:var(--blue-on-dark);transition:color .2s}
+.text-link-on-dark:hover{color:#66b5ff}
+.hero .trust{font-size:12px;color:var(--muted-dim)}
+.hero-pyramid{width:900px;height:468px}
+.hero-pyramid svg{display:block;width:100%;height:100%}
+.layer-labels{display:flex;justify-content:space-between;align-items:center;width:100%}
+.layer-label{display:flex;flex-direction:column;align-items:center;gap:2px}
+.layer-label .name{font-size:14px;font-weight:600;color:var(--white)}
+.layer-label .pct{font-size:14px;font-weight:600;color:var(--blue-on-dark)}
+
+/* ============ 快照 Stats（parchment） ============ */
+.stats{background:var(--parchment);padding:64px 72px 72px;display:flex;justify-content:center}
+.stats .container{display:flex;flex-direction:column;align-items:center;gap:14px}
+.section-title{font-size:34px;font-weight:600;letter-spacing:-0.4px;color:var(--ink)}
+.section-sub{font-size:17px;color:var(--muted);text-align:center}
+.kpi-row{display:flex;align-items:center;width:100%}
+.kpi-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.kpi-col .num{font-size:40px;font-weight:600;letter-spacing:-0.8px;color:var(--ink)}
+.kpi-col .num.red{color:var(--red)}
+.kpi-col .lab{font-size:14px;color:var(--muted)}
+.kpi-divider{width:1px;height:64px;background:var(--hairline)}
+
+/* ============ 四层金字塔体系（深 tile-1，左图右文） ============ */
+.pyramid{background:var(--tile-1);padding:80px 72px;display:flex;justify-content:center}
+.pyramid .container{display:flex;align-items:center;gap:72px}
+.pyramid-art{width:480px;flex:none;display:flex;flex-direction:column;align-items:center;gap:20px}
+.pyramid-art svg{display:block;width:480px;height:454px}
+.pyramid-art .note{font-size:14px;color:var(--muted-dark)}
+.pyramid-info{flex:1;display:flex;flex-direction:column;gap:16px}
+.pyramid-info h2{font-size:40px;font-weight:600;letter-spacing:-0.4px;color:var(--white)}
+.pyramid-info .desc{font-size:17px;line-height:1.5;color:var(--muted-dark)}
+.layer-row{display:flex;flex-direction:column;gap:10px}
+.layer-head{display:flex;justify-content:space-between;align-items:center}
+.layer-head .name{font-size:21px;font-weight:600;color:var(--white)}
+.layer-head .pct{font-size:21px;font-weight:600;color:var(--blue-on-dark)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{
+  padding:4px 10px;border-radius:9999px;
+  background:#1D1D1F;border:1px solid rgba(255,255,255,.12);
+  font-size:12px;color:var(--muted-dark);
+}
+.layer-rule{font-size:14px;color:var(--muted-dark)}
+.layer-divider{height:1px;width:100%;background:rgba(255,255,255,.10)}
+.pyramid-note{font-size:12px;color:var(--muted-dimmest)}
+
+/* ============ 核心规则（白底，utility 卡） ============ */
+.rules{background:var(--canvas);padding:80px 72px;display:flex;justify-content:center}
+.rules .container{display:flex;flex-direction:column;align-items:center;gap:36px}
+.rules-grid{display:flex;gap:20px;width:100%}
+.rule-card{
+  flex:1;padding:24px;border-radius:18px;background:var(--canvas);
+  border:1px solid var(--hairline);
+  display:flex;flex-direction:column;gap:12px;
+  transition:transform .2s,box-shadow .2s;
+}
+.rule-card:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(0,0,0,.07)}
+.rule-card h3{font-size:17px;font-weight:600;color:var(--ink)}
+.rule-card p{font-size:14px;line-height:1.5;color:var(--muted)}
+.rule-card .tag{font-size:12px;font-weight:600;color:var(--blue)}
+.rule-card .icon{width:44px;height:44px}
+.rule-card .icon svg{display:block}
+.forbidden{
+  width:100%;padding:20px 24px;border-radius:18px;background:var(--parchment);
+  display:flex;align-items:center;gap:20px;
+}
+.forbidden .fb-title{font-size:14px;font-weight:600;color:var(--crimson);flex:none}
+.ban-chips{display:flex;flex-wrap:wrap;gap:8px;flex:1}
+.ban-chip{
+  padding:6px 12px;border-radius:9999px;background:var(--canvas);
+  border:1px solid var(--hairline);font-size:12px;color:var(--crimson);
+}
+
+/* ============ 实盘数据（深 tile-2，左文右图） ============ */
+.perf{background:var(--tile-2);padding:80px 72px;display:flex;justify-content:center}
+.perf .container{display:flex;align-items:center;gap:64px}
+.perf-left{width:480px;flex:none;display:flex;flex-direction:column;gap:30px}
+.perf-left h2{font-size:40px;font-weight:600;letter-spacing:-0.4px;color:var(--white)}
+.perf-left .desc{font-size:17px;line-height:1.5;color:var(--muted-dark)}
+.kpi-group{display:flex;flex-direction:column;gap:6px}
+.kpi-group .lab{font-size:14px;color:var(--muted-dark)}
+.kpi-group .num{font-size:48px;font-weight:600;letter-spacing:-1px;color:var(--white)}
+.kpi-group .sub{font-size:14px;color:var(--muted-dark)}
+.kpi-group .num.sm{font-size:21px;font-weight:600;letter-spacing:0}
+.perf-right{flex:1;display:flex;flex-direction:column;gap:14px}
+.perf-right .chart-title{font-size:17px;font-weight:600;color:var(--white)}
+.chart-card{
+  background:#1D1D1F;border-radius:18px;padding:24px;
+  display:flex;flex-direction:column;gap:16px;
+}
+.chart-card svg{display:block;width:100%;height:auto}
+.chart-labels{display:flex;justify-content:space-between;align-items:center}
+.chart-labels .cl{display:flex;flex-direction:column;align-items:center;gap:3px}
+.chart-labels .cl .d{font-size:12px;color:var(--muted-dim)}
+.chart-labels .cl .v{font-size:14px;font-weight:600}
+.chart-labels .cl .v.up{color:var(--red-dark)}
+.chart-labels .cl .v.up-soft{color:var(--red-soft)}
+.chart-labels .cl .v.down{color:var(--green)}
+.legend{display:flex;align-items:center;gap:18px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted-dimmest)}
+.legend-item .dot{width:8px;height:8px;border-radius:50%}
+.legend-item .dot.up{background:var(--red-dark)}
+.legend-item .dot.down{background:var(--green)}
+.chart-note{font-size:12px;color:var(--muted-dimmest)}
+
+/* ============ 风控体系（parchment） ============ */
+.risk{background:var(--parchment);padding:80px 72px;display:flex;justify-content:center}
+.risk .container{display:flex;flex-direction:column;align-items:center;gap:30px}
+.drawdown-ladder{display:flex;gap:20px;width:100%}
+.level-card{
+  flex:1;padding:28px;border-radius:18px;background:var(--canvas);
+  border:1px solid var(--hairline);
+  display:flex;flex-direction:column;gap:10px;
+}
+.level-tag{display:inline-flex;align-self:flex-start;padding:4px 10px;border-radius:9999px;font-size:12px;font-weight:600}
+.level-tag.l1{background:var(--amber-bg);color:var(--amber)}
+.level-tag.l2{background:var(--orange-bg);color:var(--orange)}
+.level-tag.l3{background:var(--crimson-bg);color:var(--crimson)}
+.level-num{font-size:44px;font-weight:600;letter-spacing:-1px}
+.level-num.l1{color:var(--amber)}
+.level-num.l2{color:var(--orange)}
+.level-num.l3{color:var(--crimson)}
+.level-amt{font-size:17px;font-weight:600;color:var(--ink)}
+.level-act{font-size:14px;line-height:1.5;color:var(--muted);max-width:250px}
+.risk-note{font-size:12px;color:var(--muted-dark)}
+.guard-rails{display:flex;gap:20px;width:100%}
+.guard{
+  flex:1;display:flex;align-items:center;gap:12px;
+  padding:16px 20px;border-radius:14px;background:var(--canvas);
+  border:1px solid var(--hairline);
+}
+.guard .num{font-size:21px;font-weight:600;color:var(--ink)}
+.guard .txt{font-size:14px;color:var(--muted)}
+
+/* ============ 复盘体系（深 tile-3） ============ */
+.review{background:var(--tile-3);padding:80px 72px;display:flex;justify-content:center}
+.review .container{display:flex;flex-direction:column;align-items:center;gap:36px}
+.review .section-title{color:var(--white)}
+.review .section-sub{color:var(--muted-dark)}
+.review-cards{display:flex;gap:20px;width:100%}
+.freq-card{
+  flex:1;padding:28px;border-radius:18px;background:var(--tile-2);
+  border:1px solid rgba(255,255,255,.10);
+  display:flex;flex-direction:column;gap:14px;
+}
+.freq-tag{display:inline-flex;align-self:flex-start;padding:6px 12px;border-radius:9999px;background:var(--blue-tag-bg);font-size:12px;font-weight:600;color:var(--blue-on-dark)}
+.freq-time{font-size:40px;font-weight:600;letter-spacing:-1px;color:var(--white)}
+.freq-desc{font-size:14px;line-height:1.5;color:var(--muted-dark);max-width:250px}
+.protection{
+  width:100%;padding:20px 24px;border-radius:18px;background:var(--tile-2);
+  border:1px solid rgba(255,255,255,.10);
+  display:flex;align-items:center;gap:20px;
+}
+.protection .pt-title{font-size:17px;font-weight:600;color:var(--white);flex:none}
+.q-chips{display:flex;gap:8px;flex:1}
+.q-chip{
+  padding:6px 12px;border-radius:9999px;background:#1D1D1F;
+  border:1px solid rgba(255,255,255,.12);font-size:12px;color:var(--muted-dark);
+}
+.protection .pt-result{font-size:14px;color:var(--muted-dark);flex:none}
+
+/* ============ 最终 CTA（纯黑） ============ */
+.cta{background:var(--black);padding:100px 72px;display:flex;justify-content:center}
+.cta .container{display:flex;flex-direction:column;align-items:center;gap:24px}
+.cta h2{font-size:40px;font-weight:600;letter-spacing:-0.4px;color:var(--white);text-align:center}
+.cta .sub{font-size:17px;color:var(--muted-dark);text-align:center}
+.cta-row{display:flex;align-items:center;gap:20px}
+.btn-dark{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 28px;border-radius:9999px;background:#1D1D1F;
+  border:1px solid rgba(255,255,255,.2);
+  font-size:17px;color:var(--white);
+  transition:transform .15s,background .2s;
+}
+.btn-dark:hover{background:#2a2a2c}
+.btn-dark:active{transform:scale(0.95)}
+.cta .trust{font-size:12px;color:var(--muted-dim)}
+
+/* ============ 页脚（parchment） ============ */
+.footer{background:var(--parchment);padding:64px 72px 40px;display:flex;justify-content:center}
+.footer .container{display:flex;flex-direction:column;gap:36px}
+.footer-top{display:flex;justify-content:space-between;align-items:center}
+.footer-brand{display:flex;align-items:center;gap:10px}
+.footer-brand .brand-name{font-size:17px;font-weight:600;color:var(--ink)}
+.footer-tagline{font-size:14px;color:var(--muted)}
+.footer-cols{display:flex;gap:48px}
+.footer-col{display:flex;flex-direction:column;gap:10px}
+.footer-col h4{font-size:14px;font-weight:600;color:var(--ink)}
+.footer-col a{font-size:14px;color:var(--muted);transition:color .2s}
+.footer-col a:hover{color:var(--ink)}
+.footer-divider{height:1px;width:100%;background:var(--hairline)}
+.footer-legal{font-size:12px;line-height:1.6;color:var(--muted-dimmest)}
+</style>
+</head>
+<body>
+<div class="page" id="page">
+
+  <!-- ===== 全局导航 ===== -->
+  <nav class="global-nav" id="nav">
+    <div class="nav-brand">
+      <!-- Anchor Logo -->
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="8" cy="2.8" r="1.6" fill="#2997FF"/><rect x="7.1" y="4.2" width="1.8" height="8.6" fill="#FFFFFF"/><path d="M8 12.8 Q4.4 11.6 4.6 8.2 L6.2 8.4 Q6.1 10.6 8 11.4 Z" fill="#FFFFFF"/><path d="M8 12.8 Q11.6 11.6 11.4 8.2 L9.8 8.4 Q9.9 10.6 8 11.4 Z" fill="#FFFFFF"/></svg>
+      <span class="brand-name">Anchor 投资体系</span>
+    </div>
+    <div class="nav-links">
+      <a href="#pyramid">体系</a>
+      <a href="#pyramid">金字塔</a>
+      <a href="#rules">规则</a>
+      <a href="#perf">数据</a>
+      <a href="#risk">风控</a>
+      <a href="#review">复盘</a>
+    </div>
+    <div class="nav-actions">
+      <!-- GitHub -->
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="#CCCCCC" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      <button class="nav-cta">开始使用</button>
+    </div>
+  </nav>
+
+  <!-- ===== Hero ===== -->
+  <section class="hero">
+    <div class="container">
+      <div class="version-badge"><span class="dot"></span><span>v3.3 · 纪律框架 · 35 天高强度迭代</span></div>
+      <h1>把投资纪律，&#10;变成肌肉记忆</h1>
+      <p class="sub">面向个人投资者的基金投资纪律框架。不是选基策略，不是交易信号——是规则体系：规则优先于预测，纪律优先于收益，风控优先于盈利。</p>
+      <div class="hero-cta-row">
+        <button class="btn-primary">开始使用 Anchor</button>
+        <a class="text-link-on-dark" href="#pyramid">了解体系 ›</a>
+      </div>
+      <p class="trust">109 笔实盘交易 · 28 只清仓基金归因 · 8 月 0 操作 0 违规</p>
+      <div class="hero-pyramid">
+        <!-- 四层金字塔主视觉 -->
+        <svg width="900" height="468" viewBox="0 0 900 468" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="405,0 495,0 520,100 380,100" fill="#2997FF"/>
+          <polygon points="380,100 520,100 550,200 350,200" fill="#1C74B8"/>
+          <polygon points="350,200 550,200 585,310 315,310" fill="#14558F"/>
+          <polygon points="315,310 585,310 630,430 270,430" fill="#0E3A66"/>
+          <rect x="258" y="432" width="384" height="12" rx="2" fill="#FFFFFF" opacity="0.14"/>
+        </svg>
+      </div>
+      <div class="layer-labels">
+        <div class="layer-label"><span class="name">压舱石</span><span class="pct">57%</span></div>
+        <div class="layer-label"><span class="name">核心增长</span><span class="pct">18%</span></div>
+        <div class="layer-label"><span class="name">卫星进攻</span><span class="pct">16%</span></div>
+        <div class="layer-label"><span class="name">现金预备</span><span class="pct">9%</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 快照数据 ===== -->
+  <section class="stats">
+    <div class="container">
+      <h2 class="section-title">先看边界，再看收益</h2>
+      <p class="section-sub">一眼看清组合的边界在哪里、收益从哪来——109 笔实盘交易验证过的数字。</p>
+      <div class="kpi-row">
+        <div class="kpi-col"><span class="num">¥32,961</span><span class="lab">总资产 · 8/6 快照</span></div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-col"><span class="num red">+932</span><span class="lab">持有盈亏 · 7 月实盘</span></div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-col"><span class="num">87.5%</span><span class="lab">卫星胜率 · 7 月 8 中 7</span></div>
+        <div class="kpi-divider"></div>
+        <div class="kpi-col"><span class="num">96</span><span class="lab">体系评分 · v3.3</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 四层金字塔体系 ===== -->
+  <section class="pyramid" id="pyramid">
+    <div class="container">
+      <div class="pyramid-art">
+        <!-- 金字塔（深色 tile 版） -->
+        <svg width="480" height="454" viewBox="0 0 480 454" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="208,10 272,10 296,92 184,92" fill="#2997FF"/>
+          <polygon points="184,92 296,92 316,188 164,188" fill="#1C74B8"/>
+          <polygon points="164,188 316,188 352,300 128,300" fill="#14558F"/>
+          <polygon points="128,300 352,300 396,440 84,440" fill="#0E3A66"/>
+          <rect x="68" y="442" width="344" height="12" rx="2" fill="#FFFFFF" opacity="0.12"/>
+        </svg>
+        <span class="note">条宽即配比</span>
+      </div>
+      <div class="pyramid-info">
+        <h2>四层金字塔</h2>
+        <p class="desc">每一层都有明确身份：谁负责防守，谁负责进攻，谁负责活着。配置混乱，从这里开始根治。</p>
+        <div class="layer-row">
+          <div class="layer-head"><span class="name">压舱石</span><span class="pct">57%</span></div>
+          <div class="chips"><span class="chip">债券 ×2</span><span class="chip">红利 / 黄金</span></div>
+          <span class="layer-rule">永远不卖 · 操作 0-1 次/年 · 不设止损</span>
+        </div>
+        <div class="layer-divider"></div>
+        <div class="layer-row">
+          <div class="layer-head"><span class="name">核心增长</span><span class="pct">18%</span></div>
+          <div class="chips"><span class="chip">纳指100 A / C</span><span class="chip">天弘通利 A</span></div>
+          <span class="layer-rule">定投为主 · ≤1 次/季度 · 纳指 PE&gt;35 卖出</span>
+        </div>
+        <div class="layer-divider"></div>
+        <div class="layer-row">
+          <div class="layer-head"><span class="name">卫星进攻</span><span class="pct">16%</span></div>
+          <div class="chips"><span class="chip">创新药 C</span><span class="chip">证券ETF C</span><span class="chip">半导体 C</span></div>
+          <span class="layer-rule">快进快出 · ≤4 笔/月 · -8% 无条件止损</span>
+        </div>
+        <div class="layer-divider"></div>
+        <div class="layer-row">
+          <div class="layer-head"><span class="name">现金预备</span><span class="pct">9%</span></div>
+          <div class="chips"><span class="chip">余额宝</span></div>
+          <span class="layer-rule">暴跌补仓 · 活钱底线</span>
+        </div>
+        <span class="pyramid-note">目标配比 45 / 20 / 20 / 15 · 当前压舱石偏高 +12%，现金预备不足 -6%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 核心规则 ===== -->
+  <section class="rules" id="rules">
+    <div class="container">
+      <h2 class="section-title">规则前置 · 触发即执行</h2>
+      <p class="section-sub">情绪靠边站，数字说了算。每一条规则都有触发条件，触发即执行，不需要犹豫。</p>
+      <div class="rules-grid">
+        <div class="rule-card">
+          <span class="icon"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="40" height="40" rx="10" fill="#EAF2FC"/><path d="M22 10 L30 13 V21 C30 27 26.5 31 22 33 C17.5 31 14 27 14 21 V13 Z" fill="#0066CC"/><rect x="21" y="17.5" width="2" height="7" rx="1" fill="#FFFFFF"/><circle cx="22" cy="27.8" r="1.2" fill="#FFFFFF"/></svg></span>
+          <h3>-8% 无条件止损</h3>
+          <p>卫星层触发即卖，不找理由。恐慌日豁免（大盘 ≥3000 跌），缓冲 1 天。</p>
+          <span class="tag">2026.07 已验证</span>
+        </div>
+        <div class="rule-card">
+          <span class="icon"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="40" height="40" rx="10" fill="#EAF2FC"/><rect x="13" y="27" width="6" height="3.4" rx="0.9" fill="#0066CC"/><rect x="19.5" y="23" width="6" height="3.4" rx="0.9" fill="#0066CC"/><rect x="26" y="19" width="6" height="3.4" rx="0.9" fill="#0066CC"/><path d="M28.5 12.5 L34 18 L31.2 18 L31.2 21.5 L25.8 21.5 L25.8 18 L28.5 18 Z" fill="#0066CC"/></svg></span>
+          <h3>+10% / +20% 阶梯止盈</h3>
+          <p>+10% 卖 1/3，+20% 再卖 1/3，留 100 份底仓，让利润继续奔跑。</p>
+          <span class="tag">7 月卫星 8 中 7</span>
+        </div>
+        <div class="rule-card">
+          <span class="icon"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="40" height="40" rx="10" fill="#EAF2FC"/><circle cx="22" cy="22" r="10" fill="#0066CC"/><rect x="21.3" y="16" width="1.6" height="7" rx="0.8" fill="#FFFFFF"/><rect x="22.8" y="21.2" width="5.2" height="1.6" rx="0.8" fill="#FFFFFF"/></svg></span>
+          <h3>72h 卖出冻结</h3>
+          <p>卖出后 72 小时冷静期，禁止当天回买，杜绝情绪化往返交易。</p>
+          <span class="tag">负面清单第 3 条</span>
+        </div>
+        <div class="rule-card">
+          <span class="icon"><svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="40" height="40" rx="10" fill="#EAF2FC"/><rect x="12" y="14" width="20" height="17" rx="3" fill="#0066CC"/><rect x="12" y="17.6" width="20" height="2.6" rx="1.3" fill="#FFFFFF"/><rect x="16.5" y="11" width="2.4" height="6" rx="1.2" fill="#0066CC"/><rect x="25.1" y="11" width="2.4" height="6" rx="1.2" fill="#0066CC"/></svg></span>
+          <h3>月操作 ≤4 笔</h3>
+          <p>正常月操作上限 4 笔，清理月 6 笔。操作越少，出错越少。</p>
+          <span class="tag">8 月已用 0 笔</span>
+        </div>
+      </div>
+      <div class="forbidden">
+        <span class="fb-title">永久禁用</span>
+        <div class="ban-chips">
+          <span class="ban-chip">主动基金转换 · -¥892</span>
+          <span class="ban-chip">亏损卫星补仓 · -¥506</span>
+          <span class="ban-chip">卖出当天买入新标的</span>
+          <span class="ban-chip">产能过剩主题 · -¥310</span>
+          <span class="ban-chip">日定投卫星品种</span>
+          <span class="ban-chip">FOMO 追涨</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 实盘数据 ===== -->
+  <section class="perf" id="perf">
+    <div class="container">
+      <div class="perf-left">
+        <h2>109 笔交易</h2>
+        <p class="desc">验证出来的规则。8 月 0 操作、0 违规——纪律不是写出来的，是交易出来的。</p>
+        <div class="kpi-group">
+          <span class="lab">7 月卫星胜率</span>
+          <span class="num">87.5%</span>
+          <span class="sub">8 中 7</span>
+        </div>
+        <div class="kpi-group">
+          <span class="lab">8 月操作 / 违规</span>
+          <span class="num">0 笔 · 0 次</span>
+          <span class="sub">纪律执行月</span>
+        </div>
+        <div class="kpi-group">
+          <span class="lab">年化收益估算</span>
+          <span class="num sm">债券 3-6% · 核心 10-12% · 卫星 15-25%</span>
+        </div>
+      </div>
+      <div class="perf-right">
+        <span class="chart-title">近 4 个交易日 · 组合盈亏</span>
+        <div class="chart-card">
+          <!-- 走势柱状图：红涨绿跌 -->
+          <svg width="520" height="300" viewBox="0 0 520 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="40" y="159.5" width="460" height="1" fill="#FFFFFF" opacity="0.2"/>
+            <rect x="60" y="160" width="48" height="48.5" rx="4" fill="#46D59B"/>
+            <rect x="170" y="136.6" width="48" height="23.4" rx="4" fill="#FF6B57"/>
+            <rect x="280" y="60" width="48" height="100" rx="4" fill="#FF6B57"/>
+            <rect x="390" y="145" width="48" height="15" rx="4" fill="#FF6B57" opacity="0.7"/>
+          </svg>
+          <div class="chart-labels">
+            <div class="cl"><span class="d">8/3</span><span class="v down">-133</span></div>
+            <div class="cl"><span class="d">8/4</span><span class="v up">+64</span></div>
+            <div class="cl"><span class="d">8/5</span><span class="v up">+274</span></div>
+            <div class="cl"><span class="d">8/6</span><span class="v up-soft">+40</span></div>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="legend-item"><span class="dot up"></span>盈利</span>
+          <span class="legend-item"><span class="dot down"></span>亏损</span>
+        </div>
+        <span class="chart-note">上证 4 连涨收复 3900 · DDX 8/6 转负，成功否决半导体补仓</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 风控体系 ===== -->
+  <section class="risk" id="risk">
+    <div class="container">
+      <h2 class="section-title">先看边界 · 再看收益</h2>
+      <p class="section-sub">边界画在买入之前。组合回撤到哪条线，就执行哪个动作，不看心情。</p>
+      <div class="drawdown-ladder">
+        <div class="level-card">
+          <span class="level-tag l1">组合回撤 -5%</span>
+          <span class="level-num l1">-5%</span>
+          <span class="level-amt">≈ ¥33,872</span>
+          <span class="level-act">卫星仓位减半，不开新仓</span>
+        </div>
+        <div class="level-card">
+          <span class="level-tag l2">组合回撤 -10%</span>
+          <span class="level-num l2">-10%</span>
+          <span class="level-amt">≈ ¥32,090</span>
+          <span class="level-act">卫星全部清仓，只留压舱石 + 核心</span>
+        </div>
+        <div class="level-card">
+          <span class="level-tag l3">组合回撤 -15%</span>
+          <span class="level-num l3">-15%</span>
+          <span class="level-amt">≈ ¥30,307</span>
+          <span class="level-act">核心增长减 1/3，只保留防守</span>
+        </div>
+      </div>
+      <span class="risk-note">基准：8/10 本周最高点 ¥35,655 · 8/14 总资产 ¥35,556，距 -5% 线缓冲 ¥1,684</span>
+      <div class="guard-rails">
+        <div class="guard"><span class="num">72h</span><span class="txt">卖出冻结</span></div>
+        <div class="guard"><span class="num">7-8</span><span class="txt">持仓上限 · 只</span></div>
+        <div class="guard"><span class="num">4</span><span class="txt">月操作上限 · 笔</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 复盘体系 ===== -->
+  <section class="review" id="review">
+    <div class="container">
+      <h2 class="section-title">把复盘，变成日常</h2>
+      <p class="section-sub">每日 5 分钟触发式检查，每周 15 分钟仓位点检，每月 30 分钟完整归因。</p>
+      <div class="review-cards">
+        <div class="freq-card">
+          <span class="freq-tag">每日</span>
+          <span class="freq-time">5 min</span>
+          <span class="freq-desc">触发式检查：止损线 / 止盈线 / DDX / 溢价率，5 分钟过一遍</span>
+        </div>
+        <div class="freq-card">
+          <span class="freq-tag">每周</span>
+          <span class="freq-time">15 min</span>
+          <span class="freq-desc">仓位点检：四层偏离 + 违规记录，自动生成周报</span>
+        </div>
+        <div class="freq-card">
+          <span class="freq-tag">每月</span>
+          <span class="freq-time">30 min</span>
+          <span class="freq-desc">完整归因：beta/alpha 拆解 + 胜率统计 + 规则修正</span>
+        </div>
+      </div>
+      <div class="protection">
+        <span class="pt-title">规则保护 · 三问优化</span>
+        <div class="q-chips">
+          <span class="q-chip">能阻止哪段历史亏损？</span>
+          <span class="q-chip">与现有规则冲突吗？</span>
+          <span class="q-chip">一个月能验证吗？</span>
+        </div>
+        <span class="pt-result">三过 → 吸收 · 两过 → 搁置 · 一过 → 拒绝</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== 最终 CTA ===== -->
+  <section class="cta">
+    <div class="container">
+      <h2>把纪律，做成一个系统</h2>
+      <p class="sub">109 笔交易、6 个版本迭代出来的规则体系。开源在 GitHub，随时可以开始。</p>
+      <div class="cta-row">
+        <a class="btn-dark" href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="#FFFFFF" xmlns="http://www.w3.org/2000/svg"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          GitHub · Star
+        </a>
+        <button class="btn-primary">开始使用 Anchor</button>
+      </div>
+      <p class="trust">v3.3 · 数据截止 2026-08-06 · 更新记录见 CHANGELOG</p>
+    </div>
+  </section>
+
+  <!-- ===== 页脚 ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="3.4" r="2" fill="#0066CC"/><rect x="8.9" y="5.4" width="2.2" height="10.6" fill="#1D1D1F"/><path d="M10 16 Q5.4 14.4 5.7 10.2 L7.7 10.5 Q7.6 13.2 10 14.2 Z" fill="#1D1D1F"/><path d="M10 16 Q14.6 14.4 14.3 10.2 L12.3 10.5 Q12.4 13.2 10 14.2 Z" fill="#1D1D1F"/></svg>
+          <span class="brand-name">Anchor 投资体系</span>
+        </div>
+        <span class="footer-tagline">规则优先于预测 · 纪律优先于收益 · 风控优先于盈利</span>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <h4>体系</h4>
+          <a href="#pyramid">四层金字塔</a>
+          <a href="#rules">核心规则</a>
+          <a href="#risk">风控体系</a>
+          <a href="#review">复盘体系</a>
+        </div>
+        <div class="footer-col">
+          <h4>数据</h4>
+          <a href="#perf">实盘快照</a>
+          <a href="#">周报归档</a>
+          <a href="#">月度归因</a>
+        </div>
+        <div class="footer-col">
+          <h4>资源</h4>
+          <a href="https://github.com/killian99cm/anchor-system" target="_blank" rel="noopener">GitHub · anchor-system</a>
+          <a href="#">CHANGELOG</a>
+          <a href="#">免责声明</a>
+        </div>
+      </div>
+      <div class="footer-divider"></div>
+      <p class="footer-legal">© 2026 Anchor 投资体系 · v3.3 · 数据截止 2026-08-06<br>本体系为投资方法论框架，仅供学习参考，不构成投资建议。市场有风险，投资需谨慎。</p>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+/* ===== 画布等比缩放：保留 1440 原画布 + 跟随视口宽度 ===== */
+(function(){
+  var page = document.getElementById('page');
+  function fit(){
+    var scale = window.innerWidth / 1440;
+    if (scale > 1.5) scale = 1.5;      // 上限，避免过度放大
+    if (scale < 0.35) scale = 0.35;    // 下限，避免不可读
+    page.style.transform = 'scale(' + scale + ')';
+    page.style.left = ((window.innerWidth - 1440 * scale) / 2) + 'px';
+    document.body.style.height = (page.offsetHeight * scale) + 'px';
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('load', fit);
+  fit();
+})();
+
+/* ===== 滚动渐显（Apple 式克制动效） ===== */
+(function(){
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var els = document.querySelectorAll('.section > .container');
+  els.forEach(function(el){
+    el.classList.add('fade-up');
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, {threshold: 0.08, rootMargin: '0px 0px -40px 0px'});
+    io.observe(el);
+  });
+})();
+</script>
+</body>
+</html>

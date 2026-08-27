@@ -1,0 +1,3 @@
+Description: ⚓ 规则驱动的个人投资管理系统 — 109笔实盘迭代 · 13个月验证 · 四层金字塔 · 4条铁律 · 6条永久禁令。mx-data API实时行情 → Python rebuild引擎 → 纯HTML深色终端看板(零依赖)。AI辅助:每日复盘 · 仓位点检 · 周报生成 · 月度归因。30秒生成看板,双击即用。⭐ 用规则管住手,用数据代替直觉
+Topics: []
+Homepage: https://killian99cm.github.io/anchor-system

@@ -23,8 +23,13 @@
 - 版本号三处统一 v4.3.2（CHANGELOG/JSON×2/CLAUDE.md）；新增 version_check.py 三处一致校验；A1 自动化内置自检
 - 规则生效期登记表（01-rules/规则生效期登记表.md）：每条规则标生效/失效日，防已废规则引用
 
+### 8/27 收尾补缺（升级深度分析核验后，不 bump 版本——三处一致校验仍为 v4.3.2）
+- **护栏真正接入执行链**：sync_all.py 新增第 7.6 步调用 version_check.py——原 CHANGELOG 声称"A1 自动化内置自检"但脚本未引用，属文档-实现脱节；现已落地（不一致 log error 中止后续同步）
+- **collab 协议补护栏描述**：reference-workbuddy-collab.md 数据互通第 4 条——bump 版本号必须三处同步改
+- **CLAUDE.md 主指标同步**：近期重点行旧口径（平均收益率≥+3%）→ 三步法新主指标（盈亏比≥1.5:1｜追高≤20%｜止损执行率100%）；决策日志行同步 28→51 条/准确率 80.0%/口径审计注释
+
 ### 影响文件
-05-scripts/data_auto_fill.py / 09-backtest/scripts/{add_position_backtest,stress_test_2022}.py / Desktop/app.py / 09-backtest/2026-08-26-8月31日仲裁材料.md（seg2 矛盾句修复+第七节）/ 00-system/提升建议优化版.md / 00-system/规则生效期登记表.md（新）/ 05-scripts/version_check.py（新）/ portfolio_data.json×2 / CLAUDE.md / CHANGELOG.md / 会话检查点.md
+05-scripts/data_auto_fill.py / 09-backtest/scripts/{add_position_backtest,stress_test_2022}.py / Desktop/app.py / 09-backtest/2026-08-26-8月31日仲裁材料.md（seg2 矛盾句修复+第七节）/ 00-system/提升建议优化版.md / 00-system/规则生效期登记表.md（新）/ 05-scripts/version_check.py（新）/ 05-scripts/sync_all.py（7.6 步护栏）/ 07-memory/reference-workbuddy-collab.md / portfolio_data.json×2 / CLAUDE.md / CHANGELOG.md / 会话检查点.md
 
 ---
 

@@ -18,13 +18,13 @@ from daily_advice import mx_query  # 复用妙想 API 查询
 DESKTOP = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 JSON_PATH = os.path.join(DESKTOP, "portfolio_data.json")
 
-# 权益类持仓（债券/余额宝稳定，不查）
+# 权益类持仓（债券/余额宝稳定，不查）；查询词含代码与名称双保险
 QUERY_NAMES = [
-    "华夏国证半导体芯片ETF联接C",
+    "华夏国证半导体芯片ETF联接C 008888",
     "易方达恒生港股通创新药ETF联接C",
     "天弘纳斯达克100指数(QDII)C",
-    "华泰柏瑞纳斯达克100ETF联接A",
-    "易方达证券ETF联接C",
+    "华泰柏瑞纳斯达克100ETF联接A 008887",
+    "易方达证券ETF联接C 012590",
     "国泰黄金ETF联接A",
     "天弘通利混合A",
 ]
@@ -38,20 +38,24 @@ def load_holdings():
 
 
 def fetch_latest_pct(name: str) -> dict:
-    """查询基金最新日涨跌幅，返回 {pct, date, entity}"""
-    try:
-        rows = mx_query(f"{name} 最新净值 日涨跌幅", timeout=40)
-        # 取第一条非空涨跌数据
-        for r in rows:
-            v = r["value"].replace("%", "").strip()
-            try:
-                pct = float(v)
-            except ValueError:
-                continue
-            return {"pct": pct, "date": r["date"], "entity": r["entity"]}
-        return {"error": "无有效涨跌数据"}
-    except Exception as e:
-        return {"error": str(e)[:60]}
+    """查询基金最新日涨跌幅（多问法回退，取第一个成功）"""
+    variants = [
+        f"{name} 最新净值 日涨跌幅",
+        f"{name} 复权单位净值增长率",
+    ]
+    for v in variants:
+        try:
+            rows = mx_query(v, timeout=40)
+            for r in rows:
+                val = r["value"].replace("%", "").strip()
+                try:
+                    pct = float(val)
+                except ValueError:
+                    continue
+                return {"pct": pct, "date": r["date"], "entity": r["entity"], "query": v}
+        except Exception:
+            continue
+    return {"error": "全部问法无数据"}
 
 
 def main():

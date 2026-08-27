@@ -81,3 +81,9 @@ _mx_precise/
 
 # 技能临时文件
 .superpowers/
+
+# 公开页红线：仅正式脱敏版 anchor-pro.html 入库；v2/ultimate 为历史演示变体（含真实历史数据）
+08-website/anchor-pro-v2.html
+08-website/anchor-ultimate.html
+# 数据备份：完整持仓快照，禁止入库
+*.bak-*

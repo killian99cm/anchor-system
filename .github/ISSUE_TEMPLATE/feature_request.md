@@ -2,9 +2,11 @@
 name: 💡 功能建议
 about: 建议一个新功能或改进
 title: "[FEATURE] "
-labels: enhancement
+labels: [enhancement, needs-votes]
 assignees: killian99cm
 ---
+
+> 💡 提示：`needs-votes` 标签需要在仓库 Settings → Labels 中手工创建（网页操作）。
 
 ## 使用场景
 
@@ -21,3 +23,7 @@ assignees: killian99cm
 ## 补充信息
 
 截图、参考链接等。
+
+## Vote
+
+如果这个功能对你有价值，请给本 Issue 点 **👍**（thumbs-up）。👍 数量高的 Issue 会被优先处理。

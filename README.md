@@ -35,6 +35,15 @@ It is **not**:
 
 ---
 
+## Documentation
+
+- [Docs index](docs/index.md) — entry point for all guides
+- [Setup](SETUP.md) · [FAQ](FAQ.md) · [Troubleshooting](TROUBLESHOOTING.md)
+- [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
+- [Live demo](https://killian99cm.github.io/anchor-system) · [Track record (simulated backtest)](08-website/track-record.html)
+
+---
+
 ## Screenshots
 
 ![Anchor overview](docs/screenshots/overview.png)

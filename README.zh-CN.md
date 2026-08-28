@@ -35,6 +35,15 @@ Anchor 把三件事合成一个系统：
 
 ---
 
+## 文档
+
+- [文档总入口](docs/index.md) — 全部指南入口
+- [安装指南](SETUP.md) · [FAQ](FAQ.md) · [故障排查](TROUBLESHOOTING.md)
+- [贡献指南](CONTRIBUTING.md) · [更新日志](CHANGELOG.md)
+- [在线演示](https://killian99cm.github.io/anchor-system) · [回测战绩（模拟）](08-website/track-record.html)
+
+---
+
 ## 界面预览
 
 ![Anchor 仪表板](docs/screenshots/overview.png)

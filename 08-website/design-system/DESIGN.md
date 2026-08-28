@@ -216,4 +216,4 @@
 
 ---
 
-*本规范由 DesignMdArchitect 生成，供 WorkBuddy 与 Claude 双 AI 消费。改动规范须同步本文件与各页 tokens 覆盖层。*
+*本规范为设计系统文档，供自动化工具消费。改动规范须同步本文件与各页 tokens 覆盖层。*

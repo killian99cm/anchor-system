@@ -18,7 +18,7 @@ Anchor isn't a tech product — it's an **investment discipline tool**. It helps
 - Record all your holdings at a glance
 - Automatically check the rules (stop-loss / take-profit / time expiry)
 - Generate a visual dashboard without opening N apps
-- Get AI-assisted reviews that save manual calculation
+- Get automated review reports that save manual calculation
 
 ### Q: Does it cost money?
 
@@ -44,7 +44,7 @@ For details, run `python setup.py` for interactive configuration.
 
 Priority: `mx-data API (Eastmoney) → AKShare → WebSearch → App screenshots`
 
-For daily updates, just tell Claude "update today's data" and it will fetch automatically.
+For daily updates, just say "update today's data" and the pipeline fetches it automatically.
 
 ### Q: How often should I update?
 
@@ -110,7 +110,7 @@ crontab -e
 
 ### Q: Can I integrate other data sources?
 
-Yes. Modify the data-loading logic in `rebuild.py` to adapt to any JSON format. Or just tell Claude "help me integrate the XXX data source".
+Yes. Modify the data-loading logic in `rebuild.py` to adapt to any JSON format, or extend the data-source module to integrate the XXX data source.
 
 ### Q: How do I contribute code?
 

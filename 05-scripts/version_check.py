@@ -4,14 +4,14 @@
 检查三处版本号是否一致：
   1. CHANGELOG.md 最新版本条目（## vX.Y.Z）
   2. portfolio_data.json 的 system_version（桌面 + 06-dashboard 两副本）
-  3. CLAUDE.md（用户主目录）版本行
+  3. 用户主目录主版本文件版本行
 
 冻结规则（8/27 用户确立）：bump 必须三处一致，否则不进规则手册。
 A1 复盘自动化每日自检；手动运行：python version_check.py
 
 用法:
   python version_check.py          # 校验三处一致性
-  python version_check.py --sync   # 不一致时把 JSON/CLAUDE.md 同步到 CHANGELOG 最新版本（谨慎，仅已知一致时用）
+  python version_check.py --sync   # 不一致时把 JSON/主版本文件同步到 CHANGELOG 最新版本（谨慎，仅已知一致时用）
 """
 import io
 import json
@@ -24,7 +24,9 @@ sys.stdout.reconfigure(encoding="utf-8")
 DESKTOP = "C:/Users/lenovo/Desktop"
 ANCHOR = os.path.join(DESKTOP, "Anchor")
 CHANGELOG = os.path.join(ANCHOR, "CHANGELOG.md")
-CLAUDE_MD = "C:/Users/lenovo/CLAUDE.md"
+MASTER_VERSION_FILE = os.environ.get(
+    "ANCHOR_VERSION_FILE", os.path.join(os.path.expanduser("~"), ".anchor_version.md")
+)
 JSON_PATHS = [
     os.path.join(DESKTOP, "portfolio_data.json"),
     os.path.join(ANCHOR, "06-dashboard", "portfolio_data.json"),
@@ -53,9 +55,9 @@ def get_json_versions():
     return out
 
 
-def get_claude_version():
+def get_master_version():
     try:
-        with io.open(CLAUDE_MD, encoding="utf-8") as f:
+        with io.open(MASTER_VERSION_FILE, encoding="utf-8") as f:
             for line in f:
                 if line.strip().startswith("| 版本 |"):
                     m = VERSION_RE.search(line)
@@ -69,12 +71,12 @@ def get_claude_version():
 def main():
     cl = get_changelog_version()
     js = get_json_versions()
-    cm = get_claude_version()
+    cm = get_master_version()
 
     print(f"CHANGELOG 最新: {cl}")
     for p, v in js.items():
         print(f"JSON {os.path.basename(os.path.dirname(p)) or '桌面'}: {v}")
-    print(f"CLAUDE.md: {cm}")
+    print(f"主版本文件: {cm}")
 
     refs = [cl] + list(js.values()) + [cm]
     refs = [r for r in refs if r]
@@ -88,9 +90,9 @@ def main():
     print(f"  CHANGELOG: {cl}")
     for p, v in js.items():
         print(f"  {p}: {v}")
-    print(f"  CLAUDE.md: {cm}")
+    print(f"  主版本文件: {cm}")
     print("\n统一方法：以 CHANGELOG 最新条目为准（或先补 CHANGELOG 条目），"
-          "再改 JSON system_version 与 CLAUDE.md 版本行。")
+          "再改 JSON system_version 与主版本文件版本行。")
     return 1
 
 

@@ -143,7 +143,7 @@ report_data = {
         "color_scheme": "eastern",
     },
     "modules": modules,
-    "disclaimer": "⚠️ 以上内容由 AI 基于公开信息整理生成，仅供参考，不构成任何投资建议或个股推荐。投资有风险，决策需谨慎。",
+    "disclaimer": "⚠️ 以上内容基于公开信息整理生成，仅供参考，不构成任何投资建议或个股推荐。投资有风险，决策需谨慎。",
 }
 
 render_dashboard(report_data, output_path=os.path.join(OUT, "index.html"), template_path=TEMPLATE)

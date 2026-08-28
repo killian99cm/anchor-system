@@ -284,7 +284,7 @@ def main():
     print(bold(green("  🎉 下一步:")))
     print(f"  {blue('1.')} 运行 {cyan('python 05-scripts/rebuild.py')} 生成看板")
     print(f"  {blue('2.')} 双击打开 {cyan('portfolio_analysis.html')} 查看")
-    print(f"  {blue('3.')} 对 Claude 说 {cyan('更新今日数据')} 获取实时行情")
+    print(f"  {blue('3.')} 说 {cyan('更新今日数据')} 即获取实时行情")
     print()
 
     if not ask_yesno("  是否立即运行 rebuild.py 生成看板？", "y"):

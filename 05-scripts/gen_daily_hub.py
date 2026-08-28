@@ -296,7 +296,7 @@ def build_tools():
     )
 
 def build_commands():
-    """快捷口令（对 Claude 说）"""
+    """快捷口令（一句话触发）"""
     cmds = [
         ("更新今日数据", "mx-data 收盘 → 更新 JSON → rebuild → 全量同步", "📥"),
         ("出报告", "14:30→操作建议 / 21:30→收盘复盘", "📝"),
@@ -307,7 +307,7 @@ def build_commands():
     ]
     return "".join(
         f'<div class="cmd-card reveal"><span class="cmd-icon">{icon}</span><strong>{esc(label)}</strong>'
-        f'<span class="cmd-desc">{esc(desc)}</span><code>对 Claude 说「{esc(label)}」</code></div>'
+        f'<span class="cmd-desc">{esc(desc)}</span><code>说「{esc(label)}」</code></div>'
         for label, desc, icon in cmds
     )
 
@@ -366,7 +366,7 @@ a{color:inherit;text-decoration:none}.app{max-width:1240px;margin:0 auto;padding
 
 <section class="panel" id="tools"><div class="panel-head"><h2>系统与工具</h2><span>规则 · 协议 · 检查点</span></div><div class="panel-body"><div class="file-group">__TOOLS__</div></div></section>
 
-<section class="panel" id="commands"><div class="panel-head"><h2>快捷口令</h2><span>对 Claude 说一句即触发</span></div><div class="panel-body"><div class="cmd-grid">__COMMANDS__</div></div></section>
+<section class="panel" id="commands"><div class="panel-head"><h2>快捷口令</h2><span>说一句即触发</span></div><div class="panel-body"><div class="cmd-grid">__COMMANDS__</div></div></section>
 
 <div class="footer">Anchor v4.1.0 · 当日指挥中心 · 数据内联自 <a href="portfolio_data.json">portfolio_data.json</a> · 生成 __NOW__ · 打开主看板 / 决策仪表盘可看全量细节</div>
 </div>

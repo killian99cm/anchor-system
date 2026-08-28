@@ -87,3 +87,9 @@ _mx_precise/
 08-website/anchor-ultimate.html
 # 数据备份：完整持仓快照，禁止入库
 *.bak-*
+
+# 00-system 私有档案（含真实资金/贷款/预案信息），仅白名单文件可入库
+00-system/*
+!00-system/mx_install_guide.md
+!00-system/repo_info.txt
+!00-system/repo_info2.txt

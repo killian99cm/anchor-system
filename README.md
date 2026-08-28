@@ -1,8 +1,18 @@
 # Anchor
 
+**[English](README.md) | [中文](README.zh-CN.md)**
+
+> ⚠️ **Disclaimer** — Anchor is for **educational purposes only**, **not financial advice**.
+> Markets carry risk; you may lose money. Use at your own risk.
+
 [![CI](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml/badge.svg)](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://killian99cm.github.io/anchor-system)
+[![Version](https://img.shields.io/badge/version-v4.3.3-blueviolet)](CHANGELOG.md)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](SETUP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> ⭐ If Anchor helps you, **star this repo** so others can find it.
+> ⭐ 如果这套体系对你有帮助，欢迎点击 **Star**，让更多人看到它。
 
 | 109 live trades | 80% decision accuracy | 0% chase violations | 13 mo track record |
 |:---:|:---:|:---:|:---:|
@@ -18,6 +28,34 @@ It turns a personal portfolio process into a repeatable workflow:
 - encode investment discipline into executable checks
 - generate a private local dashboard from a single portfolio data file
 - publish sanitized public demo pages without exposing private holdings
+
+---
+
+## System at a glance
+
+**Four-layer pyramid** (weight = role):
+
+| Layer | Weight | Role | Rule |
+|---|---|---|---|
+| 🛡️ Bedrock | 45% | low-volatility ballast, portfolio foundation | hold long-term · 0-1 ops/year |
+| 🚀 Core Growth | 20% | broad-index core assets | DCA + valuation gate |
+| 🔥 Satellite Attack | 20% | high-beta offense, capped per position | -8% stop · ≤4 trades/month |
+| 💰 Cash Reserve | 15% | safety buffer, waiting for extreme opportunities | deploy on crashes |
+
+**Six iron rules:**
+
+- [ ] 🛑 Never add to a losing position — no averaging down while underwater
+- [ ] 🔒 72-hour freeze after selling — proceeds cool in cash before re-entry
+- [ ] 📉 -8% stop-loss (1-day buffer + next-day 14:30 sector confirm)
+- [ ] 📊 Portfolio drawdown lines — -5% / -10% / -15% trigger escalating cuts
+- [ ] ⏱ 30-day time stop — satellite held >30 days and underperforming ≥5% → exit
+- [ ] 🌐 Entry premium ≤3% — no chasing QDII at high premium, wait for NAV reversion
+
+**Permanently banned:** ❌ averaging down · ❌ switching targets same day · ❌ buying without a plan
+
+> "No predictions. Discipline only." — 不靠预测，靠纪律
+
+---
 
 ## What Anchor does
 

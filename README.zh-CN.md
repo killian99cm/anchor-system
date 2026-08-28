@@ -1,8 +1,18 @@
 # Anchor
 
+**[English](README.md) | [中文](README.zh-CN.md)**
+
+> ⚠️ **免责声明** — Anchor 仅用于学习与研究，**不构成投资建议**。
+> 市场有风险，投资需谨慎，据此操作风险自负。
+
 [![CI](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml/badge.svg)](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://killian99cm.github.io/anchor-system)
+[![Version](https://img.shields.io/badge/version-v4.3.3-blueviolet)](CHANGELOG.md)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue)](SETUP.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+> ⭐ If Anchor helps you, **star this repo** so others can find it.
+> ⭐ 如果这套体系对你有帮助，欢迎点击 **Star**，让更多人看到它。
 
 | 109 live trades | 80% decision accuracy | 0% chase violations | 13 mo track record |
 |:---:|:---:|:---:|:---:|
@@ -18,6 +28,34 @@ Anchor 是一套面向个人投资者的**规则驱动投资管理系统**。
 - 把纪律规则编码成可执行检查
 - 从单一持仓数据文件生成私有本地看板
 - 在不暴露真实持仓的前提下发布脱敏公开示例页
+
+---
+
+## 体系速览
+
+**四层金字塔**（权重 = 职责）：
+
+| 层级 | 权重 | 职责 | 规则 |
+|---|---|---|---|
+| 🛡️ 压舱石层 | 45% | 低波动资产 · 稳定组合地基 | 长期持有 · 年操作 0-1 次 |
+| 🚀 核心增长层 | 20% | 宽基/核心资产 | 定投为主 · 估值约束 |
+| 🔥 卫星进攻层 | 20% | 高弹性仓位 · 单只限额 | -8% 止损 · ≤4 笔/月 |
+| 💰 现金预备层 | 15% | 安全垫 · 等待极端机会 | 暴跌时补仓 |
+
+**六条铁律**：
+
+- [ ] 🛑 浮亏不加仓 —— 卫星仓没有浮盈时，不把下跌误判为机会
+- [ ] 🔒 卖出冻结 72 小时 —— 卖出资金先进现金层，至少冷却三天
+- [ ] 📉 -8% 止损（含缓冲）—— 1 天缓冲 + 次日 14:30 板块确认再执行
+- [ ] 📊 组合回撤线 —— -5% / -10% / -15% 对应不同减仓动作
+- [ ] ⏱ 时间止损 30 天 —— 卫星持有超 30 天且跑输大盘 ≥5% → 强制卖出
+- [ ] 🌐 溢价率 ≤3% 建仓 —— 场内纳指建仓硬门槛，溢价过高不追
+
+**永久禁用：** ❌ 浮亏补仓 · ❌ 当天换标的 · ❌ 无预案买入
+
+> 「不靠预测，靠纪律」
+
+---
 
 ## Anchor 是做什么的
 

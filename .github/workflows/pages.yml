@@ -35,6 +35,13 @@ jobs:
           cp -r "08-website/diagrams" _site/diagrams
           # Copy calculator
           cp "05-scripts/anchor_calculator.html" _site/anchor_calculator.html
+          # Copy track-record page (simulated backtest)
+          cp "08-website/track-record.html" _site/track-record.html
+          # Copy docs index
+          cp -r docs _site/docs
+          # Copy backtest chart PNGs referenced by track-record
+          mkdir -p "_site/09-backtest/output"
+          cp 09-backtest/output/full_anchor_vs_benchmark.png 09-backtest/output/takeprofit_compare_return.png "_site/09-backtest/output/"
           # Create redirects from old paths
           mkdir -p _site/06-dashboard
           cp "06-dashboard/portfolio_analysis_example.html" "_site/06-dashboard/portfolio_analysis.html"

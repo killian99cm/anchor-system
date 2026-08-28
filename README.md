@@ -1,6 +1,14 @@
 # Anchor
 
-![CI](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml/badge.svg)](https://github.com/killian99cm/anchor-system/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-blue)](https://killian99cm.github.io/anchor-system)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+| 109 live trades | 80% decision accuracy | 0% chase violations | 13 mo track record |
+|:---:|:---:|:---:|:---:|
+| 实操交易笔数 | 决策判定准确率 | 追高违规次数 | 持续运行记录 |
+
+<!-- 数据来源：05-scripts/transaction_ledger.md（2026-06~07 台账）/ 06-dashboard/decision_log.json（16/20 correct）/ 月度归因_2026年7月 -->
 
 Anchor is a rules-driven personal investment management system for individual investors.
 
@@ -24,6 +32,14 @@ It is **not**:
 - a stock-picking engine
 - an auto-trading bot
 - a public repository for your real portfolio data
+
+---
+
+## Screenshots
+
+![Anchor overview](docs/screenshots/overview.png)
+
+![Anchor structure — four-layer pyramid and rule boundaries](docs/screenshots/structure.png)
 
 ---
 

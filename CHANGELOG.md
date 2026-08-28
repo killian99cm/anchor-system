@@ -18,6 +18,27 @@
 - A1 复盘自动化升级为「深度版 v2.0」（步骤 5 mx-data 技术面采集）
 - 影响文件：01-rules/报告深度标准_v2.0.md（新）/ v1.0.md（标废止）/ A1 自动化 / CLAUDE.md / 07-memory 索引 / CHANGELOG.md / 检查点
 
+### v4.3.3 补充：交易前校验器 pre_trade_check.py（8/27 22:48 提交 6567a0f，与 v2.0 同属 v4.3.3）
+- 错配教训工具化（提案 #A 加仓前超限校验 / #B 贷款分批 / #C 目标可达性标注机制化）——六项校验：① 月操作额度 4/4 拦截 ② E1 单只卫星上限（加仓后市值）③ E4 月净投入 ④ 大额/贷款 334 分批提示 ⑤ 目标可达性标注 ⑥ 评分卡提醒
+- 测试：证券+2500 ⛔拦截（月额度+E1）、创新药+359 ✅通过（9/1 可用）、半导体+300 贷款 ⚠️分批提示——全符合预期
+- A2 盘中信号自动化步骤 7 强制接入（⛔ 自动转观察）；规则正式化待 8/31 仲裁，工具先行落地
+- 影响文件：05-scripts/pre_trade_check.py / A2 自动化 / 00-system/改进提案台账.md / 01-rules/规则生效期登记表.md
+
+---
+
+## 2026-08-28 — GitHub 公开仓库优化日（不 bump 版本，三处一致仍 v4.3.3）
+
+### GitHub 曝光度与公开仓库整理（7 笔提交，全部聚焦公开侧，投资逻辑零改动）
+- **隐私加固**（git 6b6dcdc）：00-system 敏感档案移除跟踪（贷款/金额/预案等 11 份，git rm --cached 保留磁盘数据完整）；.gitignore 添加 `00-system/*` 白名单机制（白名单保留 mx_install_guide / repo_info / repo_info2 三份公开文件）；根级配套 SECURITY / CONTRIBUTING / CODE_OF_CONDUCT / TROUBLESHOOTING
+- **README 首屏**：重排（448511f：数字横幅+截图+Live demo 置顶）+ 整理（73edc6c：语言切换/免责声明/徽章/速览）
+- **文档入口补全**（c9ab988）：FAQ/setup 入库 + docs 索引页 + README Documentation 节
+- **脱敏战绩页**（9f0b36b）：08-website/track-record.html + .github/workflows/pages.yml 部署扩展
+- **feature_request 模板投票引导**（7f192a2）
+- **文案统一 + 版本文件路径环境变量化**（831f45a，9 文件 23增21删）
+- GitHub 诊断专题 2 份：04-reviews/special/2026-08-28-GitHub曝光度诊断.md / 2026-08-28-高星项目设计借鉴分析.md
+- 投资侧例行（非改动）：04-reviews/daily/2026-08-28-盘中操作建议.md（14:30，8月额度 4/4 满零操作）+ 2026-08-28-盘中研究报告.md（14:57，六段式 v2.0：半导体 DDX 连正第 2 日未达成 / 杰克逊霍尔鹰派 / 纳指 A+C 全持暴露 8/29 净值最大变量）
+- 影响文件：08-website/track-record.html（新）/ .github/workflows/pages.yml / README.md / README.zh-CN.md / docs/* / 00-system/.gitignore / 05-scripts/{gen_daily_hub,version_check}.py / 09-backtest/output/* / 04-reviews/special/* / 04-reviews/daily/2026-08-28-*.md / 会话检查点.md
+
 ---
 
 ## v4.3.2 — 2026-08-27（P0/P1 落地 + 版本冻结启动）

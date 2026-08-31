@@ -79,6 +79,11 @@ def main():
     print(f"主版本文件: {cm}")
 
     refs = [cl] + list(js.values()) + [cm]
+    # 8/31 审计修复：主版本文件缺失时按失败处理（原逻辑过滤 None → 仅比 2 处即宣称「三处一致」假阳性）
+    if cm is None:
+        print(f"\n❌ 主版本文件缺失: {MASTER_VERSION_FILE}")
+        print("   原逻辑将 None 过滤后仅比对 2 处，造成「三处一致」假阳性（8/31 审计修复）")
+        return 1
     refs = [r for r in refs if r]
     ok = len(set(refs)) == 1 and refs
 

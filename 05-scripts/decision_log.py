@@ -119,12 +119,12 @@ def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "") -
 
 
 def pending_list(days: int = 3) -> list:
-    """待复盘项：已过 T+days 但仍未回填的决策"""
+    """待复盘项：已过 T+days 但仍未回填的决策（8/31 审计：排除 backfilled 历史补录噪声）"""
     log = load_log()
     now = datetime.now()
     pend = []
     for d in log["decisions"]:
-        if d["outcome"] is None and _is_active(d):
+        if d["outcome"] is None and _is_active(d) and not d.get("backfilled"):
             d_date = datetime.strptime(d["date"], "%Y-%m-%d")
             if (now - d_date).days >= days:
                 pend.append(d)
@@ -169,8 +169,16 @@ def accuracy_report() -> dict:
     pnl_ratio = (avg_win / avg_loss) if (avg_win is not None and avg_loss) else None
 
     # 追高型买入占比（v3.4，A1 标签）：目标 ≤20%
-    chase_all = [d for d in decisions if "追高" in (d.get("tags") or [])]
-    chase_pct = (len(chase_all) / len(decisions) * 100) if decisions else None
+    # 8/31 审计修正：分母=买入类决策（建仓/加仓/买入 + _is_active），原分母=全部决策稀释 ~2.3 倍
+    buy_types = {"建仓", "加仓", "买入"}
+    buy_decisions = [d for d in decisions if d.get("type") in buy_types and _is_active(d)]
+    chase_buys = [d for d in buy_decisions if "追高" in (d.get("tags") or [])]
+    chase_pct = (len(chase_buys) / len(buy_decisions) * 100) if buy_decisions else None
+
+    # 止损执行率（8/31 审计：主指标三件套缺一，口径=verdict 含「执行」/ 全部止损触发）
+    stop_triggers = [d for d in decisions if "止损" in (d.get("type") or "")]
+    stop_executed = [d for d in stop_triggers if "执行" in (d.get("verdict") or "")]
+    stop_execution_pct = (len(stop_executed) / len(stop_triggers) * 100) if stop_triggers else None
 
     return {
         "total_decisions": total,
@@ -184,8 +192,11 @@ def accuracy_report() -> dict:
         "avg_win_pct": round(avg_win, 2) if avg_win is not None else None,
         "avg_loss_pct": round(avg_loss, 2) if avg_loss is not None else None,
         "pnl_ratio": round(pnl_ratio, 2) if pnl_ratio is not None else None,
-        "chase_count": len(chase_all),
+        "chase_count": len(chase_buys),
         "chase_pct": round(chase_pct, 1) if chase_pct is not None else None,
+        "stop_loss_triggers": len(stop_triggers),
+        "stop_loss_executed": len(stop_executed),
+        "stop_loss_execution_pct": round(stop_execution_pct, 1) if stop_execution_pct is not None else None,
         "by_type": by_type,
     }
 
@@ -196,12 +207,12 @@ def due_date(d: dict) -> str:
 
 
 def due_list() -> list:
-    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日；superseded 记录跳过）"""
+    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日；superseded/backfilled 跳过——8/31 审计：backfilled 历史补录为噪声）"""
     log = load_log()
     now = datetime.now().strftime("%Y-%m-%d")
     due = []
     for d in log["decisions"]:
-        if d["outcome"] is None and _is_active(d) and due_date(d) <= now:
+        if d["outcome"] is None and _is_active(d) and not d.get("backfilled") and due_date(d) <= now:
             d["due"] = due_date(d)
             due.append(d)
     return due
@@ -445,6 +456,8 @@ def main() -> int:
             print(f"   盈亏比: {rep['pnl_ratio']:.2f}:1（均盈 {rep['avg_win_pct']:+.2f}% vs 均亏 {rep['avg_loss_pct']:+.2f}%｜目标 ≥1.5:1）")
         if rep["chase_pct"] is not None:
             print(f"   追高型买入: {rep['chase_count']} 条（{rep['chase_pct']:.1f}%｜目标 ≤20%）")
+        if rep["stop_loss_execution_pct"] is not None:
+            print(f"   止损执行率: {rep['stop_loss_executed']}/{rep['stop_loss_triggers']}（{rep['stop_loss_execution_pct']:.1f}%｜目标 100%）")
         if rep["by_type"]:
             print("   按类型:")
             for t, b in rep["by_type"].items():

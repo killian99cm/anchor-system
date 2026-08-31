@@ -89,13 +89,15 @@ def main():
     checks = []
 
     # 1) 月操作额度（ops_state 为空时 fallback 到 transactions 统计）
+    from datetime import date as _date
+    _cur_month = _date.today().strftime("%Y-%m")  # P0 修复（8/31 审计）：动态当前月，9/1 起自动重置
     used = ops.get("used", ops.get("count", 0)) if isinstance(ops, dict) else 0
     if not isinstance(used, (int, float)) or used is None or used == 0 and isinstance(ops, dict) and not ops:
         used = len([1 for t in d.get("transactions", [])
-                    if str(t.get("date", "")).startswith("2026-08")
+                    if str(t.get("date", "")).startswith(_cur_month)
                     and t.get("op") in ("买入", "加仓", "赎回", "卖出", "减仓")])
     if used >= MAX_MONTH_OPS:
-        checks.append(("⛔ 月操作额度", f"{used}/{MAX_MONTH_OPS} 已满（9/1 重置）——今日不可买入"))
+        checks.append(("⛔ 月操作额度", f"{used}/{MAX_MONTH_OPS} 已满（{_cur_month} 未重置）——今日不可买入"))
     else:
         checks.append(("✅ 月操作额度", f"{used}/{MAX_MONTH_OPS}，可执行 {MAX_MONTH_OPS - used} 笔"))
 

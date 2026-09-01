@@ -31,6 +31,8 @@ DEFAULTS = {
     "four_layer": {"bedrock_pct": 45, "core_min_pct": 20, "core_max_pct": 20, "sat_pct": 20, "cash_pct": 15},
     "t3_days": 3,
     "premium_gate_pct": 3,
+    # 09-01 止盈 v3.6（用户拍板）：+10/+20/+35 各卖25% + 25%奔跑仓
+    "take_profit": [10, 20, 35],
     # 09-01 新增：4.3 集中度上限（单只压舱石≤8000 / 核心≤4000 / 卫星≤3000 / 板块≤12000）
     "single_position_caps": {"压舱石": 8000, "核心": 4000, "卫星": 3000},
     "sector_cap": 12000,
@@ -74,6 +76,8 @@ def extract(text: str) -> dict:
     grab("event_exempt", [r"事件驱动[^\n]{0,8}?¥?\s*([\d,，]+)", r"事件[^\n]{0,8}¥?\s*([\d,，]+)", r"豁免[^\n]{0,8}¥?\s*([\d,，]+)"], _num, DEFAULTS["event_exempt"])
     grab("t3_days", [r"T\+3", r"([0-9]+)\s*个交易日内复核"], lambda m: 3, DEFAULTS["t3_days"])
     grab("premium_gate_pct", [r"溢价[^\n]{0,8}([0-9]+)\s*%"], lambda m: int(m.group(1)), DEFAULTS["premium_gate_pct"])
+    grab("take_profit", [r"\+(\d{2})%\s*→\s*卖25%[^\n]*?\+(\d{2})%\s*→\s*再卖25%[^\n]*?\+(\d{2})%\s*→\s*再卖25%"],
+          lambda m: [int(m.group(1)), int(m.group(2)), int(m.group(3))], DEFAULTS["take_profit"])
 
     # 四层配比（09-01 修复：原正则 "压舱石[^\n]{0,10}([0-9]+)%" 误匹配波动率 2%，
     # 改为锚定 "权重XX%" 句式，默认值与手册 45/20/20/15 一致）

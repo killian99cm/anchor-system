@@ -45,6 +45,8 @@ BUILTIN_THRESHOLDS = {
     "big_amount_batch": 3000.0,       # 大额分批阈值
     "max_monthly_ops": 4,             # 月操作上限
     "scorecard_event_exempt": 300.0,  # 事件驱动评分卡豁免金额
+    # 09-01 修复（手册 4.3 集中度上限）：原实现只查卫星层 E1，压舱石/核心单只上限未实现
+    "single_position_caps": {"压舱石": 8000.0, "核心": 4000.0, "卫星": 3000.0},
     # 规则手册品种目标（含可达性标注，提案 #C 落地）
     "targets": {
         "鹏华畅享债券": {"target": 6600, "layer": "压舱石", "reach": "✅ 达标"},
@@ -95,6 +97,10 @@ def load_thresholds():
                 th[k] = float(raw)
         if isinstance(cth.get("targets"), dict) and cth["targets"]:
             th["targets"].update(cth["targets"])
+        # 09-01 修复：合并契约 single_position_caps（extract 从手册 4.3 提取的权威值）
+        if isinstance(cth.get("single_position_caps"), dict) and cth["single_position_caps"]:
+            th["single_position_caps"].update(
+                {k: float(v) for k, v in cth["single_position_caps"].items()})
         th["_source"] = "contract"
     except Exception as exc:  # 契约缺失/损坏：回退内置，不阻断校验
         print(f"[WARN] 未从 rule_contract.json 读到 thresholds/rules（{exc}）→ 使用内置默认阈值")
@@ -165,27 +171,57 @@ def main():
     if tgt:
         checks.append(("层/目标", f"{tgt['layer']}层 · 目标 ¥{tgt['target']:,.0f} · 可达性 {tgt['reach']}"))
 
-    # 3) E1 单只上限（卫星层）
-    if tgt and tgt["layer"] == "卫星":
-        cur = next((h.get("mv", 0) for h in holdings.values() if key in h.get("name", "")), 0)
-        after = cur + amount
-        if after > e1_limit:
-            checks.append(("⛔ E1 单只上限", f"加仓后 ¥{after:,.0f} > ¥{e1_limit:,.0f}（当前 ¥{cur:,.0f}）——超限拦截，先压回或改分批"))
-        else:
-            checks.append(("✅ E1 单只上限", f"加仓后 ¥{after:,.0f} ≤ ¥{e1_limit:,.0f}（当前 ¥{cur:,.0f}）"))
-        # E4 月净投入
-        if amount > e4_monthly:
-            checks.append(("⚠️ E4 月净投入", f"单笔 ¥{amount:,.0f} > ¥{e4_monthly:,.0f}——注意卫星月净累计上限"))
+    # 3) 单只持仓上限（手册 4.3 分层：压舱石≤8000 / 核心≤4000 / 卫星=E1≤3000）
+    # 09-01 修复：原实现只查卫星层 E1，压舱石/核心单只上限漏检（9/1 鹏华超压舱石上限即实证）
+    if tgt:
+        layer = tgt["layer"]
+        cap = th["single_position_caps"].get(layer)
+        if cap:
+            cur = next((h.get("mv", 0) for h in holdings.values() if key in h.get("name", "")), 0)
+            after = cur + amount
+            label = "E1 单只卫星上限" if layer == "卫星" else f"单只{layer}上限"
+            if after > cap:
+                checks.append(("⛔ " + label, f"{layer}层加仓后 ¥{after:,.0f} > ¥{cap:,.0f}（当前 ¥{cur:,.0f}）——超限拦截，先压回或改分批"))
+            else:
+                checks.append(("✅ " + label, f"{layer}层加仓后 ¥{after:,.0f} ≤ ¥{cap:,.0f}（当前 ¥{cur:,.0f}）"))
 
-    # 4) 大额分批（提案 #B）
+    # 4) E4 卫星月净投入（累计口径）—— 09-01 修复：原实现只查单笔，实际应按"本月卫星净投入+拟买"累计
+    if tgt and tgt["layer"] == "卫星":
+        month_prefix = f"{ops_year:04d}-{ops_month:02d}"
+        net = 0.0
+        for tx in d.get("transactions", []):
+            if not str(tx.get("date", "")).startswith(month_prefix):
+                continue
+            tname = tx.get("name", "")
+            sat_kw = [k for k, v in targets.items()
+                      if v.get("layer") == "卫星" and (k in tname or tname in k)]
+            if not sat_kw:
+                continue
+            op = str(tx.get("op", ""))
+            try:
+                amt = float(tx.get("amount", 0) or 0)
+            except (TypeError, ValueError):
+                amt = 0.0
+            if any(w in op for w in ("买入", "加仓")):
+                net += amt
+            elif any(w in op for w in ("减仓", "清仓")):
+                net -= amt
+        after_net = net + amount
+        if after_net > e4_monthly:
+            checks.append(("⛔ E4 月净投入", f"卫星月净投入 ¥{after_net:,.0f} > ¥{e4_monthly:,.0f}（本月已投入 ¥{net:,.0f} + 拟买 ¥{amount:,.0f}）——超限拦截"))
+        else:
+            checks.append(("✅ E4 月净投入", f"卫星月净投入 ¥{after_net:,.0f} ≤ ¥{e4_monthly:,.0f}（本月已投入 ¥{net:,.0f} + 拟买 ¥{amount:,.0f}）"))
+
+    # 5) 大额分批（提案 #B）
     if amount >= big_amt or is_loan:
         checks.append(("⚠️ 大额/贷款分批", f"¥{amount:,.0f} ≥ ¥{big_amt:,.0f} 或贷款资金——必须 334 分批（分 3 批、间隔≥3 交易日），禁止一次性"))
 
-    # 5) 评分卡
-    if amount > exempt_amt and not is_loan:
+    # 6) 评分卡 —— 09-01 修复：贷款资金不再豁免（9/1 证券+2,000 贷款买入评分为 4/5 仍超 E1，
+    #    贷款≠事件驱动，需与其他资金同样打分；原逻辑 is_loan 直接进豁免分支漏检）
+    if amount > exempt_amt:
         checks.append(("⚠️ 买点评分卡", f"金额 >¥{exempt_amt:,.0f} 非事件驱动——必须 5 维打分 ≥3/5 才可成交"))
     else:
-        checks.append(("✅ 评分卡口径", f"≤¥{exempt_amt:,.0f} 或事件驱动（A4）可豁免，但必须标注「事件驱动」"))
+        checks.append(("✅ 评分卡口径", f"≤¥{exempt_amt:,.0f} 可豁免（A4 事件驱动），但必须标注「事件驱动」"))
 
     for tag, msg in checks:
         print(f"  {tag}: {msg}")

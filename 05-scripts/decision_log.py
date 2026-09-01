@@ -229,7 +229,9 @@ def next_due() -> dict:
     nxt = None
     items = []
     for d in log["decisions"]:
-        if d["outcome"] is None and _is_active(d):
+        # 09-01 修复：排除 backfilled 历史补录（与 pending_list/due_list 口径一致），
+        # 否则过期的历史记录恒占"下次复盘日"位（此前 #42 2025-10-13 陈旧日期）
+        if d["outcome"] is None and _is_active(d) and not d.get("backfilled"):
             dd = due_date(d)
             if nxt is None or dd < nxt:
                 nxt = dd

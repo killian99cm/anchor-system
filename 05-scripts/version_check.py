@@ -27,8 +27,11 @@ import paths  # C1：统一路径真源，禁止硬编码用户目录
 DESKTOP = str(paths.DESKTOP)
 ANCHOR = str(paths.ANCHOR)
 CHANGELOG = os.path.join(ANCHOR, "CHANGELOG.md")
+# 09-01 修复：原默认读 ~/.anchor_version.md（不存在）→ 主版本文件恒缺失 → 8/31 审计"三处一致"
+# 依赖不可追溯的 ANCHOR_VERSION_FILE 环境变量兜底。现默认指向家目录 CLAUDE.md（版本行恒存在，
+# 变更管理铁律强制维护），仍保留环境变量覆盖。
 MASTER_VERSION_FILE = os.environ.get(
-    "ANCHOR_VERSION_FILE", os.path.join(os.path.expanduser("~"), ".anchor_version.md")
+    "ANCHOR_VERSION_FILE", os.path.join(os.path.expanduser("~"), "CLAUDE.md")
 )
 JSON_PATHS = [
     os.path.join(DESKTOP, "portfolio_data.json"),

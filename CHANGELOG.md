@@ -6,6 +6,37 @@
 
 ---
 
+## v4.3.5 — 2026-09-01（体系深度审计 + 全部优化落地）
+
+> 用户「深度分析 anchor 体系健全性/功能可用性/逻辑流畅性 → 全部优化并保存记录」。5 维度 agent 审计（4 完成 + 1 失败维度已覆盖）+ 独立复核，产出 `00-system/2026-09-01-体系深度分析报告.md`（三评级 + P0/P1/P2 分级清单），本版本全部落地。
+
+### 🔴 P0 修复（数据污染 / 校验失效）
+- **P0-1 契约链路断裂**（A 修复是死代码）：rule_contract.json 原只剩 6 个版本握手键，extract_rule_contract.py 全仓无调用者 → pre_trade_check 每次回退内置默认。修复：①extract 四层配比正则/默认值修正（40/15-25/30/10→**45/20/20/15**，原正则误抓波动率 2%）+ 新增单只持仓上限/板块上限提取 ②sync_all 新增步骤 **8.5 规则契约提取** ③realtime_relay 分发时**保留契约 rules 段**（原覆盖写抹除）④extract 保留 data 字段。验证：8 测试全过（test_load_from_real_contract FAIL→OK）、三场景回归、契约 rules 12 键完整
+- **P0-2 决策日志重复记录**：#52/#53 与 #54/#55 同笔交易双写（双 AI 各录一次）→ 标 superseded→#54/#55（保留历史）；连带修复 **next_due() 未排除 backfilled**（#42 陈旧日期占位 → 下次复盘日正确显示 9/4 #54/#55）
+
+### 🟠 P1 修复
+- **pre_trade_check 补漏**：分层持仓上限（压舱石≤¥8,000 / 核心≤¥4,000 / 卫星=E1≤¥3,000，原只查卫星）+ E4 卫星月净投入改**累计口径**（本月已投入+拟买）+ **贷款不再豁免评分卡**（9/1 证券贷款+2,000 评 4/5 仍超 E1 实证）。回归：证券+500 ⛔E1+E4、创新药+359 ⛔E4 累计、鹏华+1000 ⛔压舱石上限、创新药+2000 --loan ⚠️评分卡
+- **version_check 主版本文件**：默认读 `~/.anchor_version.md`（不存在）→ 改读家目录 **CLAUDE.md**（版本行恒存在，消除环境变量依赖）
+- **daily_hub（D2）**：规则手册 v3.4 死链 → glob 最新；半导体/创新药/时机A/月操作/决策日志陈旧硬编码（8/25 超大单/#22/#23/26 条/8月）→ 数据驱动；EVENTS 更新至 9 月（9/4 T+3 / 9/2 DDX / 9/7 港股通 / 9/15 FOMC）
+- **Excel 生成**：gen_excel_skill.py 硬下标 tx['name'] → .get() 兜底（9/1 两次 KeyError 崩溃根因）+ 新增 **requirements.txt**（openpyxl/requests 声明）
+- **daily_advice 强制前置硬化**：⛔ 硬性违规 → 简报显著 RED 警示 + 今日禁止对应买入（原静默）；金额正则增强（¥/元/买入+ 三模式）
+- **规则文档一致性**：手册标题 v3.4→**v3.5**（与文件名统一）；登记表引用不存在文件 → v3.5；止盈旧档残留对齐（手册 1.3 创新药 +10/+20 → +8/+15/+25，data_processor profile 同步）
+- **报告路径统一**：报告深度标准 v2.0 增补"盘中研究报告→`04-reviews/research/`"权威行
+- **信息桥 F2 方向 B 回写**：claude_state.md 首次主动回写（今日产出/待办/给 WorkBuddy 留言 5 条）；Stop hook 自动化遗留（settings.json 敏感）
+- **检查点信息孤岛**：9 张历史待办表 → 头部导航锚点 + 8 张标"（历史归档）"
+- **变更管理补登记**：8/31-9/1 落地 19 项现统一登记于本版本
+
+### 🟡 P2 清理
+- design_v43_upgrade.py / gen_excel_v2.py 死代码 → 归档/；rebuild.py 8/20 过期补丁删除；提案台账 #17-20 重复去重；尾盘模板 v1.0 标废止；数据更新协议 **v1.4** 补两条最高铁律
+
+### 遗留项（需用户裁决/后续）
+C1 止盈档位待裁决｜手册 461 行旧主指标口径｜C2 冻结无代码执行｜F2 Stop hook 自动化｜E1 周报/E2 月报升级｜8/31 复盘 v2.0 回归｜可视化运维专项｜CHANGELOG v4.0.x 顺序（详见审计报告第四节）
+
+### 影响文件
+05-scripts/{extract_rule_contract,pre_trade_check,version_check,decision_log,gen_daily_hub,gen_excel_skill,sync_all,daily_advice,data_processor,rebuild}.py ｜ 05-scripts/test_pre_trade_check.py ｜ 05-scripts/requirements.txt（新）｜ 05-scripts/归档/{design_v43_upgrade,gen_excel_v2}.py（移入）｜ Desktop/AI-Collab/{realtime_relay.py,rule_contract.json,ai-bridge/claude_state.md} ｜ 01-rules/{投资规则手册_v3.5_正式版,规则生效期登记表,报告深度标准_v2.0,尾盘操作报告模板_v1.0}.md ｜ 00-system/{2026-09-01-体系深度分析报告.md（新）,数据更新协议,改进提案台账,会话检查点}.md ｜ 06-dashboard/decision_log.json ｜ CLAUDE.md ｜ CHANGELOG.md
+
+---
+
 ## v4.3.4 — 2026-09-01（E1 漏检反思 + pre_trade_check 契约兼容/A2 强制前置）
 
 ### 🔍 9/1 事件复盘：证券贷款 +2,000 超 E1 上限 129% 漏检（决策≠执行三源核验实证）

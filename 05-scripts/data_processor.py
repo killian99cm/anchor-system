@@ -218,7 +218,8 @@ def derive_take_profit_profile(name, layer):
             return '定投持有 / 估值阈值'
         return '持有'
     if '创新药' in name:
-        return '-8%止损 / +10%+20% / 30天'
+        # 09-01 修复：止盈档位对齐手册 2.3 v3.4 重构（+8/+15/+25），原 +10/+20 为旧档残留
+        return '-8%止损 / +8%+15%+25% / 30天'
     if '证券' in name:
         return '-8%止损 / PB1.35·1.6'
     if '半导体' in name or '芯片' in name:

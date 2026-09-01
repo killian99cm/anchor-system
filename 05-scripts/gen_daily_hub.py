@@ -146,32 +146,36 @@ def build_signals(processed, data, rep):
                 f'<div class="signal-desc">{esc(desc)}</div>'
                 f'<a class="signal-link" href="{link}">→ {esc(link_txt)}</a></div>')
 
-    # 半导体
+    # 半导体（09-01 修复：删除 8/25 陈旧"超大单+9.73亿"文案，改数据驱动）
     if slw:
         cur = slw.get("cur_pct", 0)
         # 观察仓市值从持仓明细取（避免把 cur_pct 百分比误当金额）
         semi_mv = next((h.get("mv") for h in data.get("holdings_summary", []) if "半导体" in (h.get("name") or "")), None)
         mv_txt = f"¥{money(semi_mv, 0)}" if semi_mv is not None else "--"
-        semi_desc = (f"止损执行闭环完成：赎回款 ¥491.60 已到账；剩余观察仓约 {mv_txt}（浮亏 {pct_str(cur)}）。"
-                     f"8/25 超大单 +9.73亿首日转正=止跌观察，但主力 -17.56亿 —— DDX 连正≥2日前不动")
-        cards.append(card("🟡", "半导体观察仓", semi_desc, "portfolio_analysis.html", "打开主看板 · 8/27 复盘 #22", "watch"))
+        semi_desc = (f"止损执行闭环完成；剩余观察仓约 {mv_txt}（浮亏 {pct_str(cur)}）。"
+                     f"DDX 连正≥2日前不动；跌破 B5 线（浮亏-15% 或破 MA20）→ 1 交易日内强制清仓")
+        cards.append(card("🟡", "半导体观察仓", semi_desc, "portfolio_analysis.html", "打开主看板", "watch"))
     else:
         cards.append(card("🟢", "半导体", "无在途止损项", "portfolio_analysis.html", "打开主看板", "safe"))
 
-    # 创新药
-    inno = "持有收益转正 +33.73（+1.34%），整仓累计 -271.55 待回补；建仓 +3000 暂缓（南向未连入，等双确认）；9/7 港股通纳入 14 家医药 = 窗口"
-    cards.append(card("🟡", "创新药 +3000 暂缓", inno, "portfolio_analysis.html", "打开主看板 · 8/27 复盘 #23", "watch"))
+    # 创新药（09-01 修复：改为持仓累计盈亏驱动，删除 8/25 陈旧"累计-271.55"文案）
+    inno_h = next((h for h in data.get("holdings_summary", []) if "创新药" in (h.get("name") or "")), {})
+    inno_cumul = inno_h.get("cumul")
+    inno_extra = f" · 整仓累计 {signed(inno_cumul)} 🔴 新低" if inno_cumul is not None else ""
+    inno = (f"HSSCID 破位延续，严禁加仓{inno_extra}；"
+            f"时间止损 30 天窗口已开，明后日不收复 MA5 → 评估减半；9/7 港股通纳入 14 家医药 = 事件窗口")
+    cards.append(card("🔴", "创新药 严禁加仓", inno, "portfolio_analysis.html", "打开主看板", "action"))
 
-    # 时机A
+    # 时机A（09-01 修复：文案数据驱动，删除"连2天"硬编码）
     sh_close = ((processed.get("mkt", {}) or {}).get("sh", {}) or {}).get("close")
     if sh_close is not None and float(sh_close) >= 3900:
-        cards.append(card("🟢", "时机A", "上证站稳 3900 连 2 天 → 新子弹可用", "portfolio_analysis.html", "打开主看板", "safe"))
+        cards.append(card("🟢", "时机A", f"上证 {sh_close} 站稳 3900 → 进攻层新子弹可用", "portfolio_analysis.html", "打开主看板", "safe"))
     else:
-        cards.append(card("⚪", "时机A 待确认", "上证需「再站上 3900 连 2 天」才重新触发；当前未收复 3900", "portfolio_analysis.html", "打开主看板", "neutral"))
+        cards.append(card("⚪", "时机A 待确认", f"上证需站上 3900 才触发；当前 {sh_close or '--'}", "portfolio_analysis.html", "打开主看板", "neutral"))
 
-    # 月操作 / 冻结
+    # 月操作 / 冻结（09-01 修复：月标签数据驱动，删除硬编码"8月"）
     ops = processed.get("ops_state", {}) or {}
-    ops_txt = f"8月操作 {ops.get('count', '--')}/{ops.get('max', '--')} 笔" + (" · 额度已满 · 禁止新买入" if ops.get("is_at_limit") else " · 可操作")
+    ops_txt = f"{ops.get('label', '本月')}操作 {ops.get('count', '--')}/{ops.get('max', '--')} 笔" + (" · 额度已满 · 禁止新买入" if ops.get("is_at_limit") else " · 可操作")
     cards.append(card("🟡", "月操作额度", ops_txt, "portfolio_analysis.html", "打开主看板", "watch"))
 
     # 回撤
@@ -179,21 +183,23 @@ def build_signals(processed, data, rep):
     dd_txt = f"回撤 {pct_str(dd.get('dd_pct'))}（安全区）· 距 -5% 线还余 ¥{money(dd.get('safe_cushion'))}"
     cards.append(card("🟢", "回撤安全", dd_txt, "portfolio_analysis.html", "打开主看板", "safe"))
 
-    # 决策日志
+    # 决策日志（09-01 修复：删除硬编码"#22/#23（8/27）"，待复盘数动态）
     ratio = rep.get("pnl_ratio")
     ratio_ok = ratio is not None and float(ratio) >= 1.5
     status_icon = "🟢" if ratio_ok else "🟡"
+    pending = rep.get("pending_review", 0)
     dec_txt = (f"{rep.get('total_decisions', 0)} 条 · 准确率 {rep.get('accuracy_pct')}% · 盈亏比 {ratio or '--'}:1"
-               f"（目标 ≥1.5:1{' ✅' if ratio_ok else '，8/27 复盘后整改'}）· 待复盘 #22/#23（8/27）")
+               f"（目标 ≥1.5:1{' ✅' if ratio_ok else ''}）· 待复盘 {pending} 项")
     cards.append(card(status_icon, "决策日志", dec_txt, "decision_dashboard.html", "打开决策胜率仪表盘", "safe" if ratio_ok else "watch"))
 
     return "".join(cards)
 
-def build_dashes():
-    """实时仪表盘直达（4 张大卡）"""
+def build_dashes(rep):
+    """实时仪表盘直达（4 张大卡）——09-01 修复：决策数从 rep 动态取，原硬编码"26 条"与 55 矛盾"""
+    dec_n = rep.get('total_decisions', 0)
     dashes = [
         ("📊", "私有主看板", "portfolio_analysis.html", "四层占比 / 持仓控制台 / 规则检查 / 风险矩阵 / 每日复盘 · 实时数据内联", "HTML · 实时"),
-        ("🎯", "决策胜率仪表盘", "decision_dashboard.html", "26 条决策 · 准确率 / 盈亏比 / 追高占比 / T+3 复盘提醒", "HTML · 实时"),
+        ("🎯", "决策胜率仪表盘", "decision_dashboard.html", f"{dec_n} 条决策 · 准确率 / 盈亏比 / 追高占比 / T+3 复盘提醒", "HTML · 实时"),
         ("🌐", "公开体系页", "../08-website/anchor-pro.html", "Anchor v4.0 体系介绍 · 四层金字塔 / 进化叙事 · GSAP 动效", "HTML · 动态"),
         ("🗺️", "体系图集", "../08-website/diagrams/", "pyramid-4layer / data-pipeline / decision-loop / architecture · 4 张体系图（内嵌 SVG）", "HTML · 静态"),
     ]
@@ -205,13 +211,13 @@ def build_dashes():
     )
 
 # 事件日历：固定序列，gen 时按日期过滤（过去自动消失，未来自动显示）
+# 09-01 修复：删除 8/26-8/31 已过期事件（8/31 归因里程碑三目标文案旧口径），更新为 9 月当前事件
 EVENTS = [
-    {"d": "2026-08-26", "t": "英伟达财报（凌晨）+ 核心 PCE", "e": "半导体 / 纳指 / 黄金三方方向观测窗：财报定企稳质量、PCE 定金价方向", "files": [("黄金专题", "04-reviews/special/2026-08-24-黄金走势深度分析.md"), ("盘中研究 8/25", "04-reviews/research/2026-08-25-盘中研究报告.md")]},
-    {"d": "2026-08-27", "t": "决策日志 T+3 复盘 #22 + #23", "e": "#22 半导体止损执行效果 + #23 创新药观望双确认 + 登海种业中报验证", "files": [("深度复盘 8/25", "04-reviews/daily/2026-08-25-深度复盘.md"), ("决策仪表盘", "06-dashboard/decision_dashboard.html")]},
-    {"d": "2026-08-28", "t": "杰克逊霍尔（沃什首秀）", "e": "本周最大变量：决定美债利率与降息路径，联动黄金/纳指", "files": [("黄金专题", "04-reviews/special/2026-08-24-黄金走势深度分析.md")]},
-    {"d": "2026-08-31", "t": "月度归因（里程碑）", "e": "三目标验证：平均收益率 ≥+3% / 盈亏比 ≥1.5:1 / 加仓准确率 ≥70%（当前 -5.02% / 0.60:1 / 57%）", "files": [("归因清单", "00-system/月度归因八步清单.md"), ("8月归因", "04-reviews/monthly/月度归因_2026年8月.md")]},
-    {"d": "2026-09-07", "t": "港股通调整纳入 14 家医药", "e": "创新药最大增量窗口（8/28-9/7 或现提前反弹窗口）", "files": [("深度复盘 8/25", "04-reviews/daily/2026-08-25-深度复盘.md")]},
-    {"d": "2026-09-15", "t": "FOMC 议息（9/15-16）", "e": "加息概率 ~40%：美债长端利率路径关键节点", "files": [("黄金专题", "04-reviews/special/2026-08-24-黄金走势深度分析.md")]},
+    {"d": "2026-09-01", "t": "黄金收盘审视线", "e": "518880 收盘破 MA20 审视线 9.025 → 9/2 审视减半", "files": [("盘中研究 9/1", "04-reviews/research/2026-09-01-盘中研究报告.md")]},
+    {"d": "2026-09-02", "t": "半导体 DDX 复核（进攻层首笔前提）", "e": "DDX 连正≥2日 → 9 月进攻层首笔可用；否则继续等待", "files": [("盘中研究 9/1", "04-reviews/research/2026-09-01-盘中研究报告.md")]},
+    {"d": "2026-09-04", "t": "决策日志 T+3 复盘 #54 + #55", "e": "#54 证券超E1上限违规（预期跌）+ #55 鹏华压舱石归并（预期涨）双笔到期", "files": [("决策仪表盘", "06-dashboard/decision_dashboard.html")]},
+    {"d": "2026-09-07", "t": "港股通调整纳入 14 家医药", "e": "创新药最大增量窗口（破位后观察是否借事件企稳）", "files": [("盘中研究 9/1", "04-reviews/research/2026-09-01-盘中研究报告.md")]},
+    {"d": "2026-09-15", "t": "FOMC 议息（9/15-16）", "e": "美债长端利率路径关键节点，联动黄金/纳指", "files": [("黄金专题", "04-reviews/special/2026-08-24-黄金走势深度分析.md")]},
 ]
 
 def build_events():
@@ -278,18 +284,29 @@ def build_datafiles():
         for label, href, typ in files
     )
 
+def latest_rule_manual():
+    """01-rules 下最新规则手册（09-01 修复：原硬编码 v3.4 死链，手册已升 v3.5）"""
+    d = ANCHOR / "01-rules"
+    if not d.is_dir():
+        return None
+    files = list(d.glob("投资规则手册_v*.md"))
+    return max(files, key=lambda p: p.name) if files else None
+
 def build_tools():
     """系统与工具链接"""
+    manual = latest_rule_manual()
+    manual_item = ("投资规则手册", manual.relative_to(ANCHOR).as_posix(), "买点/止损/止盈/换仓/仓位", "MD") if manual else None
     tools = [
         ("会话检查点", "00-system/会话检查点.md", "每次对话开始先读", "MD"),
         ("数据更新协议", "00-system/数据更新协议.md", "所有更新频率与步骤", "MD"),
-        ("投资规则手册 v3.4", "01-rules/投资规则手册_v3.4_正式版.md", "买点/止损/止盈/换仓/仓位", "MD"),
         ("股票交易规则 v1.0", "01-rules/股票交易规则_v1.0.md", "股票 515180 专属规则", "MD"),
         ("月度归因八步清单", "00-system/月度归因八步清单.md", "8/31 归因流程", "MD"),
         ("噪声审计框架", "00-system/噪声审计框架.md", "信号质量审计", "MD"),
         ("公开页", "08-website/anchor-pro.html", "体系介绍 / 展示页", "HTML"),
         ("体系图集", "08-website/diagrams/", "4 张品牌 SVG 图", "HTML"),
     ]
+    if manual_item:
+        tools.insert(2, manual_item)
     return "".join(
         f'<a class="file-card reveal" href="../{href}"><span class="file-name">{esc(label)}</span>'
         f'<span class="file-sub">{esc(href)}</span><span class="file-type">{typ}</span></a>'
@@ -407,7 +424,7 @@ def render_html(data, rep):
         "__KPIS__": build_kpis(processed, data, rep),
         "__STRIPS__": build_strips(processed),
         "__SIGNALS__": build_signals(processed, data, rep),
-        "__DASHES__": build_dashes(),
+        "__DASHES__": build_dashes(rep),
         "__EVENTS__": build_events(),
         "__REPORTS__": build_report_links(),
         "__DATAFILES__": build_datafiles(),

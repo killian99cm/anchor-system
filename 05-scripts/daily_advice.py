@@ -417,26 +417,47 @@ def main() -> int:
         # 3. 信号 + 简报
         signals = build_signals(data, state, quotes)
         brief = build_brief(data, state, quotes, signals)
-        # B 修复（09-01）：信号产出后强制跑 pre_trade_check（交易前校验前置，堵"信号不校验"洞）
+        # B 修复（09-01 硬化）：信号产出后强制跑 pre_trade_check（交易前校验前置，堵"信号不校验"洞）
+        #   09-01 审计升级：① 金额正则增强（支持 ¥2,000 / 2,000元 / 买入+2000）② ⛔ 违规 → 简报显著 RED 警示，
+        #   不再静默放行（原实现只 append 校验摘要，拦截结论不突出，易被忽略）
         try:
             import subprocess
-            _ptc = []
+
+            def _extract_amount(txt):
+                m = re.search(r"¥\s*([\d,]{2,6})", txt)
+                if m:
+                    return m.group(1)
+                m = re.search(r"([\d,]{2,6})\s*元", txt)
+                if m:
+                    return m.group(1)
+                m = re.search(r"(?:买入|加仓)\s*[+＋]?\s*([\d,]{2,6})", txt)
+                return m.group(1) if m else None
+
+            _ptc, _blocked = [], []
             for a in data.get("pending_actions", []):
-                text = (a.get("name") or "") + (a.get("action") or "")
+                text = (a.get("name") or "") + " " + (a.get("action") or "")
                 if any(k in text for k in ("买入", "加仓")):
-                    amt = re.search(r"(\d{3,5})\s*元", text)
-                    kw = a.get("name") or ""
-                    amt_v = amt.group(1) if amt else "1000"
+                    amt_v = _extract_amount(text) or "1000"
+                    kw = (a.get("name") or "").strip()
+                    if not kw:
+                        continue
                     r = subprocess.run(
                         [sys.executable, os.path.join(os.path.dirname(__file__), "pre_trade_check.py"), kw, amt_v],
                         capture_output=True, text=True, timeout=30, encoding="utf-8")
                     tail = [l for l in (r.stdout or "").splitlines() if "⛔" in l or "✅" in l][:3]
                     _ptc.append(f"[pre_trade] {kw} {amt_v}元: {'; '.join(tail) if tail else '通过'}")
+                    if r.returncode == 1 or any("⛔" in l for l in tail):
+                        _blocked.append(f"{kw} ¥{amt_v}")
             if _ptc:
                 brief += "\n\n🛡 交易前校验（pre_trade_check 强制前置）：\n" + "\n".join(_ptc)
-                log(f"pre_trade_check 已接入校验 {len(_ptc)} 笔")
+                if _blocked:
+                    brief += (f"\n\n⛔⛔ 存在硬性违规项（{'、'.join(_blocked)}）—— "
+                              f"今日禁止执行对应买入，须先压回/分批满足规则再评估 ⛔⛔")
+                    log(f"[⛔] pre_trade_check 拦截 {len(_blocked)} 笔：{'、'.join(_blocked)}")
+                else:
+                    log(f"pre_trade_check 已接入校验 {len(_ptc)} 笔（无硬性违规）")
         except Exception as e:
-            log(f"pre_trade_check 接入异常（不阻断）: {e}")
+            log(f"[ERROR] pre_trade_check 接入异常: {e}")
         log(f"简报已生成（{len(brief)} 字符，信号 {len(signals)} 条）")
         if "--dry-run" in sys.argv:
             print("\n" + "=" * 20 + " 简报预览 " + "=" * 20)

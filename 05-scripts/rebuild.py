@@ -204,7 +204,6 @@ log.info("Market data: %s (%sd ago) %s", mkt_date_str, mkt_age, "[STALE]" if mkt
 alerts = [r for r in embed["rules"] if r.get("lv") == "rr"]
 warns = [r for r in embed["rules"] if r.get("lv") == "ra"]
 log.info("Rule alerts: %s RED, %s AMBER", len(alerts), len(warns))
-for item in embed["pa"]:
-    if "8/20" in str(item).lower() or "8月20" in str(item):
-        log.info("[TIMER] 创新药时间止损提醒")
+# 09-01 清理：删除 8/20 过期补丁（硬编码日期触发"创新药时间止损提醒"日志，一次性且已过期；
+# 时间止损现由 30 天窗口机制管理，勿再依赖硬编码日期）
 log.info("Done.")

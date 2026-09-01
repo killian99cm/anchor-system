@@ -55,6 +55,8 @@ ANCHOR_体系总览.md
 05-scripts/watch_sync.py
 05-scripts/.watch_sync_state.json
 05-scripts/.watch_sync.lock
+# sync_all 运行状态（瞬时产物，不提交）
+05-scripts/.sync_last_result.json
 # 噪声审计数据
 06-dashboard/noise/
 # 决策日志（含判断依据与复盘，属隐私，不提交）

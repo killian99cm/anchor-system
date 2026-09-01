@@ -33,6 +33,13 @@ QUERIES = [
     "COMEX黄金期货 最新价 涨跌幅",
     "费城半导体指数 纳斯达克100 最新收盘价 涨跌幅",
 ]
+# 数据必达：主查询失败时换词兜底（禁止空值占位）
+FALLBACK_QUERIES = {
+    "纳指100": ["纳斯达克100指数 最新收盘", "纳斯达克100 收盘价 涨跌幅"],
+    "费半": ["费城半导体 指数 涨跌幅 收盘", "SOX 费城半导体 最新"],
+    "COMEX黄金": ["黄金期货 最新价格 涨跌幅", "上海金 最新价 涨跌幅"],
+    "创新药": ["港股通创新药 指数 最新", "恒生创新药 收盘"],
+}
 
 def fetch_mx(query: str) -> str:
     """调 mx_data.py，返回 stdout 文本"""
@@ -93,6 +100,16 @@ def collect_market() -> dict:
             elif "COMEX" in k or "黄金" in k: market["gold"] = v
             elif "费城" in k or "半导体指数" in k: market["us"]["费半"] = v
             elif "纳斯达克100" in k: market["us"]["纳指100"] = v
+    # 数据必达兜底：缺失项换查询词重试
+    for cat, key in (("us", "费半"), ("us", "纳指100"), ("gold", None), ("sectors", "创新药")):
+        tgt = market[cat] if key is None else market[cat].get(key)
+        if tgt is None or (isinstance(tgt, dict) and not tgt.get("val")):
+            for alt in FALLBACK_QUERIES.get(key or "COMEX黄金", []):
+                for k, v in parse_mx(fetch_mx(alt)).items():
+                    if key is None and ("COMEX" in k or "黄金" in k): market["gold"] = v
+                    elif key == "费半" and ("费城" in k or "半导体" in k): market["us"]["费半"] = v
+                    elif key == "纳指100" and "纳斯达克" in k: market["us"]["纳指100"] = v
+                    elif key == "创新药" and "创新药" in k: market["sectors"]["创新药"] = v
     return market
 
 # ---------- 持仓数据 ----------

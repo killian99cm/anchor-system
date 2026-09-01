@@ -67,24 +67,37 @@ _NUMERIC_KEYS = (
 
 
 def load_thresholds():
-    """从 rule_contract.json 读 thresholds；缺失/异常回退内置默认并 [WARN]（C5）。
-
-    返回 dict：数值键 + targets（契约里有的品种覆盖内置，其余保留），并带 _source 标记来源。
+    """从 rule_contract.json 读 thresholds/rules；缺失/异常回退内置默认并 [WARN]（C5 + 09-01 A 修复）。
+    契约输出为 extract_rule_contract 的 {"rules": {...}} 段（键 e1_sat_position_cap 等），
+    与内置键名（e1_sat_single_limit 等）不同 → 兼容读取 + 键名映射。
     """
     th = json.loads(json.dumps(BUILTIN_THRESHOLDS, ensure_ascii=False))  # 深拷贝
+    # 09-01 A 修复：契约键名 → 内置键名 映射（extract 用 position_cap/net_cap，内置用 single_limit/monthly_net）
+    _KEY_MAP = {
+        "e1_sat_position_cap": "e1_sat_single_limit",
+        "e4_monthly_net_cap": "e4_sat_monthly_net",
+        "big_amount_batch": "big_amount_batch",
+        "max_monthly_ops": "max_monthly_ops",
+    }
     try:
         contract = json.loads(paths.RULE_CONTRACT_PATH.read_text(encoding="utf-8"))
-        cth = contract.get("thresholds")
+        # 09-01 A 修复：兼容两段（extract 输出 rules；旧约定 thresholds）
+        cth = contract.get("thresholds") or contract.get("rules")
         if not isinstance(cth, dict):
-            raise KeyError("thresholds 段缺失或非对象")
+            raise KeyError("thresholds/rules 段缺失或非对象")
         for k in _NUMERIC_KEYS:
-            if k in cth and cth[k] is not None:
-                th[k] = float(cth[k])
+            raw = cth.get(k)
+            if raw is None:
+                # 尝试映射键（契约用 position_cap 等）
+                mapped_key = next((kk for kk, vv in _KEY_MAP.items() if vv == k), None)
+                raw = cth.get(mapped_key) if mapped_key else None
+            if raw is not None:
+                th[k] = float(raw)
         if isinstance(cth.get("targets"), dict) and cth["targets"]:
             th["targets"].update(cth["targets"])
         th["_source"] = "contract"
     except Exception as exc:  # 契约缺失/损坏：回退内置，不阻断校验
-        print(f"[WARN] 未从 rule_contract.json 读到 thresholds（{exc}）→ 使用内置默认阈值")
+        print(f"[WARN] 未从 rule_contract.json 读到 thresholds/rules（{exc}）→ 使用内置默认阈值")
         th["_source"] = "builtin"
     return th
 

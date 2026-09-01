@@ -417,6 +417,26 @@ def main() -> int:
         # 3. 信号 + 简报
         signals = build_signals(data, state, quotes)
         brief = build_brief(data, state, quotes, signals)
+        # B 修复（09-01）：信号产出后强制跑 pre_trade_check（交易前校验前置，堵"信号不校验"洞）
+        try:
+            import subprocess
+            _ptc = []
+            for a in data.get("pending_actions", []):
+                text = (a.get("name") or "") + (a.get("action") or "")
+                if any(k in text for k in ("买入", "加仓")):
+                    amt = re.search(r"(\d{3,5})\s*元", text)
+                    kw = a.get("name") or ""
+                    amt_v = amt.group(1) if amt else "1000"
+                    r = subprocess.run(
+                        [sys.executable, os.path.join(os.path.dirname(__file__), "pre_trade_check.py"), kw, amt_v],
+                        capture_output=True, text=True, timeout=30, encoding="utf-8")
+                    tail = [l for l in (r.stdout or "").splitlines() if "⛔" in l or "✅" in l][:3]
+                    _ptc.append(f"[pre_trade] {kw} {amt_v}元: {'; '.join(tail) if tail else '通过'}")
+            if _ptc:
+                brief += "\n\n🛡 交易前校验（pre_trade_check 强制前置）：\n" + "\n".join(_ptc)
+                log(f"pre_trade_check 已接入校验 {len(_ptc)} 笔")
+        except Exception as e:
+            log(f"pre_trade_check 接入异常（不阻断）: {e}")
         log(f"简报已生成（{len(brief)} 字符，信号 {len(signals)} 条）")
         if "--dry-run" in sys.argv:
             print("\n" + "=" * 20 + " 简报预览 " + "=" * 20)

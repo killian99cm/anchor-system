@@ -1,8 +1,15 @@
 # -*- coding: utf-8 -*-
-"""Anchor 交易前校验器 pre_trade_check.py v1.0（2026-08-27 错配教训落地）
+"""Anchor 交易前校验器 pre_trade_check.py v1.1（2026-09-01 C5 升级）
 
 提案 #A 加仓前超限校验 + #B 贷款分批提示 + #C 目标可达性标注 —— 机制化实现。
 任何「买入/加仓」建议生成前必须运行本校验器，输出 ⛔ 拦截或 ✅ 可执行。
+
+v1.1 变更（系统优化审计剩余项 C5）：
+  - 路径统一走 paths.py（不再硬编码 C:\\Users\\lenovo）
+  - 阈值（TARGETS / E1 / E4 / 大额 / 月限）读 AI-Collab/rule_contract.json 的
+    thresholds 段；契约缺失或字段不全时回退内置默认并打印 [WARN]，不静默
+  - 月操作统计复用 data_processor.monthly_ops_summary（单一真源：定投/出入金不计、
+    严格日期开头匹配），不再自造 op 白名单，口径与看板/风险矩阵完全一致
 
 用法:
   python pre_trade_check.py <品种关键词> <拟买金额> [--loan]
@@ -24,26 +31,62 @@ import os
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-JSON_PATH = "C:/Users/lenovo/Desktop/portfolio_data.json"
+import paths  # C1/C5：统一路径真源
+from data_processor import current_ops_period, monthly_ops_summary  # C5：月操作单一真源
 
-# 规则手册品种目标（含可达性标注，提案 #C 落地）
-TARGETS = {
-    "鹏华畅享债券": {"target": 6600, "layer": "压舱石", "reach": "✅ 达标"},
-    "中银稳健增利债券": {"target": 4600, "layer": "压舱石", "reach": "⚠️ 超配（贷款配置 8/31 评估）"},
-    "红利": {"target": 5500, "layer": "压舱石", "reach": "✅ 达标"},
-    "黄金": {"target": 1500, "layer": "压舱石", "reach": "🟡 定投积累（可议上调）"},
-    "纳斯达克": {"target": 4000, "layer": "核心", "reach": "🔒 限购（结构性缺口，不追）"},
-    "通利": {"target": 2000, "layer": "核心", "reach": "🟡 超配（已暂停定投；实为半导体股基）"},
-    "创新药": {"target": 3000, "layer": "卫星", "reach": "✅ 可补（9/1 时机A 确认）"},
-    "证券": {"target": 2500, "layer": "卫星", "reach": "⚠️ 超 E1 上限（需压回）"},
-    "半导体": {"target": 1500, "layer": "卫星", "reach": "🟡 观察仓（DDX 连正≥2日才补）"},
+JSON_PATH = paths.DATA_PATH
+
+# ============ 内置默认阈值（契约缺失时的 fallback；权威值在 rule_contract.json） ============
+BUILTIN_THRESHOLDS = {
+    "e1_sat_single_limit": 3000.0,    # E1 单只卫星上限
+    "e4_sat_monthly_net": 1500.0,     # E4 卫星月净投入上限
+    "big_amount_batch": 3000.0,       # 大额分批阈值
+    "max_monthly_ops": 4,             # 月操作上限
+    "scorecard_event_exempt": 300.0,  # 事件驱动评分卡豁免金额
+    # 规则手册品种目标（含可达性标注，提案 #C 落地）
+    "targets": {
+        "鹏华畅享债券": {"target": 6600, "layer": "压舱石", "reach": "✅ 达标"},
+        "中银稳健增利债券": {"target": 4600, "layer": "压舱石", "reach": "⚠️ 超配（贷款配置 8/31 评估）"},
+        "红利": {"target": 5500, "layer": "压舱石", "reach": "✅ 达标"},
+        "黄金": {"target": 1500, "layer": "压舱石", "reach": "🟡 定投积累（可议上调）"},
+        "纳斯达克": {"target": 4000, "layer": "核心", "reach": "🔒 限购（结构性缺口，不追）"},
+        "通利": {"target": 2000, "layer": "核心", "reach": "🟡 超配（已暂停定投；实为半导体股基）"},
+        "创新药": {"target": 3000, "layer": "卫星", "reach": "✅ 可补（9/1 时机A 确认）"},
+        "证券": {"target": 2500, "layer": "卫星", "reach": "⚠️ 超 E1 上限（需压回）"},
+        "半导体": {"target": 1500, "layer": "卫星", "reach": "🟡 观察仓（DDX 连正≥2日才补）"},
+    },
 }
 
-E1_SAT_LIMIT = 3000.0   # 单只卫星上限
-E4_SAT_MONTHLY = 1500.0  # 卫星月净投入上限
-BIG_AMT = 3000.0         # 大额分批阈值
-MAX_MONTH_OPS = 4        # 月操作上限
+# 数值型阈值键（契约里出现即覆盖内置）
+_NUMERIC_KEYS = (
+    "e1_sat_single_limit", "e4_sat_monthly_net", "big_amount_batch",
+    "max_monthly_ops", "scorecard_event_exempt",
+)
+
+
+def load_thresholds():
+    """从 rule_contract.json 读 thresholds；缺失/异常回退内置默认并 [WARN]（C5）。
+
+    返回 dict：数值键 + targets（契约里有的品种覆盖内置，其余保留），并带 _source 标记来源。
+    """
+    th = json.loads(json.dumps(BUILTIN_THRESHOLDS, ensure_ascii=False))  # 深拷贝
+    try:
+        contract = json.loads(paths.RULE_CONTRACT_PATH.read_text(encoding="utf-8"))
+        cth = contract.get("thresholds")
+        if not isinstance(cth, dict):
+            raise KeyError("thresholds 段缺失或非对象")
+        for k in _NUMERIC_KEYS:
+            if k in cth and cth[k] is not None:
+                th[k] = float(cth[k])
+        if isinstance(cth.get("targets"), dict) and cth["targets"]:
+            th["targets"].update(cth["targets"])
+        th["_source"] = "contract"
+    except Exception as exc:  # 契约缺失/损坏：回退内置，不阻断校验
+        print(f"[WARN] 未从 rule_contract.json 读到 thresholds（{exc}）→ 使用内置默认阈值")
+        th["_source"] = "builtin"
+    return th
 
 
 def load_data():
@@ -54,15 +97,15 @@ def load_data():
     return d, holdings
 
 
-def find_target(holdings, keyword):
+def find_target(targets, holdings, keyword):
     """匹配目标表（先精确匹配目标表 key，再模糊匹配持仓名）"""
-    for k, v in TARGETS.items():
+    for k, v in targets.items():
         if k in keyword or keyword in k:
             return k, v
     # 模糊匹配持仓
     for name in holdings:
         if keyword in name:
-            for k, v in TARGETS.items():
+            for k, v in targets.items():
                 if k in name:
                     return k, v
     return None, None
@@ -81,51 +124,55 @@ def main():
         return 2
     is_loan = "--loan" in sys.argv
 
+    th = load_thresholds()
+    targets = th["targets"]
+    e1_limit = th["e1_sat_single_limit"]
+    e4_monthly = th["e4_sat_monthly_net"]
+    big_amt = th["big_amount_batch"]
+    max_ops = int(th["max_monthly_ops"])
+    exempt_amt = th["scorecard_event_exempt"]
+
     d, holdings = load_data()
-    ops = d.get("ops_state", {})
-    key, tgt = find_target(holdings, keyword)
+    key, tgt = find_target(targets, holdings, keyword)
 
     print(f"=== Anchor 交易前校验（{keyword} ¥{amount:,.0f}{' · 贷款资金' if is_loan else ''}）===")
+    print(f"（阈值来源: {'规则契约 rule_contract.json' if th['_source']=='contract' else '内置默认[WARN]'}）")
     checks = []
 
-    # 1) 月操作额度（ops_state 为空时 fallback 到 transactions 统计）
-    from datetime import date as _date
-    _cur_month = _date.today().strftime("%Y-%m")  # P0 修复（8/31 审计）：动态当前月，9/1 起自动重置
-    used = ops.get("used", ops.get("count", 0)) if isinstance(ops, dict) else 0
-    if not isinstance(used, (int, float)) or used is None or used == 0 and isinstance(ops, dict) and not ops:
-        used = len([1 for t in d.get("transactions", [])
-                    if str(t.get("date", "")).startswith(_cur_month)
-                    and t.get("op") in ("买入", "加仓", "赎回", "卖出", "减仓")])
-    if used >= MAX_MONTH_OPS:
-        checks.append(("⛔ 月操作额度", f"{used}/{MAX_MONTH_OPS} 已满（{_cur_month} 未重置）——今日不可买入"))
+    # 1) 月操作额度 —— 复用 data_processor 单一真源（定投/出入金不计，严格日期匹配）
+    ops_year, ops_month, ops_label = current_ops_period(d)
+    used, used_viol = monthly_ops_summary(d, year=ops_year, month=ops_month)
+    if used >= max_ops:
+        checks.append(("⛔ 月操作额度", f"{used}/{max_ops} 已满（{ops_year}-{ops_month:02d}）——今日不可买入"))
     else:
-        checks.append(("✅ 月操作额度", f"{used}/{MAX_MONTH_OPS}，可执行 {MAX_MONTH_OPS - used} 笔"))
+        checks.append(("✅ 月操作额度", f"{used}/{max_ops}，可执行 {max_ops - used} 笔"
+                                       + (f"（含 {used_viol} 笔违规标记）" if used_viol else "")))
 
     # 2) 目标可达性 + 层
     if tgt:
-        checks.append((f"层/目标", f"{tgt['layer']}层 · 目标 ¥{tgt['target']:,.0f} · 可达性 {tgt['reach']}"))
+        checks.append(("层/目标", f"{tgt['layer']}层 · 目标 ¥{tgt['target']:,.0f} · 可达性 {tgt['reach']}"))
 
     # 3) E1 单只上限（卫星层）
     if tgt and tgt["layer"] == "卫星":
         cur = next((h.get("mv", 0) for h in holdings.values() if key in h.get("name", "")), 0)
         after = cur + amount
-        if after > E1_SAT_LIMIT:
-            checks.append((f"⛔ E1 单只上限", f"加仓后 ¥{after:,.0f} > ¥{E1_SAT_LIMIT:,.0f}（当前 ¥{cur:,.0f}）——超限拦截，先压回或改分批"))
+        if after > e1_limit:
+            checks.append(("⛔ E1 单只上限", f"加仓后 ¥{after:,.0f} > ¥{e1_limit:,.0f}（当前 ¥{cur:,.0f}）——超限拦截，先压回或改分批"))
         else:
-            checks.append((f"✅ E1 单只上限", f"加仓后 ¥{after:,.0f} ≤ ¥{E1_SAT_LIMIT:,.0f}（当前 ¥{cur:,.0f}）"))
+            checks.append(("✅ E1 单只上限", f"加仓后 ¥{after:,.0f} ≤ ¥{e1_limit:,.0f}（当前 ¥{cur:,.0f}）"))
         # E4 月净投入
-        if amount > E4_SAT_MONTHLY:
-            checks.append((f"⚠️ E4 月净投入", f"单笔 ¥{amount:,.0f} > ¥{E4_SAT_MONTHLY:,.0f}——注意卫星月净累计上限"))
+        if amount > e4_monthly:
+            checks.append(("⚠️ E4 月净投入", f"单笔 ¥{amount:,.0f} > ¥{e4_monthly:,.0f}——注意卫星月净累计上限"))
 
     # 4) 大额分批（提案 #B）
-    if amount >= BIG_AMT or is_loan:
-        checks.append(("⚠️ 大额/贷款分批", f"¥{amount:,.0f} ≥ ¥{BIG_AMT:,.0f} 或贷款资金——必须 334 分批（分 3 批、间隔≥3 交易日），禁止一次性"))
+    if amount >= big_amt or is_loan:
+        checks.append(("⚠️ 大额/贷款分批", f"¥{amount:,.0f} ≥ ¥{big_amt:,.0f} 或贷款资金——必须 334 分批（分 3 批、间隔≥3 交易日），禁止一次性"))
 
     # 5) 评分卡
-    if amount > 300 and not is_loan:
-        checks.append(("⚠️ 买点评分卡", "金额 >¥300 非事件驱动——必须 5 维打分 ≥3/5 才可成交"))
+    if amount > exempt_amt and not is_loan:
+        checks.append(("⚠️ 买点评分卡", f"金额 >¥{exempt_amt:,.0f} 非事件驱动——必须 5 维打分 ≥3/5 才可成交"))
     else:
-        checks.append(("✅ 评分卡口径", "≤¥300 或事件驱动（A4）可豁免，但必须标注「事件驱动」"))
+        checks.append(("✅ 评分卡口径", f"≤¥{exempt_amt:,.0f} 或事件驱动（A4）可豁免，但必须标注「事件驱动」"))
 
     for tag, msg in checks:
         print(f"  {tag}: {msg}")

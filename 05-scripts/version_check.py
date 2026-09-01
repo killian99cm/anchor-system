@@ -21,8 +21,11 @@ import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
-DESKTOP = "C:/Users/lenovo/Desktop"
-ANCHOR = os.path.join(DESKTOP, "Anchor")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import paths  # C1：统一路径真源，禁止硬编码用户目录
+
+DESKTOP = str(paths.DESKTOP)
+ANCHOR = str(paths.ANCHOR)
 CHANGELOG = os.path.join(ANCHOR, "CHANGELOG.md")
 MASTER_VERSION_FILE = os.environ.get(
     "ANCHOR_VERSION_FILE", os.path.join(os.path.expanduser("~"), ".anchor_version.md")

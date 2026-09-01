@@ -1,0 +1,1969 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "7df00b68-1395-48e3-8242-815539ab5219",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "04e23465-2880-4f3a-b232-c0273786d9f3",
+        "dataTableDTOList": [
+          {
+            "code": "159995.SZ",
+            "entityName": "2026-09-01 14:48",
+            "hsjDelay": false,
+            "table": {
+              "ZXJ_f2_3": [
+                "1.141",
+                "1.032",
+                "16798.48"
+              ],
+              "ZDF_f3_3": [
+                "-2.31%",
+                "-2.46%",
+                "-2.44%"
+              ],
+              "headName": [
+                "华夏国证半导体芯片ETF(159995.SZ)",
+                "国联安半导体ETF(512480.SH)",
+                "国证芯片(980017.SZ)(指数)"
+              ]
+            },
+            "rawTable": {
+              "ZXJ_f2_3": [
+                "1.141",
+                "1.032",
+                "16798.48"
+              ],
+              "ZDF_f3_3": [
+                "-2.31",
+                "-2.46",
+                "-2.44"
+              ],
+              "headName": [
+                "华夏国证半导体芯片ETF(159995.SZ)",
+                "国联安半导体ETF(512480.SH)",
+                "国证芯片(980017.SZ)(指数)"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZXJ_f2_3": "最新价",
+              "headNameSub": "数据来源",
+              "ZDF_f3_3": "涨跌幅",
+              "securityName": "股票名称"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZXJ_f2_3",
+              "returnName": "最新价",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f2",
+              "returnSourceName": "最新价",
+              "graph": "2",
+              "unit": "0",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "华夏国证半导体芯片ETF(159995.SZ)": {
+                "entityId": "1002095264",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+                "shortName": "华夏国证半导体芯片ETF",
+                "matchWord": "芯片ETF",
+                "secuCode": "159995",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "国联安半导体ETF(512480.SH)": {
+                "entityId": "1001828794",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+                "shortName": "国联安半导体ETF",
+                "matchWord": "512480",
+                "secuCode": "512480",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "国证芯片(980017.SZ)(指数)": {
+                "entityId": "1002077213",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006011",
+                "className": "国证指数",
+                "publishCode": "",
+                "fullName": "国证半导体芯片指数",
+                "shortName": "",
+                "matchWord": "国证半导体芯片指数",
+                "secuCode": "980017",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "159995.SZ",
+              "512480.SH",
+              "980017.SZ"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZXJ_f2_3",
+                "returnName": "最新价",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f2",
+                "returnSourceName": "最新价",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDF_f3_3",
+                "returnName": "涨跌幅",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f3",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "%",
+                "unitDesc": "901:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "ZXJ_f2_3",
+              "ZDF_f3_3"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "华夏国证半导体芯片ETF(159995.SZ)等当前的最新价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftEntityTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1002095264",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+              "shortName": "华夏国证半导体芯片ETF",
+              "matchWord": "芯片ETF",
+              "secuCode": "159995",
+              "market": "0",
+              "marketChar": ".SZ",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1002095264",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+                "shortName": "华夏国证半导体芯片ETF",
+                "matchWord": "芯片ETF",
+                "secuCode": "159995",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1001828794",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+                "shortName": "国联安半导体ETF",
+                "matchWord": "512480",
+                "secuCode": "512480",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1002077213",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006011",
+                "className": "国证指数",
+                "publishCode": "",
+                "fullName": "国证半导体芯片指数",
+                "shortName": "",
+                "matchWord": "国证半导体芯片指数",
+                "secuCode": "980017",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01 14:48": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          },
+          {
+            "code": "159995.SZ",
+            "entityName": "华夏国证半导体芯片ETF(159995.SZ)",
+            "table": {
+              "100000000002918": [
+                "1.169元",
+                "1.169元"
+              ],
+              "100000000019139": [
+                "-",
+                "1.493%"
+              ],
+              "100000000040289": [
+                "4.7299",
+                "4.7299"
+              ],
+              "100000000040312": [
+                "-6.3259",
+                "-6.3259"
+              ],
+              "100000000040313": [
+                "19.1015",
+                "19.1015"
+              ],
+              "100000000040314": [
+                "41.589",
+                "41.589"
+              ],
+              "100000000040319": [
+                "35.31",
+                "35.31"
+              ],
+              "100000000042624": [
+                "265/5822",
+                "265/5822"
+              ],
+              "100000000004035": [
+                "★★★",
+                "★★★"
+              ],
+              "100000000040320": [
+                "133.8",
+                "133.8"
+              ],
+              "100000000002477": [
+                "国证半导体芯片指数收益率",
+                "国证半导体芯片指数收益率"
+              ],
+              "headName": [
+                "2026-09-01",
+                "2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "100000000002918": [
+                "1.1691",
+                "1.1691"
+              ],
+              "100000000019139": [
+                "-",
+                "1.493185172323986"
+              ],
+              "100000000040289": [
+                "4.7299",
+                "4.7299"
+              ],
+              "100000000040312": [
+                "-6.3259",
+                "-6.3259"
+              ],
+              "100000000040313": [
+                "19.1015",
+                "19.1015"
+              ],
+              "100000000040314": [
+                "41.589",
+                "41.589"
+              ],
+              "100000000040319": [
+                "35.3125",
+                "35.3125"
+              ],
+              "100000000042624": [
+                "265/5822",
+                "265/5822"
+              ],
+              "100000000004035": [
+                "★★★",
+                "★★★"
+              ],
+              "100000000040320": [
+                "133.82",
+                "133.82"
+              ],
+              "100000000002477": [
+                "国证半导体芯片指数收益率",
+                "国证半导体芯片指数收益率"
+              ],
+              "headName": [
+                "2026-09-01",
+                "2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000002918": "单位净值",
+              "headNameSub": "数据来源",
+              "100000000019139": "单位净值增长率",
+              "100000000040289": "近1周回报",
+              "100000000040312": "近3月回报",
+              "100000000040313": "近6月回报",
+              "100000000040314": "近1年回报",
+              "100000000040319": "今年以来回报",
+              "100000000042624": "今年以来回报排名",
+              "100000000004035": "市场综合3年评级",
+              "100000000040320": "成立以来回报",
+              "100000000002477": "业绩比较基准"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000002918",
+              "returnName": "单位净值",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "PERNAV",
+              "returnSourceName": "单位净值",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "元",
+              "unitDesc": "10104:元:元",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "159995.SZ"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000002918",
+                "returnName": "单位净值",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "PERNAV",
+                "returnSourceName": "单位净值",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "元",
+                "unitDesc": "10104:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040313",
+                "returnName": "近6月回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_6M",
+                "returnSourceName": "近6月回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040314",
+                "returnName": "近1年回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "YEARLYRET",
+                "returnSourceName": "近1年回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000004035",
+                "returnName": "市场综合3年评级",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "STR_ZHRANK",
+                "returnSourceName": "市场综合3年评级",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000042624",
+                "returnName": "今年以来回报排名",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "FundCategory=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "NAV_PERIODRETURNRANKING_YTD",
+                "returnSourceName": "今年以来回报排名",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040289",
+                "returnName": "近1周回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "WEEKLYRET",
+                "returnSourceName": "近1周回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040319",
+                "returnName": "今年以来回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_YTD",
+                "returnSourceName": "今年以来回报",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040320",
+                "returnName": "成立以来回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_LTD",
+                "returnSourceName": "成立以来回报",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000002477",
+                "returnName": "业绩比较基准",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BENCHMARK",
+                "returnSourceName": "业绩比较基准",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000019139",
+                "returnName": "单位净值增长率",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "DEC_DWJZRIZZZ",
+                "returnSourceName": "单位净值增长率",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "108:%:%",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040312",
+                "returnName": "近3月回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_3M",
+                "returnSourceName": "近3月回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000002918",
+              "100000000019139",
+              "100000000040289",
+              "100000000040312",
+              "100000000040313",
+              "100000000040314",
+              "100000000040319",
+              "100000000042624",
+              "100000000004035",
+              "100000000040320",
+              "100000000002477"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华夏国证半导体芯片ETF(159995.SZ)的单位净值、单位净值增长率等",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=159995.SZ&indId=100000000002918|267:2026-09-01,100000000019139|121:2026-08-31,100000000040289|594:2|267:2026-09-01,100000000040312|594:2|267:2026-09-01,100000000040313|594:2|267:2026-09-01,100000000040314|267:2026-09-01,100000000040319|594:2|267:2026-09-01,100000000042624|601:1|121:2026-09-01,100000000004035|119:2026-09-01,100000000040320|594:2|267:2026-09-01,100000000002477|119:2026-09-01,100000000002918|267:2026-08-31,100000000040289|594:2|267:2026-08-31,100000000040312|594:2|267:2026-08-31,100000000040313|594:2|267:2026-08-31,100000000040314|267:2026-08-31,100000000040319|594:2|267:2026-08-31,100000000042624|601:1|121:2026-08-31,100000000004035|119:2026-08-31,100000000040320|594:2|267:2026-08-31,100000000002477|119:2026-08-31",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1002095264",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+              "shortName": "华夏国证半导体芯片ETF",
+              "matchWord": "芯片ETF",
+              "secuCode": "159995",
+              "market": "0",
+              "marketChar": ".SZ",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1002095264",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+                "shortName": "华夏国证半导体芯片ETF",
+                "matchWord": "芯片ETF",
+                "secuCode": "159995",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "512480.SH",
+            "entityName": "国联安半导体ETF(512480.SH)",
+            "table": {
+              "100000000002918": [
+                "1.058元",
+                "1.058元"
+              ],
+              "100000000019139": [
+                "-",
+                "1.917%"
+              ],
+              "100000000040289": [
+                "4.7529",
+                "4.7529"
+              ],
+              "100000000040312": [
+                "-2.259",
+                "-2.259"
+              ],
+              "100000000040313": [
+                "25.5295",
+                "25.5295"
+              ],
+              "100000000040314": [
+                "53.6864",
+                "53.6864"
+              ],
+              "100000000040319": [
+                "44.59",
+                "44.59"
+              ],
+              "100000000042624": [
+                "158/5822",
+                "158/5822"
+              ],
+              "100000000004035": [
+                "★★★",
+                "★★★"
+              ],
+              "100000000040320": [
+                "323.2",
+                "323.2"
+              ],
+              "100000000002477": [
+                "中证全指半导体产品与设备指数收益率",
+                "中证全指半导体产品与设备指数收益率"
+              ],
+              "headName": [
+                "2026-09-01",
+                "2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "100000000002918": [
+                "1.0579",
+                "1.0579"
+              ],
+              "100000000019139": [
+                "-",
+                "1.917148362235067"
+              ],
+              "100000000040289": [
+                "4.7529",
+                "4.7529"
+              ],
+              "100000000040312": [
+                "-2.259",
+                "-2.259"
+              ],
+              "100000000040313": [
+                "25.5295",
+                "25.5295"
+              ],
+              "100000000040314": [
+                "53.6864",
+                "53.6864"
+              ],
+              "100000000040319": [
+                "44.591",
+                "44.591"
+              ],
+              "100000000042624": [
+                "158/5822",
+                "158/5822"
+              ],
+              "100000000004035": [
+                "★★★",
+                "★★★"
+              ],
+              "100000000040320": [
+                "323.16",
+                "323.16"
+              ],
+              "100000000002477": [
+                "中证全指半导体产品与设备指数收益率",
+                "中证全指半导体产品与设备指数收益率"
+              ],
+              "headName": [
+                "2026-09-01",
+                "2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000002918": "单位净值",
+              "headNameSub": "数据来源",
+              "100000000019139": "单位净值增长率",
+              "100000000040289": "近1周回报",
+              "100000000040312": "近3月回报",
+              "100000000040313": "近6月回报",
+              "100000000040314": "近1年回报",
+              "100000000040319": "今年以来回报",
+              "100000000042624": "今年以来回报排名",
+              "100000000004035": "市场综合3年评级",
+              "100000000040320": "成立以来回报",
+              "100000000002477": "业绩比较基准"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000002918",
+              "returnName": "单位净值",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "PERNAV",
+              "returnSourceName": "单位净值",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "元",
+              "unitDesc": "10104:元:元",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "512480.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000002918",
+                "returnName": "单位净值",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "PERNAV",
+                "returnSourceName": "单位净值",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "元",
+                "unitDesc": "10104:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040313",
+                "returnName": "近6月回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_6M",
+                "returnSourceName": "近6月回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040314",
+                "returnName": "近1年回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "YEARLYRET",
+                "returnSourceName": "近1年回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000004035",
+                "returnName": "市场综合3年评级",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "STR_ZHRANK",
+                "returnSourceName": "市场综合3年评级",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000042624",
+                "returnName": "今年以来回报排名",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "FundCategory=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "NAV_PERIODRETURNRANKING_YTD",
+                "returnSourceName": "今年以来回报排名",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040289",
+                "returnName": "近1周回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "WEEKLYRET",
+                "returnSourceName": "近1周回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040319",
+                "returnName": "今年以来回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_YTD",
+                "returnSourceName": "今年以来回报",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040320",
+                "returnName": "成立以来回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_LTD",
+                "returnSourceName": "成立以来回报",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000002477",
+                "returnName": "业绩比较基准",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BENCHMARK",
+                "returnSourceName": "业绩比较基准",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000019139",
+                "returnName": "单位净值增长率",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "DEC_DWJZRIZZZ",
+                "returnSourceName": "单位净值增长率",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "108:%:%",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040312",
+                "returnName": "近3月回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_3M",
+                "returnSourceName": "近3月回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000002918",
+              "100000000019139",
+              "100000000040289",
+              "100000000040312",
+              "100000000040313",
+              "100000000040314",
+              "100000000040319",
+              "100000000042624",
+              "100000000004035",
+              "100000000040320",
+              "100000000002477"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "国联安半导体ETF(512480.SH)的单位净值、单位净值增长率等",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=512480.SH&indId=100000000002918|267:2026-09-01,100000000019139|121:2026-08-31,100000000040289|594:2|267:2026-09-01,100000000040312|594:2|267:2026-09-01,100000000040313|594:2|267:2026-09-01,100000000040314|267:2026-09-01,100000000040319|594:2|267:2026-09-01,100000000042624|601:1|121:2026-09-01,100000000004035|119:2026-09-01,100000000040320|594:2|267:2026-09-01,100000000002477|119:2026-09-01,100000000002918|267:2026-08-31,100000000040289|594:2|267:2026-08-31,100000000040312|594:2|267:2026-08-31,100000000040313|594:2|267:2026-08-31,100000000040314|267:2026-08-31,100000000040319|594:2|267:2026-08-31,100000000042624|601:1|121:2026-08-31,100000000004035|119:2026-08-31,100000000040320|594:2|267:2026-08-31,100000000002477|119:2026-08-31",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1001828794",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+              "shortName": "国联安半导体ETF",
+              "matchWord": "512480",
+              "secuCode": "512480",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1001828794",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+                "shortName": "国联安半导体ETF",
+                "matchWord": "512480",
+                "secuCode": "512480",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "159995.SZ",
+            "entityName": "华夏国证半导体芯片ETF(159995.SZ)",
+            "table": {
+              "100000000003102": [
+                "6.949%",
+                "6.949%"
+              ],
+              "100000000040193": [
+                "2134/5186",
+                "1836/5178"
+              ],
+              "headName": [
+                "2026-06-03至2026-09-01",
+                "2026-06-02至2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "100000000003102": [
+                "6.94941015247101400",
+                "6.94941015247101400"
+              ],
+              "100000000040193": [
+                "2134/5186",
+                "1836/5178"
+              ],
+              "headName": [
+                "2026-06-03至2026-09-01",
+                "2026-06-02至2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000003102": "年化收益率",
+              "headNameSub": "数据来源",
+              "100000000040193": "同类基金收益排名(东财基金二级分类)"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000003102",
+              "returnName": "年化收益率",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "ComputingCycle=2,CalcType=1",
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "DEC_YEARSYL",
+              "returnSourceName": "年化收益率",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "%",
+              "unitDesc": "10802:%:%",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "159995.SZ"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000040193",
+                "returnName": "同类基金收益排名(东财基金二级分类)",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "FundType=3",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "NEWPERIODRETURNRANKING",
+                "returnSourceName": "同类基金区间收益排名(2022)",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000003102",
+                "returnName": "年化收益率",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "ComputingCycle=2,CalcType=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "DEC_YEARSYL",
+                "returnSourceName": "年化收益率",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "10802:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000003102",
+              "100000000040193"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华夏国证半导体芯片ETF(159995.SZ)的年化收益率、同类基金收益排名(东财基金二级分类)",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=159995.SZ&indId=100000000003102|102:2026-09-01|292:2|132:1|101:2026-06-03,100000000040193|102:2026-09-01|603:3|101:2026-06-03,100000000003102|102:2026-08-31|292:2|132:1|101:2026-06-02,100000000040193|102:2026-08-31|603:3|101:2026-06-02",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1002095264",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+              "shortName": "华夏国证半导体芯片ETF",
+              "matchWord": "芯片ETF",
+              "secuCode": "159995",
+              "market": "0",
+              "marketChar": ".SZ",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1002095264",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+                "shortName": "华夏国证半导体芯片ETF",
+                "matchWord": "芯片ETF",
+                "secuCode": "159995",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-06-03至2026-09-01": true
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "512480.SH",
+            "entityName": "国联安半导体ETF(512480.SH)",
+            "table": {
+              "100000000003102": [
+                "25.26%",
+                "25.26%"
+              ],
+              "100000000040193": [
+                "856/5186",
+                "636/5178"
+              ],
+              "headName": [
+                "2026-06-03至2026-09-01",
+                "2026-06-02至2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "100000000003102": [
+                "25.2639749652737300",
+                "25.2639749652737300"
+              ],
+              "100000000040193": [
+                "856/5186",
+                "636/5178"
+              ],
+              "headName": [
+                "2026-06-03至2026-09-01",
+                "2026-06-02至2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000003102": "年化收益率",
+              "headNameSub": "数据来源",
+              "100000000040193": "同类基金收益排名(东财基金二级分类)"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000003102",
+              "returnName": "年化收益率",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "ComputingCycle=2,CalcType=1",
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "DEC_YEARSYL",
+              "returnSourceName": "年化收益率",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "%",
+              "unitDesc": "10802:%:%",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "512480.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000040193",
+                "returnName": "同类基金收益排名(东财基金二级分类)",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "FundType=3",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "NEWPERIODRETURNRANKING",
+                "returnSourceName": "同类基金区间收益排名(2022)",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000003102",
+                "returnName": "年化收益率",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "ComputingCycle=2,CalcType=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "DEC_YEARSYL",
+                "returnSourceName": "年化收益率",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "10802:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000003102",
+              "100000000040193"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "国联安半导体ETF(512480.SH)的年化收益率、同类基金收益排名(东财基金二级分类)",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=512480.SH&indId=100000000003102|102:2026-09-01|292:2|132:1|101:2026-06-03,100000000040193|102:2026-09-01|603:3|101:2026-06-03,100000000003102|102:2026-08-31|292:2|132:1|101:2026-06-02,100000000040193|102:2026-08-31|603:3|101:2026-06-02",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1001828794",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+              "shortName": "国联安半导体ETF",
+              "matchWord": "512480",
+              "secuCode": "512480",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1001828794",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+                "shortName": "国联安半导体ETF",
+                "matchWord": "512480",
+                "secuCode": "512480",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-06-03至2026-09-01": true
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "159995.SZ",
+            "entityName": "区间业绩比较基准增长率(基准指数)",
+            "table": {
+              "华夏国证半导体芯片ETF(159995.SZ)": [
+                "1.503"
+              ],
+              "国联安半导体ETF(512480.SH)": [
+                "1.935"
+              ],
+              "headName": [
+                "2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "华夏国证半导体芯片ETF(159995.SZ)": [
+                "1.50286780929"
+              ],
+              "国联安半导体ETF(512480.SH)": [
+                "1.934779804979"
+              ],
+              "headName": [
+                "2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000040726": "区间业绩比较基准增长率(基准指数)",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000040726",
+              "returnName": "区间业绩比较基准增长率(基准指数)",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "BENCHINDEXRETURN",
+              "returnSourceName": "区间业绩比较基准增长率(基准指数)",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "华夏国证半导体芯片ETF(159995.SZ)": {
+                "entityId": "1002095264",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+                "shortName": "华夏国证半导体芯片ETF",
+                "matchWord": "芯片ETF",
+                "secuCode": "159995",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "国联安半导体ETF(512480.SH)": {
+                "entityId": "1001828794",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+                "shortName": "国联安半导体ETF",
+                "matchWord": "512480",
+                "secuCode": "512480",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "159995.SZ",
+              "512480.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000040726",
+                "returnName": "区间业绩比较基准增长率(基准指数)",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BENCHINDEXRETURN",
+                "returnSourceName": "区间业绩比较基准增长率(基准指数)",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "华夏国证半导体芯片ETF(159995.SZ)",
+              "国联安半导体ETF(512480.SH)"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华夏国证半导体芯片ETF(159995.SZ)等的区间业绩比较基准增长率(基准指数)",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "EntityLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=159995.SZ,512480.SH&indId=100000000040726|102:2026-08-31|606:2026-08-31",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1002095264",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+              "shortName": "华夏国证半导体芯片ETF",
+              "matchWord": "芯片ETF",
+              "secuCode": "159995",
+              "market": "0",
+              "marketChar": ".SZ",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1002095264",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+                "shortName": "华夏国证半导体芯片ETF",
+                "matchWord": "芯片ETF",
+                "secuCode": "159995",
+                "market": "0",
+                "marketChar": ".SZ",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1001828794",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+                "shortName": "国联安半导体ETF",
+                "matchWord": "512480",
+                "secuCode": "512480",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-08-31": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "T_1DAY"
+          }
+        ],
+        "condition": {
+          "search_data_task_0": [
+            "华夏国证半导体芯片交易型开放式指数证券投资基金",
+            "最新价涨跌幅单位净值单位净值增长率近1周回报近3月回报近6月回报近1年回报今年以来回报今年以来回报排名年化收益率市场综合3年评级成立以来回报同类基金收益排名(东财基金二级分类)业绩比较基准区间业绩比较基准增长率(基准指数)",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_1": [
+            "华夏国证半导体芯片交易型开放式指数证券投资基金",
+            "最新价涨跌幅单位净值单位净值增长率近1周回报近3月回报近6月回报近1年回报今年以来回报今年以来回报排名年化收益率市场综合3年评级成立以来回报同类基金收益排名(东财基金二级分类)业绩比较基准区间业绩比较基准增长率(基准指数)",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_2": [
+            "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+            "最新价涨跌幅单位净值单位净值增长率近1周回报近3月回报近6月回报近1年回报今年以来回报今年以来回报排名年化收益率市场综合3年评级成立以来回报同类基金收益排名(东财基金二级分类)业绩比较基准区间业绩比较基准增长率(基准指数)",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_3": [
+            "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+            "最新价涨跌幅单位净值单位净值增长率近1周回报近3月回报近6月回报近1年回报今年以来回报今年以来回报排名年化收益率市场综合3年评级成立以来回报同类基金收益排名(东财基金二级分类)业绩比较基准区间业绩比较基准增长率(基准指数)",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_4": [
+            "国证半导体芯片指数",
+            "最新价涨跌幅",
+            "2026-09-01至2026-09-01"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1002095264",
+            "entityType": "FUND",
+            "entityTypeCode": "059002",
+            "entityTypeName": "开放式基金",
+            "classCode": "003002",
+            "className": "场内ETF基金（非货币/QDII）",
+            "publishCode": "",
+            "fullName": "华夏国证半导体芯片交易型开放式指数证券投资基金",
+            "shortName": "华夏国证半导体芯片ETF",
+            "matchWord": "芯片ETF",
+            "secuCode": "159995",
+            "market": "0",
+            "marketChar": ".SZ",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1001828794",
+            "entityType": "FUND",
+            "entityTypeCode": "059002",
+            "entityTypeName": "开放式基金",
+            "classCode": "003002",
+            "className": "场内ETF基金（非货币/QDII）",
+            "publishCode": "",
+            "fullName": "国联安中证全指半导体产品与设备交易型开放式指数证券投资基金",
+            "shortName": "国联安半导体ETF",
+            "matchWord": "512480",
+            "secuCode": "512480",
+            "market": "1",
+            "marketChar": ".SH",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1002077213",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006011",
+            "className": "国证指数",
+            "publishCode": "",
+            "fullName": "国证半导体芯片指数",
+            "shortName": "",
+            "matchWord": "国证半导体芯片指数",
+            "secuCode": "980017",
+            "market": "0",
+            "marketChar": ".SZ",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "2e879e812ed84ca4b5d61bcfa253f3a3"
+}

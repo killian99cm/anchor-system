@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 华安黄金ETF 518880 MA5 MA10 MA20 均线 2026-09-01
+数据文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_华安黄金ETF_518880_MA5_MA10_MA20_均线_2026-09-01.xlsx
+描述文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_华安黄金ETF_518880_MA5_MA10_MA20_均线_2026-09-01_description.txt
+数据行数: 1
+表数量: 1
+Sheet 列表: 华安黄金ETF(518880.SH)的BOLL布林线LOW、BOLL布林线UP等

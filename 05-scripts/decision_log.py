@@ -31,9 +31,13 @@ T+3 复盘规则（8/21 确立）：记录日 + 3 个自然日后到期回填，
       Anchor/06-dashboard/decision_dashboard.html（生成的仪表盘，私有）
 """
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import paths  # C1：统一路径真源
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -136,10 +140,11 @@ def _is_active(d: dict) -> bool:
     return not (d.get("superseded_by") or "superseded" in (d.get("tags") or []))
 
 
-def accuracy_report() -> dict:
-    """胜率/准确率统计：按类型 + 总览（superseded 记录不计入）"""
-    log = load_log()
-    decisions = log["decisions"]
+def accuracy_report(decisions=None) -> dict:
+    """胜率/准确率统计：按类型 + 总览（superseded 记录不计入）。
+    decisions 可注入（测试用）；默认从决策日志文件读取。"""
+    if decisions is None:
+        decisions = load_log()["decisions"]
     reviewed = [d for d in decisions if d["outcome"] and _is_active(d)]
     total = len(decisions)
 
@@ -238,7 +243,7 @@ def stopwatch() -> int:
     """止损倒计时（v3.4 B4 状态机）：读取 portfolio_data.json stop_loss_watch，按硬Deadline推送三态。
     结构: stop_loss_watch = { "半导体": {"triggered":"2026-08-19","cur_pct":-12.38,
                                         "buffers_used":2,"deadline":"2026-08-22","status":"观察中"} }"""
-    desktop_pf = Path.home() / "Desktop" / "portfolio_data.json"
+    desktop_pf = paths.DATA_PATH
     if not desktop_pf.exists():
         desktop_pf = LOG_FILE.parent / "portfolio_data.json"  # 06-dashboard 只读副本
     if not desktop_pf.exists():

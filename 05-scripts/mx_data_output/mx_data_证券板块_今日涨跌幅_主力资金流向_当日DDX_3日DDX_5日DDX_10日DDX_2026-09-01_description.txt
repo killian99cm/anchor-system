@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 证券板块 今日涨跌幅 主力资金流向 当日DDX 3日DDX 5日DDX 10日DDX 2026-09-01
+数据文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_证券板块_今日涨跌幅_主力资金流向_当日DDX_3日DDX_5日DDX_10日DDX_2026-09-01.xlsx
+描述文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_证券板块_今日涨跌幅_主力资金流向_当日DDX_3日DDX_5日DDX_10日DDX_2026-09-01_description.txt
+数据行数: 3
+表数量: 3
+Sheet 列表: 证券Ⅱ(板块)当前的涨跌幅、超大单净流入资金等, 证券Ⅱ(板块)的成份区间涨跌幅(流通市值加权平均), 证券Ⅱ(板块)当前的主力流出(元)、主力流入(元)

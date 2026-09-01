@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 上证指数 科创50指数 沪深300指数 最新点位 涨跌幅 2026-09-01
+数据文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_上证指数_科创50指数_沪深300指数_最新点位_涨跌幅_2026-09-01.xlsx
+描述文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_上证指数_科创50指数_沪深300指数_最新点位_涨跌幅_2026-09-01_description.txt
+数据行数: 3
+表数量: 1
+Sheet 列表: 上证指数(000001.SH)(指数)等当前的最新价、涨跌幅

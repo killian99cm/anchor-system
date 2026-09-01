@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 纳斯达克100指数 最新点位 涨跌幅 2026-08-31
+数据文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_纳斯达克100指数_最新点位_涨跌幅_2026-08-31.xlsx
+描述文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_纳斯达克100指数_最新点位_涨跌幅_2026-08-31_description.txt
+数据行数: 1
+表数量: 1
+Sheet 列表: 纳斯达克100(NDX.GI)(指数)的涨跌幅

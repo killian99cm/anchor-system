@@ -310,6 +310,24 @@ def main():
     )
     check("核心测试通过", "ALL TESTS PASSED" in r2.stdout, f"(rc={r2.returncode})")
 
+    # 7-c2. 决策日志统计测试（C2：盈亏比/追高分母/backfilled 过滤/止损执行率）
+    print("\n[7-c2a] 决策日志测试 test_decision_log.py")
+    r_dl = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_decision_log.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    check("决策日志统计测试通过", "ALL TESTS PASSED" in r_dl.stdout, f"(rc={r_dl.returncode}) {r_dl.stderr[-200:]}")
+
+    # 7-c2. 交易前校验测试（C2/C5：契约阈值/fallback/月操作口径）
+    print("\n[7-c2b] 交易前校验测试 test_pre_trade_check.py")
+    r_pt = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_pre_trade_check.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    check("交易前校验测试通过", "ALL TESTS PASSED" in r_pt.stdout, f"(rc={r_pt.returncode}) {r_pt.stderr[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

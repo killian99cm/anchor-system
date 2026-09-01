@@ -15,13 +15,18 @@ Anchor 数据管道规范 v1.0（8/20 确立，最高优先级数据纪律）
   python data_pipeline.py --check      → 跑数据质量自检（报告生成前必跑）
 """
 import json
+import os
+import subprocess
 import sys
+import time as _time
 from pathlib import Path
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT / "05-scripts"))
+import paths  # B2：数据就绪自检需要桌面产物路径
 
 
 # ============================================================
@@ -284,6 +289,93 @@ def data_quality_check(report_text: str, holdings: list = None) -> list:
 
 
 # ============================================================
+# B2 数据就绪 6 项自检（报告生成前必跑；--check 调用）
+# ============================================================
+def _latest_mtime(directory):
+    """返回目录下最新文件的 mtime（递归），无文件/目录不存在返回 None。"""
+    dp = Path(directory)
+    files = [f for f in dp.rglob("*") if f.is_file()] if dp.exists() else []
+    if not files:
+        return None
+    return max(f.stat().st_mtime for f in files)
+
+
+def artifact_readiness_check():
+    """报告生成前数据就绪 6 项自检。返回 (issues, warns)：
+    issues=硬问题（产物缺失/损坏/逾期未复盘），应阻断；warns=陈旧提示，不阻断。"""
+    issues, warns = [], []
+
+    # 1) 源 JSON：存在 / 可解析 / total 正 / 有日期
+    data = None
+    if not paths.DATA_PATH.exists():
+        issues.append(f"[1·JSON] 缺少 {paths.DATA_PATH.name}")
+    else:
+        try:
+            data = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
+            if data.get("total_assets", 0) <= 0:
+                issues.append("[1·JSON] total_assets 非正数")
+            if not (data.get("update_date") or data.get("update_time")):
+                issues.append("[1·JSON] 缺 update_date/update_time")
+        except Exception as e:
+            issues.append(f"[1·JSON] 解析失败: {e}")
+    json_mtime = paths.DATA_PATH.stat().st_mtime if paths.DATA_PATH.exists() else 0
+
+    # 2) Excel：存在 / 足够大 / 不旧于源 JSON
+    if not paths.EXCEL_PATH.exists():
+        issues.append("[2·Excel] 缺少 portfolio_holdings.xlsx（先跑 sync_all）")
+    else:
+        size = paths.EXCEL_PATH.stat().st_size
+        if size < 10000:
+            issues.append(f"[2·Excel] 文件仅 {size}B，可能生成不完整")
+        elif paths.EXCEL_PATH.stat().st_mtime < json_mtime:
+            warns.append("[2·Excel] Excel 早于源 JSON（数据更新后未重跑 sync_all）")
+
+    # 3) HTML：存在 / 含 var D 数据块 / 不旧于源 JSON
+    if not paths.HTML_PATH.exists():
+        issues.append("[3·HTML] 缺少 portfolio_analysis.html")
+    else:
+        html_text = paths.HTML_PATH.read_text(encoding="utf-8", errors="replace")
+        if len(html_text) < 20000 or "var D" not in html_text:
+            issues.append("[3·HTML] 过小或缺 var D 数据块，rebuild 可能失败")
+        elif paths.HTML_PATH.stat().st_mtime < json_mtime:
+            warns.append("[3·HTML] HTML 早于源 JSON（未重跑 rebuild/sync_all）")
+
+    # 4) 快照：存在 / 可解析 / total 与源 JSON 偏差 <100
+    if not paths.SNAPSHOT_PATH.exists():
+        issues.append("[4·快照] 缺少 portfolio_snapshot.json")
+    elif data:
+        try:
+            snap = json.loads(paths.SNAPSHOT_PATH.read_text(encoding="utf-8"))
+            if abs(snap.get("total_assets", 0) - data.get("total_assets", 0)) >= 100:
+                issues.append("[4·快照] total_assets 与源 JSON 偏差≥100（快照过期，重跑 sync_all）")
+        except Exception as e:
+            issues.append(f"[4·快照] 解析失败: {e}")
+
+    # 5) 决策日志近 3 日复盘：T+3 到期未复盘（输出含 🔴）→ 阻断
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(paths.SCRIPTS / "decision_log.py"), "--due"],
+            capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30,
+        )
+        if "🔴" in (proc.stdout or ""):
+            issues.append("[5·决策复盘] 有已到 T+3 未复盘决策（先 decision_log.py --review 再写报告）")
+    except Exception as e:
+        warns.append(f"[5·决策复盘] --due 检查异常: {e}")
+
+    # 6) mx-data 新鲜度：mx_output 最新采集 >4 自然日 → WARN；空目录 → WARN
+    latest = _latest_mtime(paths.MX_OUTPUT_DIR)
+    if latest is None:
+        warns.append(f"[6·mx-data] {paths.MX_OUTPUT_DIR.name} 目录无采集文件")
+    else:
+        age_days = (_time.time() - latest) / 86400
+        latest_str = _time.strftime("%Y-%m-%d", _time.localtime(latest))
+        if age_days > 4:
+            warns.append(f"[6·mx-data] 最新采集为 {latest_str}（{age_days:.1f} 天前），行情可能陈旧")
+
+    return issues, warns
+
+
+# ============================================================
 # 主入口
 # ============================================================
 def main() -> int:
@@ -307,19 +399,40 @@ def main() -> int:
         return 0
 
     if "--check" in sys.argv:
-        # 无报告文本时，做映射完整性自检
-        issues = []
+        hard_fail = 0
+
+        # (A) 数据管道映射完整性（--map-only 时可单独跳过就绪检查）
+        map_issues = []
         for key, val in DATA_PIPELINE_MAP.items():
             for field in ("index", "market", "flow_source", "macro_driver"):
                 if not val.get(field):
-                    issues.append(f"[{key}] 缺 {field}")
-        if issues:
-            print("🔴 映射缺失：")
-            for i in issues:
+                    map_issues.append(f"[{key}] 缺 {field}")
+        if map_issues:
+            print("🔴 数据管道映射缺失：")
+            for i in map_issues:
                 print(" -", i)
+            hard_fail = 1
+        else:
+            print(f"✅ 数据管道映射完整：{len(DATA_PIPELINE_MAP)} 只持仓/资产全部定义资金面来源与宏观归因")
+            print("   （8/20 纪律：港股看南向、债券看中国10Y、QDII看美股净值+溢价）")
+
+        # (B) 报告前数据就绪 6 项（B2）；--map-only 仅查映射
+        if "--map-only" not in sys.argv:
+            print("\n— 数据就绪 6 项自检 —")
+            r_issues, r_warns = artifact_readiness_check()
+            for w in r_warns:
+                print("  ⚠️", w)
+            if r_issues:
+                for i in r_issues:
+                    print("  🔴", i)
+                hard_fail = 1
+            else:
+                print("  ✅ JSON / Excel / HTML / 快照 / 决策复盘 / mx-data 六项就绪")
+
+        if hard_fail:
+            print("\n🔴 --check 未通过：请先按上述 🔴 项处理（通常先跑 sync_all.py）")
             return 1
-        print(f"✅ DATA_PIPELINE_MAP 完整：{len(DATA_PIPELINE_MAP)} 只持仓/资产全部定义资金面来源与宏观归因")
-        print("   （8/20 纪律：港股看南向、债券看中国10Y、QDII看美股净值+溢价）")
+        print("\n✅ --check 全部通过")
         return 0
 
     print(__doc__)

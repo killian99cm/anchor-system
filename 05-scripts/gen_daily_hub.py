@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
 from decision_log import accuracy_report
 from data_processor import process_all  # 复用权威派生数据（四层/风险/回撤/操作），口径与主看板一致
+from freshness_watchdog import banner_html  # B3：数据陈旧页顶横幅
 
 # ============ 工具函数 ============
 def money(v, digits=0):
@@ -349,6 +350,7 @@ a{color:inherit;text-decoration:none}.app{max-width:1240px;margin:0 auto;padding
 <nav class="quicknav">
 <a href="#snapshot">今日快照</a><a href="#signals">今日信号</a><a href="#dashboards">实时仪表盘</a><a href="#events">事件日历</a><a href="#reports">报告中心</a><a href="#data">数据文件</a><a href="#tools">系统工具</a><a href="#commands">快捷口令</a>
 </nav>
+__FRESH_BANNER__
 
 <section class="kpi-grid" id="snapshot">__KPIS__</section>
 
@@ -401,6 +403,7 @@ def render_html(data, rep):
     """组装：process_all 权威派生 → 构建各片段 → 模板占位符替换"""
     processed = process_all(data)
     fragments = {
+        "__FRESH_BANNER__": banner_html(data),  # B3：fresh 时为空串
         "__KPIS__": build_kpis(processed, data, rep),
         "__STRIPS__": build_strips(processed),
         "__SIGNALS__": build_signals(processed, data, rep),

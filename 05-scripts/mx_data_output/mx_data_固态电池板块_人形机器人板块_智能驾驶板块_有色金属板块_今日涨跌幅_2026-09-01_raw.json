@@ -1,0 +1,824 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "e8342c9b-cd97-4909-99cc-08fd79c6196b",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "3667fe62-2de5-498e-8124-7df960981457",
+        "dataTableDTOList": [
+          {
+            "code": "90.BK0968",
+            "entityName": "2026-08-31",
+            "table": {
+              "100000000015695": [
+                "-0.2141%",
+                "-",
+                "1.747%",
+                "-",
+                "1.057%",
+                "-1.285%"
+              ],
+              "100000000006368": [
+                "-",
+                "-0.2852%",
+                "-",
+                "1.689%",
+                "-",
+                "-"
+              ],
+              "headName": [
+                "固态电池(板块)",
+                "固态电池(指数)",
+                "人形机器人(板块)",
+                "人形机器人(指数)",
+                "智能驾驶(板块)",
+                "有色金属(板块)"
+              ]
+            },
+            "rawTable": {
+              "100000000015695": [
+                "-0.214059",
+                "-",
+                "1.747188",
+                "-",
+                "1.056798",
+                "-1.284778"
+              ],
+              "100000000006368": [
+                "-",
+                "-0.285168143196",
+                "-",
+                "1.689301503374",
+                "-",
+                "-"
+              ],
+              "headName": [
+                "固态电池(板块)",
+                "固态电池(指数)",
+                "人形机器人(板块)",
+                "人形机器人(指数)",
+                "智能驾驶(板块)",
+                "有色金属(板块)"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000015695": "成份区间涨跌幅(流通市值加权平均)",
+              "headNameSub": "数据来源",
+              "securityName": "股票名称",
+              "100000000006368": "区间涨跌幅"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000015695",
+              "returnName": "成份区间涨跌幅(流通市值加权平均)",
+              "classCode": "007109",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "IsHistory=0",
+              "quantType": "9",
+              "isGroup": false,
+              "returnSourceCode": "CVCHG",
+              "returnSourceName": "成份区间涨跌幅(流通市值加权平均)",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "%",
+              "unitDesc": "108:%:%",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "固态电池(板块)": {
+                "entityId": "BK0968",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "固态电池",
+                "shortName": "",
+                "matchWord": "固态电池",
+                "secuCode": "BK0968",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "固态电池(指数)": {
+                "entityId": "1002478635",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "固态电池",
+                "shortName": "",
+                "secuCode": "861361",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "人形机器人(板块)": {
+                "entityId": "BK1184",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "人形机器人",
+                "shortName": "",
+                "matchWord": "人形机器人",
+                "secuCode": "BK1184",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "人形机器人(指数)": {
+                "entityId": "1004040558",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "人形机器人",
+                "shortName": "",
+                "secuCode": "861546",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "智能驾驶(板块)": {
+                "entityId": "BK0802",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "智能驾驶",
+                "shortName": "",
+                "matchWord": "智能驾驶",
+                "secuCode": "BK0802",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "有色金属(板块)": {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "90.BK0968",
+              "861361.EI",
+              "90.BK1184",
+              "861546.EI",
+              "90.BK0802",
+              "90.BK0478"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000006368",
+                "returnName": "区间涨跌幅",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "PCTCHANGE",
+                "returnSourceName": "区间涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "108:%:%",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000015695",
+                "returnName": "成份区间涨跌幅(流通市值加权平均)",
+                "classCode": "007109",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsHistory=0",
+                "quantType": "9",
+                "isGroup": false,
+                "returnSourceCode": "CVCHG",
+                "returnSourceName": "成份区间涨跌幅(流通市值加权平均)",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "108:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000015695",
+              "100000000006368"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "固态电池(板块)等的成份区间涨跌幅(流通市值加权平均)、区间涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftEntityTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=BLOCK&code=007361,007546,007197,90.BK0478&indId=100000000015695|102:2026-08-31|283:2026-08-31",
+                "typeName": "数据浏览器"
+              },
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=INDEX&code=861361.EI,861546.EI&indId=100000000006368|102:2026-08-31|101:2026-08-31",
+                "typeName": "数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "BK0968",
+              "entityType": "BLOCK",
+              "entityTypeCode": "BLOCK",
+              "entityTypeName": "概念板块",
+              "classCode": "005003",
+              "className": "概念板块",
+              "publishCode": "",
+              "fullName": "固态电池",
+              "shortName": "",
+              "matchWord": "固态电池",
+              "secuCode": "BK0968",
+              "market": "90",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "BK0968",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "固态电池",
+                "shortName": "",
+                "matchWord": "固态电池",
+                "secuCode": "BK0968",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1002478635",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "固态电池",
+                "shortName": "",
+                "secuCode": "861361",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "BK1184",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "人形机器人",
+                "shortName": "",
+                "matchWord": "人形机器人",
+                "secuCode": "BK1184",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1004040558",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "人形机器人",
+                "shortName": "",
+                "secuCode": "861546",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "BK0802",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "智能驾驶",
+                "shortName": "",
+                "matchWord": "智能驾驶",
+                "secuCode": "BK0802",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-08-31": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "T_1DAY"
+          },
+          {
+            "code": "861361.EI",
+            "entityName": "涨跌幅",
+            "table": {
+              "固态电池(指数)": [
+                "-1.61%"
+              ],
+              "人形机器人(指数)": [
+                "-1.33%"
+              ],
+              "有色金属(板块)": [
+                "-0.98%"
+              ],
+              "headName": [
+                "2026-09-01 14:49"
+              ]
+            },
+            "rawTable": {
+              "固态电池(指数)": [
+                "-1.61"
+              ],
+              "人形机器人(指数)": [
+                "-1.33"
+              ],
+              "有色金属(板块)": [
+                "-0.98"
+              ],
+              "headName": [
+                "2026-09-01 14:49"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZDF_f3_3": "涨跌幅",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZDF_f3_3",
+              "returnName": "涨跌幅",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f3",
+              "returnSourceName": "涨跌幅",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "2",
+              "unitName": "%",
+              "unitDesc": "901:%:%",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "固态电池(指数)": {
+                "entityId": "1002478635",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "固态电池",
+                "shortName": "",
+                "secuCode": "861361",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "人形机器人(指数)": {
+                "entityId": "1004040558",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "人形机器人",
+                "shortName": "",
+                "secuCode": "861546",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "有色金属(板块)": {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "861361.EI",
+              "861546.EI",
+              "90.BK0478"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZDF_f3_3",
+                "returnName": "涨跌幅",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f3",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "%",
+                "unitDesc": "901:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "固态电池(指数)",
+              "人形机器人(指数)",
+              "有色金属(板块)"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "固态电池(指数)等当前的涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "EntityLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1002478635",
+              "entityType": "INDEX",
+              "entityTypeCode": "DC_CONCEPT",
+              "entityTypeName": "东财概念指数",
+              "classCode": "006007",
+              "className": "DC_CONCEPT_INDEX",
+              "fullName": "固态电池",
+              "shortName": "",
+              "secuCode": "861361",
+              "marketChar": ".EI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": true
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1002478635",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "固态电池",
+                "shortName": "",
+                "secuCode": "861361",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "1004040558",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "人形机器人",
+                "shortName": "",
+                "secuCode": "861546",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01 14:49": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          }
+        ],
+        "condition": {
+          "search_data_task_1": [
+            "固态电池固态电池",
+            "成份区间涨跌幅(流通市值加权平均)涨跌幅区间涨跌幅",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_3": [
+            "人形机器人人形机器人",
+            "成份区间涨跌幅(流通市值加权平均)涨跌幅区间涨跌幅",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_0": [
+            "智能驾驶",
+            "成份区间涨跌幅(流通市值加权平均)",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_2": [
+            "有色金属",
+            "涨跌幅成份区间涨跌幅(流通市值加权平均)",
+            "2026-09-01至2026-09-01"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "BK0968",
+            "entityType": "BLOCK",
+            "entityTypeCode": "BLOCK",
+            "entityTypeName": "概念板块",
+            "classCode": "005003",
+            "className": "概念板块",
+            "publishCode": "",
+            "fullName": "固态电池",
+            "shortName": "",
+            "matchWord": "固态电池",
+            "secuCode": "BK0968",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1002478635",
+            "entityType": "INDEX",
+            "entityTypeCode": "DC_CONCEPT",
+            "entityTypeName": "东财概念指数",
+            "classCode": "006007",
+            "className": "DC_CONCEPT_INDEX",
+            "fullName": "固态电池",
+            "shortName": "",
+            "secuCode": "861361",
+            "marketChar": ".EI",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": true
+          },
+          {
+            "entityId": "BK1184",
+            "entityType": "BLOCK",
+            "entityTypeCode": "BLOCK",
+            "entityTypeName": "概念板块",
+            "classCode": "005003",
+            "className": "概念板块",
+            "publishCode": "",
+            "fullName": "人形机器人",
+            "shortName": "",
+            "matchWord": "人形机器人",
+            "secuCode": "BK1184",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1004040558",
+            "entityType": "INDEX",
+            "entityTypeCode": "DC_CONCEPT",
+            "entityTypeName": "东财概念指数",
+            "classCode": "006007",
+            "className": "DC_CONCEPT_INDEX",
+            "fullName": "人形机器人",
+            "shortName": "",
+            "secuCode": "861546",
+            "marketChar": ".EI",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": true
+          },
+          {
+            "entityId": "BK0802",
+            "entityType": "BLOCK",
+            "entityTypeCode": "BLOCK",
+            "entityTypeName": "概念板块",
+            "classCode": "005003",
+            "className": "概念板块",
+            "publishCode": "",
+            "fullName": "智能驾驶",
+            "shortName": "",
+            "matchWord": "智能驾驶",
+            "secuCode": "BK0802",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "BK0478",
+            "entityType": "BLOCK",
+            "entityTypeCode": "2",
+            "entityTypeName": "财富通行业板块1级",
+            "classCode": "005002",
+            "className": "行业板块",
+            "publishCode": "",
+            "fullName": "有色金属",
+            "shortName": "",
+            "secuCode": "BK0478",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "e1bde58f52d141ee9b98033e4953b776"
+}

@@ -1,0 +1,213 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "8e530a30-8cf2-45a2-83e0-d6d15cd3c905",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "3a52faab-0127-405d-800c-3fcc5b2e35d6",
+        "dataTableDTOList": [
+          {
+            "code": "NDX.GI",
+            "entityName": "纳斯达克100(NDX.GI)(指数)",
+            "table": {
+              "326865": [
+                "0.07998%"
+              ],
+              "headName": [
+                "2026-08-31(日)"
+              ]
+            },
+            "rawTable": {
+              "326865": [
+                "0.0799770872779722700"
+              ],
+              "headName": [
+                "2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "326865": "涨跌幅",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "326865",
+              "returnName": "涨跌幅",
+              "classCode": "007121",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-08-31 00:00:00",
+              "endDate": "2026-08-31 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "AdjustFlag=1,CurType=3,Period=1",
+              "isGroup": false,
+              "returnSourceCode": "PCTCHANGE",
+              "returnSourceName": "涨跌幅",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "20",
+              "unitName": "100%",
+              "unitDesc": "100%",
+              "dcsdField": true
+            },
+            "entityName2TagMap": {},
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "326865",
+                "returnName": "涨跌幅",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-08-31 00:00:00",
+                "endDate": "2026-08-31 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=3,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "PCTCHANGE",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "20",
+                "unitName": "100%",
+                "unitDesc": "100%",
+                "dcsdField": true
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "326865"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "纳斯达克100(NDX.GI)(指数)的涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=INDEX&code=NDX.GI&indId=100000000006180|121:2026-08-31",
+                "typeName": "指数数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000386329",
+              "entityType": "INDEX",
+              "entityTypeCode": "INDEX",
+              "entityTypeName": "INDEX",
+              "classCode": "006002",
+              "className": "全球指数",
+              "publishCode": "",
+              "fullName": "纳斯达克100指数",
+              "shortName": "",
+              "matchWord": "纳斯达克100指数",
+              "secuCode": "NDX",
+              "market": "100",
+              "marketChar": ".GI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000386329",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "纳斯达克100指数",
+                "shortName": "",
+                "matchWord": "纳斯达克100指数",
+                "secuCode": "NDX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-08-31": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          }
+        ],
+        "condition": {
+          "search_data_task_0": [
+            "纳斯达克100指数",
+            "涨跌幅",
+            "2026-08-31至2026-08-31"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1000386329",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006002",
+            "className": "全球指数",
+            "publishCode": "",
+            "fullName": "纳斯达克100指数",
+            "shortName": "",
+            "matchWord": "纳斯达克100指数",
+            "secuCode": "NDX",
+            "market": "100",
+            "marketChar": ".GI",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "5c22f1b0429f4f3295a0007273a5c760"
+}

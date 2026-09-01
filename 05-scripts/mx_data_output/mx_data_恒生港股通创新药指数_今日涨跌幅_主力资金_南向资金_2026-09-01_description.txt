@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 恒生港股通创新药指数 今日涨跌幅 主力资金 南向资金 2026-09-01
+数据文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_恒生港股通创新药指数_今日涨跌幅_主力资金_南向资金_2026-09-01.xlsx
+描述文件路径: C:\Users\lenovo\Desktop\Anchor\05-scripts\mx_data_output\mx_data_恒生港股通创新药指数_今日涨跌幅_主力资金_南向资金_2026-09-01_description.txt
+数据行数: 1
+表数量: 1
+Sheet 列表: 恒生港股通创新药指数(HSSCID.HI)(指数)当前的涨跌幅

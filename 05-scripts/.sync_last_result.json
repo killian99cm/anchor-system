@@ -1,0 +1,54 @@
+{
+  "time": "2026-09-01 15:06:14",
+  "success": false,
+  "failed_steps": [
+    "3.Excel十表生成"
+  ],
+  "steps": [
+    {
+      "step": "1.复制JSON到06-dashboard",
+      "ok": true,
+      "fatal": true
+    },
+    {
+      "step": "2.rebuild主看板重建",
+      "ok": true,
+      "fatal": true
+    },
+    {
+      "step": "3.Excel十表生成",
+      "ok": false,
+      "fatal": false
+    },
+    {
+      "step": "4.anchor-pro公开页",
+      "ok": true,
+      "fatal": false
+    },
+    {
+      "step": "5.决策日志四合一",
+      "ok": true,
+      "fatal": false
+    },
+    {
+      "step": "6.当日指挥中心daily_hub",
+      "ok": true,
+      "fatal": false
+    },
+    {
+      "step": "7.版本一致性自检",
+      "ok": true,
+      "fatal": true
+    },
+    {
+      "step": "8.每日持仓快照",
+      "ok": true,
+      "fatal": false
+    },
+    {
+      "step": "9.实时分发relay",
+      "ok": true,
+      "fatal": false
+    }
+  ]
+}

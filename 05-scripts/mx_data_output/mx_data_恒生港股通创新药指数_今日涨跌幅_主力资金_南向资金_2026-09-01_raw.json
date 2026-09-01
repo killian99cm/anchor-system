@@ -1,0 +1,215 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "a2d4b412-07cc-4248-a44d-d3385e49052a",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "3c8836ea-deb0-4a75-a374-bb25c522a432",
+        "dataTableDTOList": [
+          {
+            "code": "HSSCID.HI",
+            "entityName": "恒生港股通创新药指数(HSSCID.HI)(指数)",
+            "table": {
+              "ZDF_f3_3": [
+                "-1.33%"
+              ],
+              "headName": [
+                "2026-09-01 14:48"
+              ]
+            },
+            "rawTable": {
+              "ZDF_f3_3": [
+                "-1.33"
+              ],
+              "headName": [
+                "2026-09-01 14:48"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZDF_f3_3": "涨跌幅",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZDF_f3_3",
+              "returnName": "涨跌幅",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f3",
+              "returnSourceName": "涨跌幅",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "2",
+              "unitName": "%",
+              "unitDesc": "901:%:%",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZDF_f3_3",
+                "returnName": "涨跌幅",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f3",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "%",
+                "unitDesc": "901:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "ZDF_f3_3"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "恒生港股通创新药指数(HSSCID.HI)(指数)当前的涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1003526080",
+              "entityType": "INDEX",
+              "entityTypeCode": "INDEX",
+              "entityTypeName": "INDEX",
+              "classCode": "006009",
+              "className": "港股恒生指数",
+              "publishCode": "",
+              "fullName": "恒生港股通创新药指数",
+              "shortName": "",
+              "matchWord": "恒生港股通创新药指数",
+              "secuCode": "HSSCID",
+              "market": "124",
+              "marketChar": ".HI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1003526080",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006009",
+                "className": "港股恒生指数",
+                "publishCode": "",
+                "fullName": "恒生港股通创新药指数",
+                "shortName": "",
+                "matchWord": "恒生港股通创新药指数",
+                "secuCode": "HSSCID",
+                "market": "124",
+                "marketChar": ".HI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01 14:48": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          }
+        ],
+        "condition": {
+          "search_data_task_0": [
+            "恒生港股通创新药指数",
+            "涨跌幅",
+            "2026-09-01至2026-09-01"
+          ],
+          "search_data_task_1": [
+            "恒生港股通创新药指数",
+            "涨跌幅",
+            "2026-09-01至2026-09-01"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1003526080",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006009",
+            "className": "港股恒生指数",
+            "publishCode": "",
+            "fullName": "恒生港股通创新药指数",
+            "shortName": "",
+            "matchWord": "恒生港股通创新药指数",
+            "secuCode": "HSSCID",
+            "market": "124",
+            "marketChar": ".HI",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "e7522091796445f88545f0bfa7213f8c"
+}

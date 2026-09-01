@@ -1,0 +1,1850 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "41677527-de45-419f-b749-7bf299a053f3",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "b4c99be8-66c7-4099-9b18-5d4f0bcf449e",
+        "dataTableDTOList": [
+          {
+            "code": "518880.SH",
+            "entityName": "华安黄金ETF(518880.SH)",
+            "hsjDelay": false,
+            "table": {
+              "ZXJ_f2_3": [
+                "9.118"
+              ],
+              "ZDF_f3_3": [
+                "-0.19%"
+              ],
+              "CDDJE_f66_3": [
+                "5557万元"
+              ],
+              "CDDLC_f65_3": [
+                "10.19亿元"
+              ],
+              "CDDLR_f64_3": [
+                "10.74亿元"
+              ],
+              "DDJE_f72_3": [
+                "-2.814亿元"
+              ],
+              "DDLC_f71_3": [
+                "19.52亿元"
+              ],
+              "DDLR_f70_3": [
+                "16.7亿元"
+              ],
+              "ZDJE_f78_3": [
+                "1.558亿元"
+              ],
+              "ZDLC_f77_3": [
+                "6.086亿元"
+              ],
+              "ZDLR_f76_3": [
+                "7.644亿元"
+              ],
+              "XDJE_f84_3": [
+                "7002万元"
+              ],
+              "XDLC_f83_3": [
+                "3.192亿元"
+              ],
+              "XDLR_f82_3": [
+                "3.892亿元"
+              ],
+              "ZLJE_f62_3": [
+                "-2.258亿元"
+              ],
+              "DRDDX_f88_3": [
+                "-0.212"
+              ],
+              "DRDDY_f89_3": [
+                "0.036"
+              ],
+              "DRDDZ_f90_3": [
+                "-3.05"
+              ],
+              "3RDDX_f396_3": [
+                "-1.25"
+              ],
+              "3RDDY_f397_3": [
+                "-2.005"
+              ],
+              "5RDDX_f91_3": [
+                "-1.685"
+              ],
+              "5RDDY_f92_3": [
+                "-2.709"
+              ],
+              "10RDDX_f94_3": [
+                "-2.369"
+              ],
+              "10RDDY_f95_3": [
+                "-3.366"
+              ],
+              "headName": [
+                "2026-09-01 14:48"
+              ]
+            },
+            "rawTable": {
+              "ZXJ_f2_3": [
+                "9.118"
+              ],
+              "ZDF_f3_3": [
+                "-0.19"
+              ],
+              "CDDJE_f66_3": [
+                "55571248.00"
+              ],
+              "CDDLC_f65_3": [
+                "1018893504.00"
+              ],
+              "CDDLR_f64_3": [
+                "1074464752.00"
+              ],
+              "DDJE_f72_3": [
+                "-281395984.00"
+              ],
+              "DDLC_f71_3": [
+                "1951508864.00"
+              ],
+              "DDLR_f70_3": [
+                "1670112880.00"
+              ],
+              "ZDJE_f78_3": [
+                "155775360.00"
+              ],
+              "ZDLC_f77_3": [
+                "608604144.00"
+              ],
+              "ZDLR_f76_3": [
+                "764379504.00"
+              ],
+              "XDJE_f84_3": [
+                "70022000.00"
+              ],
+              "XDLC_f83_3": [
+                "319190768.00"
+              ],
+              "XDLR_f82_3": [
+                "389212768.00"
+              ],
+              "ZLJE_f62_3": [
+                "-225824736.00"
+              ],
+              "DRDDX_f88_3": [
+                "-0.212"
+              ],
+              "DRDDY_f89_3": [
+                "0.036"
+              ],
+              "DRDDZ_f90_3": [
+                "-3.05"
+              ],
+              "3RDDX_f396_3": [
+                "-1.25"
+              ],
+              "3RDDY_f397_3": [
+                "-2.005"
+              ],
+              "5RDDX_f91_3": [
+                "-1.685"
+              ],
+              "5RDDY_f92_3": [
+                "-2.709"
+              ],
+              "10RDDX_f94_3": [
+                "-2.369"
+              ],
+              "10RDDY_f95_3": [
+                "-3.366"
+              ],
+              "headName": [
+                "2026-09-01 14:48"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZXJ_f2_3": "最新价",
+              "headNameSub": "数据来源",
+              "ZDF_f3_3": "涨跌幅",
+              "CDDJE_f66_3": "超大单净流入资金",
+              "CDDLC_f65_3": "超大单流出资金",
+              "CDDLR_f64_3": "超大单流入资金",
+              "DDJE_f72_3": "大单净流入资金",
+              "DDLC_f71_3": "大单流出",
+              "DDLR_f70_3": "大单流入",
+              "ZDJE_f78_3": "中单净流入资金",
+              "ZDLC_f77_3": "中单流出",
+              "ZDLR_f76_3": "中单流入",
+              "XDJE_f84_3": "小单净流入资金",
+              "XDLC_f83_3": "小单流出",
+              "XDLR_f82_3": "小单流入",
+              "ZLJE_f62_3": "主力净流入资金",
+              "DRDDX_f88_3": "当日DDX",
+              "DRDDY_f89_3": "当日DDY",
+              "DRDDZ_f90_3": "当日DDZ",
+              "3RDDX_f396_3": "3日DDX",
+              "3RDDY_f397_3": "3日DDY",
+              "5RDDX_f91_3": "5日DDX",
+              "5RDDY_f92_3": "5日DDY",
+              "10RDDX_f94_3": "10日DDX",
+              "10RDDY_f95_3": "10日DDY"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZXJ_f2_3",
+              "returnName": "最新价",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f2",
+              "returnSourceName": "最新价",
+              "graph": "2",
+              "unit": "0",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "518880.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZXJ_f2_3",
+                "returnName": "最新价",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f2",
+                "returnSourceName": "最新价",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "CDDLC_f65_3",
+                "returnName": "超大单流出资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f65",
+                "returnSourceName": "超大单流出",
+                "graph": "0",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "CDDLR_f64_3",
+                "returnName": "超大单流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f64",
+                "returnSourceName": "超大单流入",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "10RDDY_f95_3",
+                "returnName": "10日DDY",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f95",
+                "returnSourceName": "10日DDY",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "CDDJE_f66_3",
+                "returnName": "超大单净流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f66",
+                "returnSourceName": "超大单净额",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "XDJE_f84_3",
+                "returnName": "小单净流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f84",
+                "returnSourceName": "小单净额",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "3RDDY_f397_3",
+                "returnName": "3日DDY",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f397",
+                "returnSourceName": "3日DDY",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDLC_f77_3",
+                "returnName": "中单流出",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f77",
+                "returnSourceName": "中单流出",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "XDLC_f83_3",
+                "returnName": "小单流出",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f83",
+                "returnSourceName": "小单流出",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DDLC_f71_3",
+                "returnName": "大单流出",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f71",
+                "returnSourceName": "大单流出",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "5RDDY_f92_3",
+                "returnName": "5日DDY",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f92",
+                "returnSourceName": "5日DDY",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "5RDDX_f91_3",
+                "returnName": "5日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f91",
+                "returnSourceName": "5日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "10RDDX_f94_3",
+                "returnName": "10日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f94",
+                "returnSourceName": "10日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDF_f3_3",
+                "returnName": "涨跌幅",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f3",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "%",
+                "unitDesc": "901:%:%",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DRDDX_f88_3",
+                "returnName": "当日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f88",
+                "returnSourceName": "当日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DRDDZ_f90_3",
+                "returnName": "当日DDZ",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f90",
+                "returnSourceName": "当日DDZ",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDLR_f76_3",
+                "returnName": "中单流入",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f76",
+                "returnSourceName": "中单流入",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DDJE_f72_3",
+                "returnName": "大单净流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f72",
+                "returnSourceName": "大单净额",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "XDLR_f82_3",
+                "returnName": "小单流入",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f82",
+                "returnSourceName": "小单流入",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DRDDY_f89_3",
+                "returnName": "当日DDY",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f89",
+                "returnSourceName": "当日DDY",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DDLR_f70_3",
+                "returnName": "大单流入",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f70",
+                "returnSourceName": "大单流入",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "3RDDX_f396_3",
+                "returnName": "3日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f396",
+                "returnSourceName": "3日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDJE_f78_3",
+                "returnName": "中单净流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f78",
+                "returnSourceName": "中单净额",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZLJE_f62_3",
+                "returnName": "主力净流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f62",
+                "returnSourceName": "主力净额",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "ZXJ_f2_3",
+              "ZDF_f3_3",
+              "CDDJE_f66_3",
+              "CDDLC_f65_3",
+              "CDDLR_f64_3",
+              "DDJE_f72_3",
+              "DDLC_f71_3",
+              "DDLR_f70_3",
+              "ZDJE_f78_3",
+              "ZDLC_f77_3",
+              "ZDLR_f76_3",
+              "XDJE_f84_3",
+              "XDLC_f83_3",
+              "XDLR_f82_3",
+              "ZLJE_f62_3",
+              "DRDDX_f88_3",
+              "DRDDY_f89_3",
+              "DRDDZ_f90_3",
+              "3RDDX_f396_3",
+              "3RDDY_f397_3",
+              "5RDDX_f91_3",
+              "5RDDY_f92_3",
+              "10RDDX_f94_3",
+              "10RDDY_f95_3"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "华安黄金ETF(518880.SH)当前的最新价、涨跌幅等",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000201733",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华安易富黄金交易型开放式证券投资基金",
+              "shortName": "华安黄金易ETF",
+              "matchWord": "黄金ETF",
+              "secuCode": "518880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000201733",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华安易富黄金交易型开放式证券投资基金",
+                "shortName": "华安黄金易ETF",
+                "matchWord": "黄金ETF",
+                "secuCode": "518880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01 14:48": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          },
+          {
+            "code": "518880.SH",
+            "entityName": "华安黄金ETF(518880.SH)",
+            "hsjDelay": false,
+            "table": {
+              "ZLLCY_f136_0": [
+                "29.7亿"
+              ],
+              "ZLLRY_f135_0": [
+                "27.45亿"
+              ],
+              "headName": [
+                "2026-09-01 14:48"
+              ]
+            },
+            "rawTable": {
+              "ZLLCY_f136_0": [
+                "2970458896.00"
+              ],
+              "ZLLRY_f135_0": [
+                "2744928640.00"
+              ],
+              "headName": [
+                "2026-09-01 14:48"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZLLCY_f136_0": "主力流出(元)",
+              "headNameSub": "数据来源",
+              "ZLLRY_f135_0": "主力流入(元)"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZLLCY_f136_0",
+              "returnName": "主力流出(元)",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "0",
+              "isGroup": false,
+              "returnSourceCode": "f136",
+              "returnSourceName": "主力流出(元)",
+              "graph": "1",
+              "unit": "1",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "518880.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZLLRY_f135_0",
+                "returnName": "主力流入(元)",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "0",
+                "isGroup": false,
+                "returnSourceCode": "f135",
+                "returnSourceName": "主力流入(元)",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZLLCY_f136_0",
+                "returnName": "主力流出(元)",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "0",
+                "isGroup": false,
+                "returnSourceCode": "f136",
+                "returnSourceName": "主力流出(元)",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "ZLLCY_f136_0",
+              "ZLLRY_f135_0"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "华安黄金ETF(518880.SH)当前的主力流出(元)、主力流入(元)",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000201733",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华安易富黄金交易型开放式证券投资基金",
+              "shortName": "华安黄金易ETF",
+              "matchWord": "黄金ETF",
+              "secuCode": "518880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000201733",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华安易富黄金交易型开放式证券投资基金",
+                "shortName": "华安黄金易ETF",
+                "matchWord": "黄金ETF",
+                "secuCode": "518880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01 14:48": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          },
+          {
+            "code": "518880.SH",
+            "entityName": "华安黄金ETF(518880.SH)",
+            "table": {
+              "100000000002918": [
+                "9.153元",
+                "-"
+              ],
+              "100000000019139": [
+                "-",
+                "-3.324%"
+              ],
+              "100000000040289": [
+                "-4.2152",
+                "-"
+              ],
+              "100000000040312": [
+                "-2.4876",
+                "-"
+              ],
+              "100000000040313": [
+                "-16.0997",
+                "-"
+              ],
+              "100000000040314": [
+                "22.2728",
+                "-"
+              ],
+              "100000000040319": [
+                "-1.741",
+                "-"
+              ],
+              "100000000042624": [
+                "73/101",
+                "-"
+              ],
+              "100000000040320": [
+                "245.6",
+                "-"
+              ],
+              "100000000002477": [
+                "国内黄金现货价格收益率",
+                "-"
+              ],
+              "headName": [
+                "2026-09-01",
+                "2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "100000000002918": [
+                "9.1531",
+                "-"
+              ],
+              "100000000019139": [
+                "-",
+                "-3.323897843215953"
+              ],
+              "100000000040289": [
+                "-4.2152",
+                "-"
+              ],
+              "100000000040312": [
+                "-2.4876",
+                "-"
+              ],
+              "100000000040313": [
+                "-16.0997",
+                "-"
+              ],
+              "100000000040314": [
+                "22.2728",
+                "-"
+              ],
+              "100000000040319": [
+                "-1.7412",
+                "-"
+              ],
+              "100000000042624": [
+                "73/101",
+                "-"
+              ],
+              "100000000040320": [
+                "245.633486",
+                "-"
+              ],
+              "100000000002477": [
+                "国内黄金现货价格收益率",
+                "-"
+              ],
+              "headName": [
+                "2026-09-01",
+                "2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000002918": "单位净值",
+              "headNameSub": "数据来源",
+              "100000000019139": "单位净值增长率",
+              "100000000040289": "近1周回报",
+              "100000000040312": "近3月回报",
+              "100000000040313": "近6月回报",
+              "100000000040314": "近1年回报",
+              "100000000040319": "今年以来回报",
+              "100000000042624": "今年以来回报排名",
+              "100000000040320": "成立以来回报",
+              "100000000002477": "业绩比较基准"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000002918",
+              "returnName": "单位净值",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "PERNAV",
+              "returnSourceName": "单位净值",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "元",
+              "unitDesc": "10104:元:元",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "518880.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000002918",
+                "returnName": "单位净值",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "PERNAV",
+                "returnSourceName": "单位净值",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "元",
+                "unitDesc": "10104:元:元",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040313",
+                "returnName": "近6月回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_6M",
+                "returnSourceName": "近6月回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040314",
+                "returnName": "近1年回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "YEARLYRET",
+                "returnSourceName": "近1年回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000042624",
+                "returnName": "今年以来回报排名",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "FundCategory=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "NAV_PERIODRETURNRANKING_YTD",
+                "returnSourceName": "今年以来回报排名",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040289",
+                "returnName": "近1周回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "WEEKLYRET",
+                "returnSourceName": "近1周回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040319",
+                "returnName": "今年以来回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_YTD",
+                "returnSourceName": "今年以来回报",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040320",
+                "returnName": "成立以来回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_LTD",
+                "returnSourceName": "成立以来回报",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000002477",
+                "returnName": "业绩比较基准",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BENCHMARK",
+                "returnSourceName": "业绩比较基准",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000019139",
+                "returnName": "单位净值增长率",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "DEC_DWJZRIZZZ",
+                "returnSourceName": "单位净值增长率",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "108:%:%",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000040312",
+                "returnName": "近3月回报",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsNaau=2",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "RET_3M",
+                "returnSourceName": "近3月回报",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000002918",
+              "100000000019139",
+              "100000000040289",
+              "100000000040312",
+              "100000000040313",
+              "100000000040314",
+              "100000000040319",
+              "100000000042624",
+              "100000000040320",
+              "100000000002477"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华安黄金ETF(518880.SH)的单位净值、单位净值增长率等",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=518880.SH&indId=100000000002918|267:2026-09-01,100000000019139|121:2026-08-31,100000000040289|594:2|267:2026-09-01,100000000040312|594:2|267:2026-09-01,100000000040313|594:2|267:2026-09-01,100000000040314|267:2026-09-01,100000000040319|594:2|267:2026-09-01,100000000042624|601:1|121:2026-09-01,100000000040320|594:2|267:2026-09-01,100000000002477|119:2026-09-01",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000201733",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华安易富黄金交易型开放式证券投资基金",
+              "shortName": "华安黄金易ETF",
+              "matchWord": "黄金ETF",
+              "secuCode": "518880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000201733",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华安易富黄金交易型开放式证券投资基金",
+                "shortName": "华安黄金易ETF",
+                "matchWord": "黄金ETF",
+                "secuCode": "518880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "518880.SH",
+            "entityName": "华安黄金ETF(518880.SH)",
+            "table": {
+              "100000000003102": [
+                "12.69%"
+              ],
+              "100000000040193": [
+                "29/63"
+              ],
+              "headName": [
+                "2026-06-03至2026-09-01"
+              ]
+            },
+            "rawTable": {
+              "100000000003102": [
+                "12.6856657732752800"
+              ],
+              "100000000040193": [
+                "29/63"
+              ],
+              "headName": [
+                "2026-06-03至2026-09-01"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000003102": "年化收益率",
+              "headNameSub": "数据来源",
+              "100000000040193": "同类基金收益排名(东财基金二级分类)"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000003102",
+              "returnName": "年化收益率",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "ComputingCycle=2,CalcType=1",
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "DEC_YEARSYL",
+              "returnSourceName": "年化收益率",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "unitName": "%",
+              "unitDesc": "10802:%:%",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "518880.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000040193",
+                "returnName": "同类基金收益排名(东财基金二级分类)",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "FundType=3",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "NEWPERIODRETURNRANKING",
+                "returnSourceName": "同类基金区间收益排名(2022)",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000003102",
+                "returnName": "年化收益率",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "ComputingCycle=2,CalcType=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "DEC_YEARSYL",
+                "returnSourceName": "年化收益率",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "unitName": "%",
+                "unitDesc": "10802:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000003102",
+              "100000000040193"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华安黄金ETF(518880.SH)的年化收益率、同类基金收益排名(东财基金二级分类)",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=518880.SH&indId=100000000003102|102:2026-09-01|292:2|132:1|101:2026-06-03,100000000040193|102:2026-09-01|603:3|101:2026-06-03",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000201733",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华安易富黄金交易型开放式证券投资基金",
+              "shortName": "华安黄金易ETF",
+              "matchWord": "黄金ETF",
+              "secuCode": "518880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000201733",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华安易富黄金交易型开放式证券投资基金",
+                "shortName": "华安黄金易ETF",
+                "matchWord": "黄金ETF",
+                "secuCode": "518880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-06-03至2026-09-01": true
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "518880.SH",
+            "entityName": "华安黄金ETF(518880.SH)",
+            "table": {
+              "100000000040726": [
+                "-3.321"
+              ],
+              "headName": [
+                "2026-08-31"
+              ]
+            },
+            "rawTable": {
+              "100000000040726": [
+                "-3.321443251426"
+              ],
+              "headName": [
+                "2026-08-31"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "100000000040726": "区间业绩比较基准增长率(基准指数)",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "100000000040726",
+              "returnName": "区间业绩比较基准增长率(基准指数)",
+              "classCode": "007101",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "BENCHINDEXRETURN",
+              "returnSourceName": "区间业绩比较基准增长率(基准指数)",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "100000000040726",
+                "returnName": "区间业绩比较基准增长率(基准指数)",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BENCHINDEXRETURN",
+                "returnSourceName": "区间业绩比较基准增长率(基准指数)",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "100000000040726"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华安黄金ETF(518880.SH)的区间业绩比较基准增长率(基准指数)",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=518880.SH&indId=100000000040726|102:2026-08-31|606:2026-08-31",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000201733",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华安易富黄金交易型开放式证券投资基金",
+              "shortName": "华安黄金易ETF",
+              "matchWord": "黄金ETF",
+              "secuCode": "518880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000201733",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华安易富黄金交易型开放式证券投资基金",
+                "shortName": "华安黄金易ETF",
+                "matchWord": "黄金ETF",
+                "secuCode": "518880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-08-31": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "T_1DAY"
+          }
+        ],
+        "condition": {
+          "search_data_task_1": [
+            "华安易富黄金交易型开放式证券投资基金",
+            "最新价涨跌幅超大单净流入资金超大单流出资金超大单流入资金大单净流入资金大单流出大单流入中单净流入资金中单流出中单流入小单净流入资金小单流出小单流入主力净流入资金主力流出(元)主力流入(元)当日DDX当日DDY当日DDZ3日DDX3日DDY5日DDX5日DDY10日DDX10日DDY单位净值单位净值增长率近1周回报近3月回报近6月回报近1年回报今年以来回报今年以来回报排名年化收益率成立以来回报同类基金收益排名(东财基金二级分类)业绩比较基准区间业绩比较基准增长率(基准指数)",
+            "2026-09-01至2026-09-01"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1000201733",
+            "entityType": "FUND",
+            "entityTypeCode": "059002",
+            "entityTypeName": "开放式基金",
+            "classCode": "003002",
+            "className": "场内ETF基金（非货币/QDII）",
+            "publishCode": "",
+            "fullName": "华安易富黄金交易型开放式证券投资基金",
+            "shortName": "华安黄金易ETF",
+            "matchWord": "黄金ETF",
+            "secuCode": "518880",
+            "market": "1",
+            "marketChar": ".SH",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "2a1f47cfa60c4d6d9d2122536a55f112"
+}

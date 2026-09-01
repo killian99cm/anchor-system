@@ -1,0 +1,272 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "1343f615-257c-4b36-a9b6-e0c6888ac238",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "3551716b-c193-4920-afc9-f79a5da17e06",
+        "dataTableDTOList": [
+          {
+            "code": "518880.SH",
+            "entityName": "华安黄金ETF(518880.SH)",
+            "table": {
+              "BOLLBLXLOW_100000000035143": [
+                "8.972"
+              ],
+              "BOLLBLXUP_100000000035143": [
+                "9.918"
+              ],
+              "100000000035143": [
+                "9.421"
+              ],
+              "headName": [
+                "2026-09-01"
+              ]
+            },
+            "rawTable": {
+              "BOLLBLXLOW_100000000035143": [
+                "8.972388108486467"
+              ],
+              "BOLLBLXUP_100000000035143": [
+                "9.917611891513534"
+              ],
+              "100000000035143": [
+                "9.421199999999999"
+              ],
+              "headName": [
+                "2026-09-01"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "BOLLBLXLOW_100000000035143": "BOLL布林线LOW",
+              "headNameSub": "数据来源",
+              "BOLLBLXUP_100000000035143": "BOLL布林线UP",
+              "100000000035143": "BOLL布林线"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "BOLLBLXLOW_100000000035143",
+              "returnName": "BOLL布林线LOW",
+              "classCode": "007101",
+              "checkedRelatedIndicators": false,
+              "startDate": "2026-09-01 00:00:00",
+              "endDate": "2026-09-01 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "N=6,K=3,Boll=3,AdjustFlag=1,period=1",
+              "quantType": "1",
+              "isGroup": false,
+              "returnSourceCode": "BOLLBLXLOW",
+              "returnSourceName": "BOLL布林线",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "1",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "518880.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "BOLLBLXUP_100000000035143",
+                "returnName": "BOLL布林线UP",
+                "classCode": "007101",
+                "checkedRelatedIndicators": false,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "N=6,K=3,Boll=2,AdjustFlag=1,period=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BOLLBLXUP",
+                "returnSourceName": "BOLL布林线",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "100000000035143",
+                "returnName": "BOLL布林线",
+                "classCode": "007101",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,period=1,N=5,K=10,Boll=1,NewOldType=0",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BOLLBLX",
+                "returnSourceName": "BOLL布林线",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "BOLLBLXLOW_100000000035143",
+                "returnName": "BOLL布林线LOW",
+                "classCode": "007101",
+                "checkedRelatedIndicators": false,
+                "startDate": "2026-09-01 00:00:00",
+                "endDate": "2026-09-01 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "N=6,K=3,Boll=3,AdjustFlag=1,period=1",
+                "quantType": "1",
+                "isGroup": false,
+                "returnSourceCode": "BOLLBLXLOW",
+                "returnSourceName": "BOLL布林线",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "1",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "BOLLBLXLOW_100000000035143",
+              "BOLLBLXUP_100000000035143",
+              "100000000035143"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "华安黄金ETF(518880.SH)的BOLL布林线LOW、BOLL布林线UP等",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUND&code=518880.SH&indId=100000000035143|176:3|500:1|513:1|189:3|121:2026-09-01|205:6,100000000035143|176:2|500:1|513:1|189:3|121:2026-09-01|205:6,100000000035143|500:1|176:1|513:1|189:10|121:2026-09-01|205:5",
+                "typeName": "基金数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000201733",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "华安易富黄金交易型开放式证券投资基金",
+              "shortName": "华安黄金易ETF",
+              "matchWord": "华安黄金ETF",
+              "secuCode": "518880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000201733",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "华安易富黄金交易型开放式证券投资基金",
+                "shortName": "华安黄金易ETF",
+                "matchWord": "华安黄金ETF",
+                "secuCode": "518880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-01": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "所查指标入参：BOLL布林线：[复权方式]不复权，[计算周期]日，[周期]5，[带宽]10，[BOLL指标选项]MID；",
+            "tdayEnum": "TDAY"
+          }
+        ],
+        "condition": {
+          "search_data_task_0": [
+            "华安易富黄金交易型开放式证券投资基金",
+            "BOLL布林线LOWBOLL布林线UPBOLL布林线",
+            "2026-09-01至2026-09-01"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1000201733",
+            "entityType": "FUND",
+            "entityTypeCode": "059002",
+            "entityTypeName": "开放式基金",
+            "classCode": "003002",
+            "className": "场内ETF基金（非货币/QDII）",
+            "publishCode": "",
+            "fullName": "华安易富黄金交易型开放式证券投资基金",
+            "shortName": "华安黄金易ETF",
+            "matchWord": "华安黄金ETF",
+            "secuCode": "518880",
+            "market": "1",
+            "marketChar": ".SH",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "a401ee399aaa4f78a89b31177aae0cc2"
+}

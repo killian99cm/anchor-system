@@ -34,9 +34,10 @@ import requests
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.path.insert(0, str(Path(__file__).parent))
 from data_processor import process_all  # noqa: E402
+import paths  # C1：统一路径真源（noqa: E402）
 
-DESKTOP = Path.home() / "Desktop"
-DATA_PATH = DESKTOP / "portfolio_data.json"
+DESKTOP = paths.DESKTOP
+DATA_PATH = paths.DATA_PATH
 LOG_FILE = Path(__file__).parent / "daily_advice.log"
 
 MX_URL = "https://mkapi2.dfcfs.com/finskillshub/api/claw/query"
@@ -399,6 +400,14 @@ def main() -> int:
         data = load_data()
         state = load_state(data)
         log(f"数据源 OK（update_date={data.get('update_date', '?')}）")
+        # B3 数据新鲜度看门狗：陈旧/日期异常直接中止，不基于旧数据推建议（--allow-stale 逃生）
+        from freshness_watchdog import check_freshness
+        _fr = check_freshness(data)
+        if _fr["level"] in ("stale", "unknown") and "--allow-stale" not in sys.argv:
+            log(f"[❌] {_fr['message']} —— 今日不推送建议（确需查看历史加 --allow-stale）")
+            return 1
+        if _fr["level"] == "warn":
+            log(f"[⚠️] {_fr['message']}")
         # 2. 实时行情（失败则整体跳过，不发假数据）
         try:
             quotes = fetch_quotes()

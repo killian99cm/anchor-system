@@ -76,8 +76,13 @@ def extract(text: str) -> dict:
     grab("event_exempt", [r"事件驱动[^\n]{0,8}?¥?\s*([\d,，]+)", r"事件[^\n]{0,8}¥?\s*([\d,，]+)", r"豁免[^\n]{0,8}¥?\s*([\d,，]+)"], _num, DEFAULTS["event_exempt"])
     grab("t3_days", [r"T\+3", r"([0-9]+)\s*个交易日内复核"], lambda m: 3, DEFAULTS["t3_days"])
     grab("premium_gate_pct", [r"溢价[^\n]{0,8}([0-9]+)\s*%"], lambda m: int(m.group(1)), DEFAULTS["premium_gate_pct"])
-    grab("take_profit", [r"\+(\d{2})%\s*→\s*卖25%[^\n]*?\+(\d{2})%\s*→\s*再卖25%[^\n]*?\+(\d{2})%\s*→\s*再卖25%"],
-          lambda m: [int(m.group(1)), int(m.group(2)), int(m.group(3))], DEFAULTS["take_profit"])
+    m_tp = re.findall(r"\+(\d{1,2})%\s*→\s*(再)?卖25%", text)
+    if len(m_tp) >= 1:
+        rules["take_profit"] = [int(x[0]) for x in m_tp[:3]]
+        if len(m_tp) < 3:
+            warns.append("take_profit 档位数不足 3")
+    else:
+        rules["take_profit"] = DEFAULTS["take_profit"]
 
     # 四层配比（09-01 修复：原正则 "压舱石[^\n]{0,10}([0-9]+)%" 误匹配波动率 2%，
     # 改为锚定 "权重XX%" 句式，默认值与手册 45/20/20/15 一致）

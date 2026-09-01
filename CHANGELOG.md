@@ -29,8 +29,13 @@
 ### 🟡 P2 清理
 - design_v43_upgrade.py / gen_excel_v2.py 死代码 → 归档/；rebuild.py 8/20 过期补丁删除；提案台账 #17-20 重复去重；尾盘模板 v1.0 标废止；数据更新协议 **v1.4** 补两条最高铁律
 
+### v4.3.5 补充（17:21）：止盈档位 v3.6 裁决同步
+- **8/31 归因裁决③ 采纳疏档 +10/+20/+35**（用户/WorkBuddy 拍板，手册 2.3 已更新 v3.6：回测证明趋势市高档不卖飞，止盈降收益且 MDD 零改善）
+- 软件侧同步：data_processor.py 创新药 profile → `-8%止损 / +10%+20%+35% / 30天`；登记表 C1 → ✅ 已裁决采纳（17:00 同步时曾按手册旧文写成 +8/+15/+25，本补充纠正）
+- 影响文件：05-scripts/data_processor.py ｜ 01-rules/规则生效期登记表.md
+
 ### 遗留项（需用户裁决/后续）
-C1 止盈档位待裁决｜手册 461 行旧主指标口径｜C2 冻结无代码执行｜F2 Stop hook 自动化｜E1 周报/E2 月报升级｜8/31 复盘 v2.0 回归｜可视化运维专项｜CHANGELOG v4.0.x 顺序（详见审计报告第四节）
+手册 461 行旧主指标口径｜C2 冻结无代码执行｜F2 Stop hook 自动化｜E1 周报/E2 月报升级｜8/31 复盘 v2.0 回归｜可视化运维专项｜CHANGELOG v4.0.x 顺序｜手册文件名 v3.5 vs 正文 v3.6 版本标注统一（详见审计报告第四节）
 
 ### 影响文件
 05-scripts/{extract_rule_contract,pre_trade_check,version_check,decision_log,gen_daily_hub,gen_excel_skill,sync_all,daily_advice,data_processor,rebuild}.py ｜ 05-scripts/test_pre_trade_check.py ｜ 05-scripts/requirements.txt（新）｜ 05-scripts/归档/{design_v43_upgrade,gen_excel_v2}.py（移入）｜ Desktop/AI-Collab/{realtime_relay.py,rule_contract.json,ai-bridge/claude_state.md} ｜ 01-rules/{投资规则手册_v3.5_正式版,规则生效期登记表,报告深度标准_v2.0,尾盘操作报告模板_v1.0}.md ｜ 00-system/{2026-09-01-体系深度分析报告.md（新）,数据更新协议,改进提案台账,会话检查点}.md ｜ 06-dashboard/decision_log.json ｜ CLAUDE.md ｜ CHANGELOG.md

@@ -185,10 +185,14 @@ def accuracy_report(decisions=None) -> dict:
     stop_executed = [d for d in stop_triggers if "执行" in (d.get("verdict") or "")]
     stop_execution_pct = (len(stop_executed) / len(stop_triggers) * 100) if stop_triggers else None
 
+    # v4.4.2：待复盘只计有效决策——superseded 前提已推翻永不复盘、backfilled 历史补录为噪声，
+    #        原 len(decisions)-len(reviewed) 把 3 条已取代记录算进待复盘（曾虚报 26，实为 23）
+    active_total = sum(1 for d in decisions if _is_active(d))
     return {
-        "total_decisions": total,
+        "total_decisions": total,  # 57 历史累计（含已取代 3，KPI 标注）
+        "active_total": active_total,  # 54 有效决策
         "reviewed": len(reviewed),
-        "pending_review": len(decisions) - len(reviewed),
+        "pending_review": active_total - len(reviewed),
         "correct": correct,
         "wrong": wrong,
         "neutral": neutral,
@@ -308,10 +312,18 @@ def dashboard_html() -> str:
 
     rows = []
     for d in decisions:
+        # v4.4.2：superseded（已被取代/前提推翻）决策整行置灰 + 结果列标「已取代」，
+        #        不再显示「⏳待复盘」黄标（防止与真实待复盘混淆，如 27/52/53）
+        is_sup = not _is_active(d)
         due_txt = due_date(d)
-        status = f'<span style="color:#fab219;font-size:11px">⏳ 待复盘（到期 {due_txt}）</span>' if d["outcome"] is None else f'复盘于 {d["review_date"]}'
+        if is_sup:
+            status = f'<span style="color:#536a85;font-size:11px">已取代' + (f' → #{d["superseded_by"]}' if d.get("superseded_by") else '') + ' · 前提推翻</span>'
+        else:
+            status = f'<span style="color:#fab219;font-size:11px">⏳ 待复盘（到期 {due_txt}）</span>' if d["outcome"] is None else f'复盘于 {d["review_date"]}'
+        row_style = 'style="opacity:0.5;background:rgba(83,106,133,0.04)"' if is_sup else ''
+        result_badge = '<span style="color:#536a85;font-family:Cascadia Mono,monospace">已取代</span>' if is_sup else badge(d['outcome'])
         rows.append(f"""
-      <tr>
+      <tr {row_style}>
         <td style="padding:10px 14px;color:#536a85;font-family:Cascadia Mono,monospace">#{d['id']}</td>
         <td style="padding:10px 14px;color:#91a4bd;font-family:Cascadia Mono,monospace">{d['date']}</td>
         <td style="padding:10px 14px;color:#9085e9;font-family:Cascadia Mono,monospace">{d['type']}</td>
@@ -320,7 +332,7 @@ def dashboard_html() -> str:
         <td style="padding:10px 14px;color:#e8f1ff;font-family:Cascadia Mono,monospace">{"¥{:,.0f}".format(d['amount']) if d['amount'] else "—"}</td>
         <td style="padding:10px 14px;color:#91a4bd">{d['expected'] or "—"}</td>
         <td style="padding:10px 14px;color:#91a4bd;font-size:11px">{d['rationale'][:34] or "—"}</td>
-        <td style="padding:10px 14px">{badge(d['outcome'])}</td>
+        <td style="padding:10px 14px">{result_badge}</td>
         <td style="padding:10px 14px;color:#536a85;font-size:11px">{status}</td>
       </tr>""")
     rows_html = "\n".join(rows)
@@ -383,9 +395,9 @@ def dashboard_html() -> str:
   <h1>决策日志 · 胜率仪表盘</h1>
   {due_html}
   <div class="kpis">
-    <div class="kpi"><div class="label">总决策</div><div class="value">{rep['total_decisions']}</div><div class="sub">历史累计</div></div>
+    <div class="kpi"><div class="label">总决策</div><div class="value">{rep['total_decisions']}</div><div class="sub">历史累计 · 有效 {rep['active_total']}（已取代 {rep['total_decisions'] - rep['active_total']}）</div></div>
     <div class="kpi"><div class="label">已复盘</div><div class="value">{rep['reviewed']}</div><div class="sub">T+3 回填</div></div>
-    <div class="kpi"><div class="label">待复盘</div><div class="value">{rep['pending_review']}</div><div class="sub">未到/未填</div></div>
+    <div class="kpi"><div class="label">待复盘</div><div class="value">{rep['pending_review']}</div><div class="sub">仅有效决策 · 不含已取代</div></div>
     <div class="kpi"><div class="label">准确率</div><div class="value" style="color:#36d39c">{acc_txt}</div><div class="sub">correct / (correct+wrong)</div></div>
     <div class="kpi"><div class="label">平均收益率</div><div class="value" style="color:#3987e5">{avg_txt}</div><div class="sub">已复盘 pnl</div></div>
     <div class="kpi"><div class="label">盈亏比</div><div class="value" style="color:{'#36d39c' if pr and pr >= 1.5 else '#fab219'}">{pr_txt}</div><div class="sub">均盈/均亏 · 目标 ≥1.5:1</div></div>

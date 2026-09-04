@@ -6,6 +6,14 @@
 
 ---
 
+## v4.4.2 — 2026-09-05（superseded 决策视觉隔离：已取代灰显 + 待复盘口径去重）
+
+> 用户复盘 #57 时点出 53/52/27——三条「已被取代(superseded)」决策（#27 纳指止盈草案被 #28 取代、#52/#53 9/1 买草案被 #54/#55 执行取代）在 v4.4.1 新排序后仍按普通 outcome=None 行渲染出"⏳待复盘"黄标，读表像三条悬空操作；且 KPI「待复盘」= 57-31 直接相减**未扣除 superseded**（虚报 26，真实 23）。
+> 修复：①`dashboard_html` 全部决策表 superseded 行置灰(50%) + 结果列标「已取代」+ 状态列显示"已取代 → #取代者 · 前提推翻"（不再出待复盘黄标）②`accuracy_report` 待复盘 = 有效决策 - 已复盘（新增 active_total=54，KPI 标注"历史累计 · 有效 54（已取代 3）"）③数据层 27/52/53 补 `superseded_by` 字段（→28/54/55），误复盘时提示正确指向。
+> 影响文件：`05-scripts/decision_log.py`（accuracy_report pending_review 口径 + dashboard_html 渲染 + KPI）、`06-dashboard/decision_log.json`（superseded_by×3）、`06-dashboard/decision_dashboard.html`（重生成）。
+
+---
+
 ## v4.4.1 — 2026-09-05（决策仪表盘"全部决策"表按时间新上旧下）
 
 > 用户反馈"决策仪表盘里这几天的操作都没有"——根因非数据缺失（57 条决策 + 9/4 复盘回填均完整同步），而是决策表按 id 升序渲染，最新 #52-57 被埋在 57 行表格底部，近几天记录一眼不可见。修复：date 降序 + 同日 id 降序，最新决策置顶。

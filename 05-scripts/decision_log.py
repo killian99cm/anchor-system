@@ -289,7 +289,8 @@ def dashboard_html() -> str:
     """生成胜率仪表盘 HTML（Anchor 品牌深色金融终端风格）"""
     rep = accuracy_report()
     log = load_log()
-    decisions = log["decisions"]
+    # v4.4.1：全部决策表按时间「新上旧下」——date 降序、同日 id 降序（原升序把最新决策埋在表底）
+    decisions = sorted(log["decisions"], key=lambda x: (x.get("date", ""), int(x.get("id", 0) or 0)), reverse=True)
     due = due_list()
     nd = next_due()
     # v4.4.0：footer 注入真实时刻——数据源(decision_log.json)更新时间 + 本页生成时间

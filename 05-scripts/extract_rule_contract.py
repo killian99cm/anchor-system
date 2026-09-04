@@ -70,7 +70,10 @@ def extract(text: str) -> dict:
     grab("monthly_ops_max", [r"月[^\n]{0,8}操作[^\n]{0,6}≤\s*([0-9]+)\s*笔", r"操作[^\n]{0,8}≤\s*([0-9]+)\s*笔"], lambda m: int(m.group(1)), DEFAULTS["monthly_ops_max"])
     # 09-01 修复：手册用 `¥3,000**` 加粗标记，原正则要求数字后紧跟"元"导致提取失败 → 改为兼容 ¥ + 可选加粗
     _num = lambda m: int(m.group(1).replace(",", "").replace("，", ""))
-    grab("e1_sat_position_cap", [r"E1[^\n]{0,24}?¥?\s*([\d,，]+)", r"单只卫星[^\n]{0,12}?¥?\s*([\d,，]+)"], _num, DEFAULTS["e1_sat_position_cap"])
+    # v4.4.0 修复：原正则 `E1[^\n]{0,24}?¥?\s*([\d,，]+)` 在手册 "月限额/E1-E4/评分卡"（规则枚举行）
+    # 从 E1 起非贪婪命中 "-E4" 里的 4 → 契约 e1_sat_position_cap 被误抓成 4（本应为 ¥3,000）。
+    # 修复：排除 E1-… 连写（-E4 是并列枚举非规则句），并强制金额边界（单只/市值/≤/上限/¥）。
+    grab("e1_sat_position_cap", [r"E1(?![-－—])\s*[^\n]{0,20}?(?:单只|市值|投入|上限|≤|<=|不超|¥)[^\n]{0,12}?¥?\s*([\d,，]+)", r"单只卫星[^\n]{0,12}?¥?\s*([\d,，]+)"], _num, DEFAULTS["e1_sat_position_cap"])
     grab("e4_monthly_net_cap", [r"E4[^\n]{0,24}?¥?\s*([\d,，]+)", r"卫星月净投入[^\n]{0,12}?¥?\s*([\d,，]+)"], _num, DEFAULTS["e4_monthly_net_cap"])
     grab("scorecard_min", [r"≥\s*([0-9])\s*/\s*([0-9])", r"([0-9])\s*分[^\n]{0,6}才可买"], lambda m: int(m.group(1)), DEFAULTS["scorecard_min"])
     grab("event_exempt", [r"事件驱动[^\n]{0,8}?¥?\s*([\d,，]+)", r"事件[^\n]{0,8}¥?\s*([\d,，]+)", r"豁免[^\n]{0,8}¥?\s*([\d,，]+)"], _num, DEFAULTS["event_exempt"])

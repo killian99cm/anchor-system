@@ -292,6 +292,9 @@ def dashboard_html() -> str:
     decisions = log["decisions"]
     due = due_list()
     nd = next_due()
+    # v4.4.0：footer 注入真实时刻——数据源(decision_log.json)更新时间 + 本页生成时间
+    gen_ts = datetime.fromtimestamp(LOG_FILE.stat().st_mtime).strftime('%Y-%m-%d %H:%M') if LOG_FILE.exists() else "--"
+    now_ts = datetime.now().strftime('%Y-%m-%d %H:%M')
 
     def badge(outcome: str) -> str:
         if outcome == "correct":
@@ -394,7 +397,7 @@ def dashboard_html() -> str:
     <thead><tr><th>ID</th><th>日期</th><th>类型</th><th>标的</th><th>判定</th><th>金额</th><th>预期</th><th>依据</th><th>结果</th><th>复盘</th></tr></thead>
     <tbody>{rows_html}</tbody>
   </table>
-  <p class="foot">决策日志 v3.4 · T+3 到期日 = 记录日 + 3 自然日 · 盈亏比目标 ≥1.5:1 · 数据生成时间见文件生成时刻</p>
+  <p class="foot">决策日志 v3.4 · T+3 到期日 = 记录日 + 3 自然日 · 盈亏比目标 ≥1.5:1 · 数据源更新 {gen_ts} · 本页生成 {now_ts}</p>
 </body>
 </html>"""
 

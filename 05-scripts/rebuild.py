@@ -93,7 +93,7 @@ function tone(layer){return {bedrock:"var(--blue)",core:"var(--green)",sat:"var(
 function levelClass(level){return level==="red"?"action":level==="amber"?"watch":"safe"}
 function levelIcon(level){return level==="red"?"🔴":level==="amber"?"🟡":"🟢"}
 function updateClock(){var now=new Date(),days=["日","一","二","三","四","五","六"];document.getElementById("clock").textContent=now.toLocaleDateString("zh-CN",{year:"numeric",month:"2-digit",day:"2-digit"})+" "+now.toLocaleTimeString("zh-CN",{hour12:false})+" · 周"+days[now.getDay()]}
-updateClock();setInterval(updateClock,1000);document.getElementById("updateLabel").textContent=D.time||D.source_update_date||"--";
+updateClock();setInterval(updateClock,1000);document.getElementById("updateLabel").textContent=(D.source_update_date||D.time||"--").toString().slice(0,10);
 
 (function(){var state=D.risk_state||{},today=D.today||{},freeze=D.freeze_state||{},level=state.level||"green",decision=document.getElementById("decision");decision.className="decision "+levelClass(level);document.getElementById("headerStatus").className="status "+levelClass(level);document.getElementById("headerStatus").textContent=state.label||"安全";document.getElementById("decisionIcon").textContent=today.ic||levelIcon(level);document.getElementById("decisionTag").textContent=today.tag||state.label||"安全";document.getElementById("decisionTitle").textContent=level==="red"?"今天先处理红灯，再考虑新动作":level==="amber"?"今天以观察和等待为主":"今天没有必须执行的交易";var reasons=(state.reasons||[]).concat(freeze.reasons||[]);document.getElementById("decisionText").textContent=(today.tx||[]).map(function(x){return x.t||""}).filter(Boolean).join(" · ")||reasons.join(" · ")||"全部规则通过，保持当前计划。"+(freeze.frozen?" 当前存在冻结条件。":"")})();
 

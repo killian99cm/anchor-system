@@ -12,6 +12,7 @@ import shutil
 import sys
 import subprocess
 import tempfile
+from datetime import datetime
 from pathlib import Path
 
 import paths
@@ -125,10 +126,10 @@ def private_tokens_from_data(data, embed):
     active_label = str(hc.get('active_label', '')).strip()
     if active_label:
         tokens.add(active_label)
-    for key, suffix in (('fund', '只基金'), ('stock', '只股票')):
-        val = hc.get(key)
-        if isinstance(val, int) and val:
-            tokens.add(f'{val}{suffix}')
+    # v4.4.0 修复：不再把 "N只基金/N只股票" 拆成独立细 token——它是通用计数短语，
+    # 公开示例页用示例数据渲染自身 active_label（如 "8只基金+1项现金"）时与真实基金数
+    # 同为 N 即必然误报。完整 active_label + 各持仓名/code 已足够防泄漏；写死风险由
+    # 完整标签命中覆盖（真实标签带分组间隔，与示例标签不同串）。
     return sorted(tokens, key=len, reverse=True)
 
 
@@ -167,6 +168,53 @@ def main():
               "回撤基准缺失!")
         check("update_date 存在", bool(data.get('update_date') or data.get('update_time')),
               "日期缺失!")
+
+    # 1b. 结构化入库自检（v4.4.0 护栏镜像；对应 sync_all 步骤0 / data_pipeline --integrity）
+    print("\n[1b] 结构化入库自检 validate_integrity")
+    if data:
+        ud = str(data.get('update_date', ''))
+        chart = data.get('chart_data', [])
+        sm = data.get('daily_summaries', [])
+        check("chart_data 无重复 d", len({c.get('d') for c in chart if c.get('d')}) == len([c for c in chart if c.get('d')]))
+        if chart and ud:
+            check("chart 末条 == update_date", str(chart[-1].get('d', '')) == ud[-5:],
+                  f"(chart={chart[-1].get('d')} vs update_date={ud})")
+        if sm and ud:
+            check("summaries 末条 == update_date", str(sm[-1].get('date', ''))[:10] == ud[:10],
+                  f"({sm[-1].get('date')} vs {ud})")
+        mdate = str((data.get('market') or {}).get('date', ''))
+        if mdate and ud:
+            check("market.date == update_date", mdate[:10] == ud[:10], f"({mdate} vs {ud})")
+        ta, fa, sa = (data.get(k) for k in ('total_assets', 'fund_account', 'stock_account'))
+        if isinstance(ta, (int, float)) and isinstance(fa, (int, float)) and isinstance(sa, (int, float)):
+            check("total == fund + stock (±0.01)", abs(ta - (fa + sa)) <= 0.01, f"({ta} vs {fa}+{sa})")
+        _wd = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+        wbad = []
+        for s in sm[-5:]:
+            dt, dy = str(s.get('date', ''))[:10], str(s.get('day', ''))
+            try:
+                wd = datetime.strptime(dt, '%Y-%m-%d').weekday()
+            except (ValueError, TypeError):
+                continue
+            if dy and _wd[wd] not in dy:
+                wbad.append((dt, dy))
+        check("末5条 summaries 星期正确", not wbad, f"({wbad})")
+        from data_processor import validate_integrity
+        hard = [p for p in validate_integrity(data) if p.startswith('🔴')]
+        check("validate_integrity 无硬项", not hard, f"(共{len(hard)}项: {'; '.join(hard[:2])})")
+        # 页面 freshness 证据（产物由 sync_all 生成；缺失文件即 FAIL，暴露链路断点）
+        for label, path, token in (
+            ("HTML 顶栏渲染数据日期", DESKTOP / 'portfolio_analysis.html', ud[:10]),
+            ("daily_hub 含入库时刻", ANCHOR / '06-dashboard' / 'daily_hub.html', str(data.get('update_time', ''))[:16]),
+            ("决策仪表盘含数据源时刻", ANCHOR / '06-dashboard' / 'decision_dashboard.html', '数据源更新'),
+        ):
+            if token and path.exists():
+                txt = path.read_text(encoding='utf-8', errors='replace')
+                check(label, token in txt, f"(缺 token={token!r})")
+            elif token:
+                check(label, False, f"(缺 {path.name})")
+            else:
+                check(label, True, "(无 token，跳过)")
 
     # 2. HTML 产物
     print("\n[2] portfolio_analysis.html")

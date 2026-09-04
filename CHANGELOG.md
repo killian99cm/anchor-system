@@ -6,6 +6,35 @@
 
 ---
 
+## v4.4.0 — 2026-09-04（同步更新链闭环：入库自检 + 页面真日期/时刻 + sync 机器回执）
+
+> 用户连续被"数据没及时更新/页面不同步/看不出哪层是新的"困扰（chart_data 曾重复 09-01 脏条、落后 2 天、星期标错全程无拦截直通页面）。逐层诊断定位 5 断点后一次性闭环。
+
+### 🔴 入库自检护栏（一次实现、三处复用）
+- **data_processor.validate_integrity()**（新，可复用）：V1 chart 重复 d ｜ V2 chart/summaries 末条 vs update_date 对账 ｜ V3 星期对照 ｜ V4 顶层自洽（**口径铁律：total=fund_account+stock_account，fund_account 已含 yuebao，勿三者相加**）｜ V5 market.date==update_date ｜ V6/V7 软提示（活跃市值和、data_freshness 人工维护提醒）
+- **data_pipeline.py --integrity**（新）：🔴 硬项 rc=1；**sync_all 新增致命步骤 0「写库自检」** → 脏数据不再直通 rebuild/页面
+- **rebuild**：process_all 内嵌调用，经 `_warnings` 免费打印（本次修复 9/1 脏条 + 星期误标 2 类历史错误，正/负向 6 测试全过）
+
+### 页面显示真实数据日期/时刻（可见性）
+- **rebuild.py 顶栏**：`source_update_date`（真数据日期）优先于 `time`（重建时刻），修复"重建时刻冒充更新"（曾停留 8/28→页面却显 9/3）
+- **gen_daily_hub**：顶栏新增入库**时刻**（update_time 前 16 位，显示 23:12）
+- **decision_log dashboard footer**：静态占位"生成时间见文件时刻" → 真实「数据源更新 {mtime} · 本页生成 {now}」
+
+### sync 机器回执 + 9.5 恢复
+- **sync_all**：`.sync_last_result.json` 扩展 `data_date`/`note`（机器级新鲜度权威）；结尾一行回执「数据截至 · 同步生成 · 失败步」
+- **push_portfolio_data.sh** 本地行 python3 → `"$PY"` fallback（Windows 无 python3 rc=127 → **9.5 步骤恢复成功，净退出码可信**）；远程 ssh python3 不动
+
+### 新鲜度语义澄清（避免 watch_sync 无限循环）
+- **不自动写桌面 JSON `_meta`**（写则 sha256 变→再触发→再写死循环）；机器级新鲜度权威 = `.sync_last_result.json`；`_meta.data_freshness` = **人工入库维护**（本次 holdings 补 9/4）；协议 v1.4→**v1.5**（每日层新增 9.5 写库自检步 + §六语义修订，`last_rebuilt` 降为静态备注）
+
+### 验证
+- smoke_test 新增 [1b] 数据自检节（chart 去重/时间轴/星期/顶层自洽/market 日期/页面 freshness 三 token）
+
+### 影响文件
+05-scripts/{data_processor,data_pipeline,sync_all,rebuild,gen_daily_hub,decision_log,smoke_test}.py ｜ Anchor-Software/deploy/scripts/push_portfolio_data.sh ｜ 00-system/数据更新协议.md（v1.5）｜ Desktop/portfolio_data.json（system_version v4.4.0 + _meta.data_freshness 9/4）｜ CHANGELOG.md ｜ CLAUDE.md ｜ 会话检查点.md
+
+---
+
 ## v4.3.5 — 2026-09-01（体系深度审计 + 全部优化落地）
 
 > 用户「深度分析 anchor 体系健全性/功能可用性/逻辑流畅性 → 全部优化并保存记录」。5 维度 agent 审计（4 完成 + 1 失败维度已覆盖）+ 独立复核，产出 `00-system/2026-09-01-体系深度分析报告.md`（三评级 + P0/P1/P2 分级清单），本版本全部落地。

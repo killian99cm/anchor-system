@@ -363,7 +363,7 @@ a{color:inherit;text-decoration:none}.app{max-width:1240px;margin:0 auto;padding
 </head>
 <body>
 <div class="app">
-<header class="topbar"><div class="brand"><span class="brand-mark">⚓</span><span><em>Anchor</em> Daily Hub</span></div><span class="badge">v4.1</span><span class="status __STATUS_CLS__">__STATUS_LABEL__</span><span class="spacer"></span><div class="topstat">数据截止<b>__UPDATE__ __DAY__</b></div><div class="clock" id="clock">--</div></header>
+<header class="topbar"><div class="brand"><span class="brand-mark">⚓</span><span><em>Anchor</em> Daily Hub</span></div><span class="badge">v4.1</span><span class="status __STATUS_CLS__">__STATUS_LABEL__</span><span class="spacer"></span><div class="topstat">数据截止<b>__UPDATE__ __DAY__</b><b style="color:var(--amber)">__UPDATE_TIME__</b></div><div class="clock" id="clock">--</div></header>
 <nav class="quicknav">
 <a href="#snapshot">今日快照</a><a href="#signals">今日信号</a><a href="#dashboards">实时仪表盘</a><a href="#events">事件日历</a><a href="#reports">报告中心</a><a href="#data">数据文件</a><a href="#tools">系统工具</a><a href="#commands">快捷口令</a>
 </nav>
@@ -434,6 +434,7 @@ def render_html(data, rep):
 
     frag = {
         "__UPDATE__": str(data.get("update_date", "")),
+        "__UPDATE_TIME__": str(data.get("update_time", ""))[:16],  # v4.4.0 顶栏显示入库时刻
         "__DAY__": str(((processed.get("mkt", {}) or {}).get("day")) or ""),
         "__STATUS_CLS__": "safe",
         "__STATUS_LABEL__": "安全",

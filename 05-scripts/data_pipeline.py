@@ -398,6 +398,29 @@ def main() -> int:
             print(f"未找到「{name}」的管道定义，请先补充到 DATA_PIPELINE_MAP")
         return 0
 
+    if "--integrity" in sys.argv:
+        # v4.4.0 结构化入库自检：读桌面权威 JSON → data_processor.validate_integrity
+        # 🔴 硬项命中 rc=1（sync_all 步骤0 用作致命闸门）；🟡 软提示仅打印。
+        try:
+            data = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
+        except Exception as e:
+            print(f"🔴 无法读取 {paths.DATA_PATH}: {e}")
+            return 1
+        from data_processor import validate_integrity
+        problems = validate_integrity(data)
+        hard = [p for p in problems if p.startswith("🔴")]
+        soft = [p for p in problems if p.startswith("🟡")]
+        print(f"— 结构化入库自检（v4.4.0）· update_date={data.get('update_date')} · total={data.get('total_assets')} —")
+        for p in soft:
+            print("  ", p)
+        for p in hard:
+            print("  ", p)
+        if not problems:
+            print("✅ 入库数据完整：chart 无重复 / 时间轴对齐 / 星期正确 / 顶层自洽 / market 日期一致")
+        else:
+            print(f"{'🔴' if hard else '🟡'} 共 {len(hard)} 硬项 + {len(soft)} 提示")
+        return 1 if hard else 0
+
     if "--check" in sys.argv:
         hard_fail = 0
 

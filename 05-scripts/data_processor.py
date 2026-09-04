@@ -1091,10 +1091,118 @@ def validate_data(data):
     return warnings
 
 
+# 星期对照（weekday(): 0=周一 … 6=周日）
+_WEEKDAYS_CN = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+
+
+def _fnum(v):
+    """把值安全转 float（容忍逗号/亿/% 等字符串），失败返回 None。"""
+    if v is None:
+        return None
+    try:
+        return float(str(v).replace(",", "").replace("%", "").replace("+", "").replace("亿", "").replace("万", ""))
+    except (ValueError, TypeError):
+        return None
+
+
+def validate_integrity(data: dict) -> list:
+    """结构化入库自检（v4.4.0）。返回问题 list；严重问题以 '🔴' 开头（应阻断），提示以 '🟡' 开头（仅提示）。
+
+    V1-V5 为硬项（data_pipeline --integrity / sync_all 步骤0 命中即 rc=1），
+    V6-V7 为软提示。约束前提（口径铁律）：fund_account 已含 yuebao，
+    顶层自洽判定为 total_assets == fund_account + stock_account，勿三者相加。
+    """
+    issues = []
+
+    # ---- V1 🔴 chart_data 无重复日期（MM-DD 唯一）----
+    chart = data.get("chart_data") or []
+    seen_d = {}
+    for c in chart:
+        dd = c.get("d", "")
+        if not dd:
+            continue
+        if dd in seen_d:
+            issues.append(f"🔴 V1 chart_data 重复日期 {dd}（出现 ≥2 次，脏条目直通页面）")
+        else:
+            seen_d[dd] = c.get("sh")
+
+    # ---- V2 🔴 时间轴对账：summaries/chart 末条必须等于 update_date ----
+    update_date = str(data.get("update_date") or "").strip()
+    if update_date:
+        if chart:
+            last_d = str(chart[-1].get("d", ""))
+            if last_d != update_date[-5:]:
+                issues.append(f"🔴 V2 chart_data 末条 {last_d} ≠ update_date {update_date}（图落后/超前，曾出现 2 天滞后）")
+        else:
+            issues.append("🔴 V2 chart_data 为空，无时间轴")
+        summaries = data.get("daily_summaries") or []
+        if summaries:
+            last_s = str(summaries[-1].get("date", ""))[:10]
+            if last_s != update_date[:10]:
+                issues.append(f"🔴 V2 daily_summaries 末条 {last_s} ≠ update_date {update_date}")
+        else:
+            issues.append("🔴 V2 daily_summaries 为空")
+    else:
+        issues.append("🔴 V2 缺 update_date，无法对账 chart/summaries 时间轴")
+
+    # ---- V3 🔴 星期正确性（拦 9/1「周一」误标类）----
+    summaries = data.get("daily_summaries") or []
+    for s in summaries:
+        dt_raw = str(s.get("date", ""))[:10]
+        day_txt = str(s.get("day", "")).strip()
+        if len(dt_raw) == 10 and "T" not in dt_raw:
+            try:
+                dt = datetime.strptime(dt_raw, "%Y-%m-%d")
+            except ValueError:
+                continue
+            expect = _WEEKDAYS_CN[dt.weekday()]
+            # day 形态不定（"周五"/"2026-09-04 周五"/"周五收盘"…）→ 以「期望 token 是否出现」判定
+            if day_txt and expect not in day_txt:
+                issues.append(f"🔴 V3 {dt_raw} 星期标错：{day_txt!r}（应为 {expect}）")
+
+    # ---- V4 🔴 顶层自洽（fund_account 已含 yuebao）----
+    total = _fnum(data.get("total_assets"))
+    fund = _fnum(data.get("fund_account"))
+    stock = _fnum(data.get("stock_account"))
+    yuebao = _fnum(data.get("yuebao"))
+    if total is not None and fund is not None and stock is not None:
+        if abs(total - (fund + stock)) > 0.01:
+            issues.append(f"🔴 V4 顶层不自治：total_assets {total} ≠ fund_account {fund} + stock_account {stock} = {fund + stock}")
+    if fund is not None and yuebao is not None and fund + 0.01 < yuebao:
+        issues.append(f"🔴 V4 fund_account {fund} < yuebao {yuebao}（fund_account 已含 yuebao，勿三者相加）")
+
+    # ---- V5 🔴 market.date == update_date（若 market 有 date）----
+    mkt_date = str((data.get("market") or {}).get("date", "")).strip()
+    if mkt_date and update_date and mkt_date != update_date[:10]:
+        issues.append(f"🔴 V5 market.date {mkt_date} ≠ update_date {update_date}（行情日期与持仓日期错配）")
+
+    # ---- V6 🟡 活跃基金持仓市值和 ≈ fund_account（仅提示）----
+    if fund is not None:
+        active_sum = sum(
+            (_fnum(h.get("mv")) or 0)
+            for h in (data.get("holdings_summary") or [])
+            if _fnum(h.get("mv")) is not None and (_fnum(h.get("mv")) > 0) and h.get("group") != "已清仓"
+        )
+        if abs(active_sum - fund) > 0.02:
+            issues.append(f"🟡 V6 活跃持仓市值和 {active_sum:,.2f} 与 fund_account {fund:,.2f} 偏差 >0.02（核对 holdings_summary 口径）")
+
+    # ---- V7 🟡 data_freshness 由人工入库维护 ----
+    meta_fresh = str((((data.get("_meta") or {}).get("data_freshness") or {}).get("holdings")) or "").strip()
+    if meta_fresh and meta_fresh[:10] != update_date[:10]:
+        issues.append(f"🟡 V7 _meta.data_freshness.holdings 为 {meta_fresh[:10]}，落后 update_date {update_date[:10]}（该字段由人工入库维护，见协议 v1.5）")
+
+    return issues
+
+
 def process_all(data):
     """Process all portfolio data. Returns dict ready for embedding."""
     # Validate
     warnings = validate_data(data)
+    # v4.4.0 结构化入库自检（rebuild 现有 _warnings 循环免费打印；致命闸门在 data_pipeline --integrity / sync_all 步骤0）
+    try:
+        warnings += validate_integrity(data)
+    except Exception as _e:
+        warnings.append(f"validate_integrity 异常: {_e}")
 
     # Holdings (P1-1 智能分类)
     raw = data.get('holdings_summary', [])

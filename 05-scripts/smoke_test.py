@@ -216,6 +216,34 @@ def main():
             else:
                 check(label, True, "(无 token，跳过)")
 
+    # 1c. 报告时间校验（v4.4.4 时间错标防御 L4）
+    #     2026-09-11 事故：报告把 9/15 写成「周一」（实为周二）、9/13 写成「周六」（实为周日）。
+    #     这里只断言「最新报告没有新增的星期错标」——注意不是「全库为零」：
+    #     历史上仍有 28 处存量错标（归档未改写，见 00-system/2026-09-11-时间错标事故…）。
+    print("\n[1c] 报告时间校验 report_time_check")
+    rtc = SCRIPTS / "report_time_check.py"
+    if not rtc.exists():
+        check("report_time_check.py 存在", False, f"(缺 {rtc.name})")
+    else:
+        rep = [p for p in (ANCHOR / '04-reviews').rglob('*.md') if p.is_file()]
+        if not rep:
+            check("04-reviews 下存在报告", False)
+        else:
+            latest = max(rep, key=lambda p: p.stat().st_mtime)
+            try:
+                sys.path.insert(0, str(SCRIPTS))
+                from report_time_check import check_text
+                _res = check_text(latest.read_text(encoding='utf-8', errors='replace'),
+                                  datetime.now().year)
+                bad = [f"行{h['line']}「{h['text']}」应为{h['expected']}" for h in _res['a']]
+                check(f"最新报告无星期错标（{latest.name[:32]}）", not bad,
+                      f"({'；'.join(bad[:2])})")
+                # 🟡 只记录不判负：场外「收盘价」作触发线是待整改的表述习惯，非硬错误
+                if _res['b']:
+                    print(f"      ⚠️ 时点可执行性存疑 {len(_res['b'])} 处（提示级，不计失败）")
+            except Exception as e:
+                check("report_time_check 可导入并可运行", False, f"({e})")
+
     # 2. HTML 产物
     print("\n[2] portfolio_analysis.html")
     embed = {}

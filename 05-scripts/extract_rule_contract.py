@@ -36,6 +36,15 @@ DEFAULTS = {
     # 09-01 新增：4.3 集中度上限（单只压舱石≤8000 / 核心≤4000 / 卫星≤3000 / 板块≤12000）
     "single_position_caps": {"压舱石": 8000, "核心": 4000, "卫星": 3000},
     "sector_cap": 12000,
+    # 09-11 新增：附录D 执行时点规则（事故后立）
+    # 场外基金 15:00 前提交方按当日净值成交；建议一律写 14:30 前（留 30 分钟缓冲）。
+    # 放在这里不是为了让脚本「知道」——是为了让它可被程序读取、可被 pre_trade_check 点检。
+    "otc_submit_cutoff": "15:00",
+    "otc_advice_deadline": "14:30",
+    "otc_confirm_days": 1,
+    "otc_settle_days": 2,
+    "hk_connect_cutoff": "16:00",
+    "exec_time_declaration_required": True,
 }
 
 # 规则手册路径（默认取 01-rules 下最新 v*）
@@ -123,6 +132,23 @@ def extract(text: str) -> dict:
     else:
         rules["sector_cap"] = DEFAULTS["sector_cap"]
         warns.append("sector_cap")
+
+    # ── 附录D 执行时点规则（09-11 事故后立）──
+    # 全部锚定在附录D 独有的措辞上，避免 re.search 命中正文里的旧句而取到错值。
+    grab("otc_submit_cutoff", [r"场外申赎截止\s*(\d{1,2}:\d{2})"],
+         lambda m: m.group(1), DEFAULTS["otc_submit_cutoff"])
+    grab("otc_advice_deadline", [r"建议钟点\s*(\d{1,2}:\d{2})"],
+         lambda m: m.group(1), DEFAULTS["otc_advice_deadline"])
+    grab("otc_confirm_days", [r"T\+(\d)\s*确认份额"], lambda m: int(m.group(1)), DEFAULTS["otc_confirm_days"])
+    grab("otc_settle_days", [r"T\+(\d)\s*资金到账"], lambda m: int(m.group(1)), DEFAULTS["otc_settle_days"])
+    grab("hk_connect_cutoff", [r"港股通截止\s*(\d{1,2}:\d{2})"],
+         lambda m: m.group(1), DEFAULTS["hk_connect_cutoff"])
+    # 存在性规则：不是取值，是「这条契约还在不在」——附录D 若被删/改标题，此处会 WARN
+    if "禁止不可执行表述" in text:
+        rules["exec_time_declaration_required"] = True
+    else:
+        rules["exec_time_declaration_required"] = DEFAULTS["exec_time_declaration_required"]
+        warns.append("exec_time_declaration_required")
 
     return rules, warns
 

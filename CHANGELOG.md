@@ -6,6 +6,30 @@
 
 ---
 
+## v4.4.5 — 2026-09-11（信息桥 GBK 崩溃修复 + 9/11 入库订正）
+
+> **同一个 bug 类，在 v4.4.4 之后又被抓到一次——这次不在校验链路，在 sync_all 的生产链路里。**
+> 9/11 晚间跑 `sync_all.py` 时步骤 9「实时分发 relay」**总体显示 `[OK]`，但子步骤信息桥推送报错**：
+> `UnicodeEncodeError: 'gbk' codec can't encode character '\xa5' in position 158`（`ai_bridge_sync.py:106`
+> 打印含 `¥` 的数据表）。**子步骤失败不冒泡到步骤级退出码**，所以这行 WARN 被 `[OK]` 掩盖——
+> 属 v4.4.4 认定的最危险失败方式：**静默失效**。
+
+**修复**
+- `AI-Collab/ai_bridge_sync.py` — 顶部加模块级 `reconfigure(encoding="utf-8", errors="replace")`
+  （与 v4.4.4 的 `report_time_check.py` / `pretooluse_time_gate.py` / `gate_selftest.py` 同一规范）。
+  验证：重跑 `--push` 与整条 `sync_all`，WARN 消失、推送成功。
+
+**数据入库订正（9/11 收盘 App 权威，`portfolio_data.json`）**
+- 总资产 **¥56,071.88**（基金+余额宝 50,331.88 + 股票 5,740.00），当日 **-340.01（-0.60%）**
+- 同步订正 **3 处滞后字段**：`total_hold_pnl_est` 1,596.32 → **1,256.32**；余额宝 `pnl` 336.11 → **336.44**；
+  股票 `pnl` 600.00 → **500.00**（515180 由 1.460 降至 1.435）
+- **口径勘误（存量）**：历史笔记「纳指 9/9 收 26,253.34」实为**纳斯达克综合**，本基金跟踪**纳斯达克 100**
+  （长期差约 3,000 点），本次起以纳指100 为准
+
+**影响文件**：`AI-Collab/ai_bridge_sync.py`、`portfolio_data.json`（桌面 + 06-dashboard）、`CHANGELOG.md`、`CLAUDE.md`、`00-system/会话检查点.md`
+
+---
+
 ## v4.4.4 — 2026-09-11（时间错标事故治理：L0–L4 五层防御 + 事实核验派）
 
 > 9/11 盘中研究报告把 9/15 写成「周一」（实为**周二**）、9/13 写成「周六」（实为**周日**），

@@ -68,9 +68,21 @@ ck("半导体 fetch=when_held 且 mv=0 → 按设计跳过",
    semi["fetch"] == "when_held" and not (semi_h and semi_h["mv"] > 0))
 
 print("\n=== E. 收盘判定三态（#138 B）===")
-for cls, expect in (("hk", True), ("a_share", True), ("cn_fund_nav", True), ("cash", True), ("us", False)):
-    ok, why = dsh.close_confirmed(cls)
-    ck(f"close_confirmed({cls}) = {expect}", ok == expect)
+# ⚠️ v4.4.11 修正：本段原调用 close_confirmed(cls) 不注入 now，
+#    断言的真值随【运行钟点】漂移 —— 9/16 23:5x 跑为 True，
+#    9/17 00:02 跑同一断言变 False（当日尚未开盘，False 才是正确答案）。
+#    → 一个会按钟点翻脸的断言不是测试，是钟表。已改为注入固定时刻，
+#      并对每个边界【两侧都断言】，避免只测「已收盘」单向。
+_CLOSED = __import__("datetime").datetime(2026, 9, 16, 23, 50)  # 三类市场均已收盘
+_OPEN = __import__("datetime").datetime(2026, 9, 16, 10, 00)    # 三类市场均在盘中
+for cls in ("hk", "a_share", "cn_fund_nav", "cash"):
+    ok, _ = dsh.close_confirmed(cls, now=_CLOSED)
+    ck(f"已收盘时刻 close_confirmed({cls}) = True", ok is True)
+for cls in ("hk", "a_share", "cn_fund_nav"):
+    ok, _ = dsh.close_confirmed(cls, now=_OPEN)
+    ck(f"盘中时刻 close_confirmed({cls}) = False", ok is False)
+ok, _ = dsh.close_confirmed("us", now=_CLOSED)
+ck("美股盘中 → close_confirmed=False", ok is False)
 ok, _ = dsh.close_confirmed("us", data_date="2026-09-15")
 ck("历史数据日期一律判为已结算", ok)
 ok, _ = dsh.close_confirmed("未识别类别")

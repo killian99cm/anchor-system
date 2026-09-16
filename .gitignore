@@ -57,6 +57,9 @@ ANCHOR_体系总览.md
 05-scripts/.watch_sync.lock
 # sync_all 运行状态（瞬时产物，不提交）
 05-scripts/.sync_last_result.json
+# 数据源健康矩阵（#138）：每次取数自动重写，属运行产物；且含逐只持仓的源尝试留痕
+# （公开仓库不发布持仓构成信息）。代码 data_source_health.py 入库，本 JSON 不入库。
+05-scripts/data_source_health.json
 # 噪声审计数据
 06-dashboard/noise/
 # 决策日志（含判断依据与复盘，属隐私，不提交）

@@ -404,6 +404,16 @@ def main():
     )
     check("交易前校验测试通过", "ALL TESTS PASSED" in r_pt.stdout, f"(rc={r_pt.returncode}) {r_pt.stderr[-200:]}")
 
+    # 7-c2c. 取数层回归测试（#137/#138：注册表覆盖度 / 双向断言 / 收盘判定 / 健康矩阵约束）
+    #         不发网络请求，秒级；含负向测试（删债券条目必须被 --coverage 拦下并指名）
+    print("\n[7-c2c] 取数层回归测试 test_fetch_registry.py")
+    r_fr = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_fetch_registry.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=120
+    )
+    check("取数层回归测试通过", "全部通过" in r_fr.stdout, f"(rc={r_fr.returncode}) {r_fr.stderr[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

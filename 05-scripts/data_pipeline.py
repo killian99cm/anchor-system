@@ -13,6 +13,12 @@ Anchor 数据管道规范 v1.0（8/20 确立，最高优先级数据纪律）
   python data_pipeline.py --map        → 打印全部持仓的数据管道映射
   python data_pipeline.py --lookup 创新药 → 查单只持仓的管道定义
   python data_pipeline.py --check      → 跑数据质量自检（报告生成前必跑）
+  python data_pipeline.py --integrity  → 结构化入库自检（v4.4.0，sync_all 步骤0 致命闸门）
+  python data_pipeline.py --coverage   → 取数覆盖度校验（v4.4.11，任务单 #137）：
+                                         活跃持仓 ↔ fetch_registry.json 双向差集 + A-2 双向断言。
+                                         🔴 与 --check 的分工：--check 查「映射表内部自洽」，
+                                         --coverage 查「该取的资产是否真的有取数定义」——
+                                         后者才能发现「债券有定义却从未被取数」这类缺口。
 """
 import json
 import os
@@ -376,6 +382,89 @@ def artifact_readiness_check():
 
 
 # ============================================================
+# 取数覆盖度校验（任务单 #137 需求B，2026-09-16）
+# ============================================================
+REGISTRY_PATH = Path(__file__).resolve().parent / "fetch_registry.json"
+
+
+def _active_holdings(data: dict) -> list:
+    """活跃持仓 = mv>0 且 group≠已清仓；读【两个段】（红利在 stock_holdings）。"""
+    out = []
+    for h in data.get("holdings_summary", []):
+        if (h.get("mv") or 0) > 0 and h.get("group") != "已清仓":
+            out.append({"name": h.get("name", ""), "mv": h.get("mv") or 0,
+                        "group": h.get("group", ""), "segment": "holdings_summary"})
+    for h in data.get("stock_holdings", []):
+        mv = h.get("mv")
+        if mv in (None, ""):
+            try:
+                mv = round(float(h.get("shares", 0)) * float(h.get("price", 0)), 2)
+            except (TypeError, ValueError):
+                mv = 0
+        if (mv or 0) > 0 and h.get("group") != "已清仓":
+            out.append({"name": h.get("name", ""), "mv": mv or 0,
+                        "group": h.get("group", ""), "segment": "stock_holdings"})
+    return out
+
+
+def coverage_check() -> tuple:
+    """双向差集校验。返回 (problems, notes)。
+
+    (A) 每只【活跃持仓】必须至少被一个注册表条目覆盖（按 holdings_match 关键词）
+    (B) A-2 双向断言：每个条目的 pipeline_key ∈ DATA_PIPELINE_MAP，
+        且 DATA_PIPELINE_MAP 每个键都有条目指向它  —— 防止「改了分析口径忘了改取数」或反之
+    """
+    problems, notes = [], []
+
+    try:
+        data = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
+    except Exception as e:
+        return [f"无法读取 {paths.DATA_PATH}: {e}"], notes
+
+    try:
+        reg = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
+    except Exception as e:
+        return [f"🔴 取数注册表不可读 {REGISTRY_PATH}: {e} —— 取数层无真值，覆盖度不可判"], notes
+
+    entries = reg.get("entries") or []
+    if not entries:
+        return [f"🔴 注册表 {REGISTRY_PATH.name} 无 entries"], notes
+
+    holds = _active_holdings(data)
+    notes.append(f"活跃持仓 {len(holds)} 只（mv>0 且非已清仓）｜注册表条目 {len(entries)} 条")
+
+    # ---- (A) 活跃持仓 → 是否有取数定义 ----
+    for h in holds:
+        hit = [e for e in entries
+               if any(kw and kw in h["name"] for kw in (e.get("holdings_match") or []))]
+        if not hit:
+            problems.append(f"持仓「{h['name']}」(mv={h['mv']}, {h['segment']}) "
+                            f"→ ❌ 无任何取数定义（该持仓不会被取数）")
+        else:
+            keys = "/".join(e.get("key", "?") for e in hit)
+            notes.append(f"  ✅ {h['name'][:22]:<24}→ {keys}")
+
+    # ---- (B) A-2 双向断言 ----
+    map_keys = set(DATA_PIPELINE_MAP.keys())
+    reg_keys = {e.get("pipeline_key") for e in entries if e.get("pipeline_key")}
+
+    orphan_reg = reg_keys - map_keys
+    if orphan_reg:
+        problems.append(f"注册表 pipeline_key 在 DATA_PIPELINE_MAP 中不存在：{sorted(orphan_reg)}"
+                        f"（分析口径无此资产 → 取数结果无处归因）")
+
+    uncovered_map = map_keys - reg_keys
+    if uncovered_map:
+        problems.append(f"DATA_PIPELINE_MAP 有定义但取数层无条目：{sorted(uncovered_map)}"
+                        f"（＝ 死定义，该资产不会被取数 —— 9/16「债券从未取数」即此形态）")
+
+    if not orphan_reg and not uncovered_map:
+        notes.append(f"  ✅ A-2 双向断言通过：MAP {len(map_keys)} 键 ↔ 注册表 {len(reg_keys)} 键，双向差集为空")
+
+    return problems, notes
+
+
+# ============================================================
 # 主入口
 # ============================================================
 def main() -> int:
@@ -420,6 +509,26 @@ def main() -> int:
         else:
             print(f"{'🔴' if hard else '🟡'} 共 {len(hard)} 硬项 + {len(soft)} 提示")
         return 1 if hard else 0
+
+    if "--coverage" in sys.argv:
+        # 任务单 #137 需求B（2026-09-16）：取数覆盖度校验。
+        #   缘起：DATA_PIPELINE_MAP 有「债券」定义（占组合 42.43%），而取数层 QUERY_SPECS 无对应
+        #   条目 → 债券【从未被发起取数】。--check 只校验映射表内部自洽，删掉债券条目依然全绿。
+        #   本分支补的正是这一层：把「持仓」与「取数定义」做双向差集，非空即 🔴。
+        # ⛔ 只读 portfolio_data.json 与 fetch_registry.json，绝不写入任何文件。
+        problems, notes = coverage_check()
+        print(f"— 取数覆盖度校验（#137）· 注册表 {REGISTRY_PATH.name} —")
+        for n in notes:
+            print("  ", n)
+        if problems:
+            print(f"\n🔴 取数覆盖度未通过（{len(problems)} 项）：")
+            for p in problems:
+                print("  -", p)
+            print("\n   处置：把缺口条目补进 fetch_registry.json（含 pipeline_key / holdings_match / queries），"
+                  "或确认该持仓确无取数必要并显式登记原因。")
+            return 1
+        print("\n✅ 取数覆盖度通过：活跃持仓与取数定义双向对应，无孤儿。")
+        return 0
 
     if "--check" in sys.argv:
         hard_fail = 0

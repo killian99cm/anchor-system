@@ -147,6 +147,20 @@ def liabilities_in_cash(data):
     return safe_float(data.get('_meta', {}).get('liabilities', {}).get('in_cash', 0), 0)
 
 
+def net_outflow_total(data):
+    """Return cumulative capital withdrawn from the account (累计净转出).
+
+    净值口径补正项，与 liabilities.in_cash 方向相反：
+      - in_cash     = 借来的钱仍留在账户里 → 虚增 total_assets，回撤要扣掉
+      - net_outflow = 自己的钱离开了账户   → 压低 total_assets，回撤要加回
+
+    v4.4.7：不补回会制造「假回撤」。9/14 用户转出 ¥8,298.67 至银行卡/消费，
+    若不补回：净值 40,848.24 → 回撤 -17.5% → 误触发 -15% 线「核心增长减 1/3」，
+    而当日实际为盈利 +98.80。回撤梯子量的是市场回撤，不是提现。
+    """
+    return safe_float(data.get('_meta', {}).get('net_outflow_total', 0), 0)
+
+
 def drawdown_status(total, peak):
     """Return explicit drawdown status with signed precedence."""
     if peak <= 0:
@@ -175,14 +189,17 @@ def compute_drawdown_state(data, totals):
     v3.5.5 净值口径：回撤/安全垫以自有净值计算
     （total_assets 扣减账户内贷款残留 liabilities.in_cash），
     防止贷款虚增总资产导致安全垫被高估 3 倍以上。
+    v4.4.7 净值口径补正：再加回累计净转出 net_outflow_total，
+    防止用户提现/消费被算成市场亏损、误触发减仓线。
     total_assets = 账户口径（含贷款残留，四层占比仍用它）；
-    net_assets   = 净值口径（回撤/安全垫用它）。
+    net_assets   = 净值口径（回撤/安全垫用它）= total - in_cash + net_outflow。
     """
     peak = get_peak_assets(data)
     peak_note = data.get('_meta', {}).get('peak_note', '')
     total_assets = safe_float(totals['total'], 0)
     liabilities = liabilities_in_cash(data)
-    net_assets = total_assets - liabilities
+    outflow = net_outflow_total(data)
+    net_assets = total_assets - liabilities + outflow
     status = drawdown_status(net_assets, peak)
     triggered_line = status['line']
     if status['level'] == 'safe' and status['dd_pct'] >= 0:
@@ -193,6 +210,7 @@ def compute_drawdown_state(data, totals):
         'total_assets': round(total_assets, 2),
         'net_assets': round(net_assets, 2),
         'liabilities_in_cash': round(liabilities, 2),
+        'net_outflow_total': round(outflow, 2),
         'dd_pct': round(status['dd_pct'], 1),
         'dd_level': status['level'],
         'safe_cushion': round(status['cushion'], 2),
@@ -914,7 +932,10 @@ def generate_rules(sat_holdings, data, mkt, totals, drawdown_state=None, ops_sta
     elif dd_pct <= -5:
         rules.append({"lv": "ra", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -5% 线！卫星仓位减半"})
     else:
-        rules.append({"lv": "rg", "t": f"自有净值距 -5% 回撤线 ¥{drawdown_state['lines']['minus5']:,.0f} 还有 ¥{safe_cushion:,.0f} 安全垫（已扣贷款残留 ¥{drawdown_state['liabilities_in_cash']:,.0f}）"})
+        _dd_basis = f"已扣贷款残留 ¥{drawdown_state['liabilities_in_cash']:,.0f}"
+        if drawdown_state.get('net_outflow_total'):
+            _dd_basis += f"·已补回净转出 ¥{drawdown_state['net_outflow_total']:,.0f}"
+        rules.append({"lv": "rg", "t": f"自有净值距 -5% 回撤线 ¥{drawdown_state['lines']['minus5']:,.0f} 还有 ¥{safe_cushion:,.0f} 安全垫（{_dd_basis}）"})
 
     # 操作计数 (from unified helper)
     violations = ops_state.get('violations', 0)

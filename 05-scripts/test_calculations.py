@@ -16,7 +16,7 @@ from datetime import date
 # data_processor.py 是本文件所在目录
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
-from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot, time_stop_deadline_from_data, compute_drawdown_state, liabilities_in_cash
+from data_processor import fp, rate, safe_float, monthly_ops_summary, is_manual_operation, get_peak_assets, drawdown_status, process_all, build_snapshot, time_stop_deadline_from_data, compute_drawdown_state, liabilities_in_cash, net_outflow_total
 
 # 测试辅助函数（data_processor 未提供，纯测试用）
 def calc_layer_ratios(bedrock_mv, core_mv, sat_mv, cash_mv):
@@ -201,6 +201,47 @@ class TestNetAssetsDrawdown(unittest.TestCase):
         self.assertAlmostEqual(dd['dd_pct'], (44016.90 - self.PEAK) / self.PEAK * 100, places=1)
 
 
+class TestNetOutflow(unittest.TestCase):
+    """v4.4.7：累计净转出补正——提现/消费不得被算成市场亏损"""
+
+    PEAK = 49529.40
+
+    def _data(self, total_assets, outflow=None, in_cash=0):
+        meta = {'peak_assets': self.PEAK}
+        if in_cash:
+            meta['liabilities'] = {'in_cash': in_cash}
+        if outflow is not None:
+            meta['net_outflow_total'] = outflow
+        return {'total_assets': total_assets, '_meta': meta}
+
+    def test_defaults_to_zero_when_absent(self):
+        """旧数据无该字段 → 兜底 0，行为与 v4.4.6 完全一致"""
+        self.assertEqual(net_outflow_total({'_meta': {}}), 0)
+        self.assertEqual(net_outflow_total({'total_assets': 100}), 0)
+
+    def test_outflow_is_added_back(self):
+        """净转出必须加回净值分子，否则制造假回撤"""
+        dd = compute_drawdown_state(self._data(40848.24, outflow=8298.67), {'total': 40848.24})
+        self.assertAlmostEqual(dd['net_assets'], 49146.91, places=2)
+        self.assertAlmostEqual(dd['net_outflow_total'], 8298.67, places=2)
+        # 9/14 真实场景：不补回是 -17.5%（假警报），补回后是 -0.8%
+        self.assertAlmostEqual(dd['dd_pct'], -0.8, places=1)
+        self.assertEqual(dd['dd_level'], 'safe')
+
+    def test_without_outflow_would_be_false_alarm(self):
+        """反证：同一组数字，若漏掉净转出 → 误触发 -15% 线"""
+        dd = compute_drawdown_state(self._data(40848.24), {'total': 40848.24})
+        self.assertLessEqual(dd['dd_pct'], -15)
+        self.assertEqual(dd['dd_level'], 'red')
+        self.assertEqual(dd['action'], '核心增长减 1/3')
+
+    def test_outflow_and_liability_are_opposite(self):
+        """in_cash 与 net_outflow 方向相反，同时存在时各自生效"""
+        dd = compute_drawdown_state(self._data(40848.24, outflow=8298.67, in_cash=7023.77),
+                                    {'total': 40848.24})
+        self.assertAlmostEqual(dd['net_assets'], 40848.24 - 7023.77 + 8298.67, places=2)
+
+
 class TestStopLoss(unittest.TestCase):
     def test_no_trigger(self):
         triggered, r = check_stop_loss(-100, 9000)
@@ -370,7 +411,7 @@ class TestRealPortfolioData(unittest.TestCase):
         """检查当前回撤级别 — 使用引擎净值口径 drawdown_state（v3.5.5）"""
         peak = get_peak_assets(self.data)
         dd = process_all(self.data).get('drawdown_state', {})
-        self.assertAlmostEqual(dd['net_assets'], dd['total_assets'] - dd['liabilities_in_cash'], places=2)
+        self.assertAlmostEqual(dd['net_assets'], dd['total_assets'] - dd['liabilities_in_cash'] + dd.get('net_outflow_total', 0), places=2)
         pct = dd['dd_pct']
         print(f"\n  [INFO] Total: {dd['total_assets']:,.0f}, Net: {dd['net_assets']:,.0f}, "
               f"Peak: {peak:,.0f}, DD: {pct:.1f}%, Level: {dd['dd_level']}")
@@ -385,7 +426,7 @@ class TestRealPortfolioData(unittest.TestCase):
         total = embed.get('total', 0)
         self.assertIn('net_assets', dd)
         self.assertIn('liabilities_in_cash', dd)
-        self.assertAlmostEqual(dd['net_assets'], total - dd['liabilities_in_cash'], places=2)
+        self.assertAlmostEqual(dd['net_assets'], total - dd['liabilities_in_cash'] + dd.get('net_outflow_total', 0), places=2)
         # 安全垫 = 净值 - peak*0.95（与 drawdown_status 一致）
         peak = get_peak_assets(self.data)
         expected_cushion = dd['net_assets'] - peak * 0.95

@@ -15,6 +15,14 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
                                会得「全部净流入」的**取样假象** —— 必须 pz≥500 且两端都取
   ✅ 南向资金                datacenter-web.eastmoney.com  RPT_MUTUAL_DEAL_HISTORY
   ✅ 日K / MA（前复权）      web.ifzq.gtimg.cn/appstock/app/fqkline/get
+  ✅ 主力资金【日序列】       push2his.eastmoney.com/api/qt/stock/fflow/daykline/get
+                            ⚠️ **必须带 ut token**，否则返回空
+                            🔴 **有 IP 级限流**：实测一次成功拿到 **121 条**，随后**连打
+                               19 次请求全部 RemoteDisconnected** → 纳入 `_BANNED` 冷处理，
+                               **调用要省**（一次拿够，勿循环重试）
+                            ⚠️ push2delay / push2 **同路径只回当日 1 条**（不是序列）
+                               → 故本端点**不复用 `_EM_HOSTS`**，主机优先级独立
+                            📌 用途：判「连续 N 日主力净流出」——此前被误判为「无源」
 
 🔴 已知不可用（勿再试，勿写进 fallback 链）
 --------------------------------------------------------------------------------
@@ -54,7 +62,8 @@ from datetime import datetime
 
 __all__ = [
     "index_quotes", "sector_flow", "sector_movers", "southbound",
-    "cn10y", "bond_refs", "daily_kline", "ma", "PROBE_LOG",
+    "cn10y", "bond_refs", "daily_kline", "ma",
+    "fund_flow_series", "PROBE_LOG",
 ]
 
 # ---------------------------------------------------------------- 基础设施
@@ -400,6 +409,89 @@ def ma(closes: list[float], n: int) -> float | None:
     if len(closes) < n or n <= 0:
         return None
     return round(sum(closes[-n:]) / n, 4)
+
+
+# ---------------------------------------------------------------- 资金流日序列
+
+# ⚠️ 本端点**不复用 `_EM_HOSTS`**：只有 push2his 提供**序列**，push2delay/push2 同路径
+#    只回**当日 1 条**。把 push2delay 放前面会静默拿到「1 条」而被误当完整序列。
+_FLOW_HOSTS = ("push2his.eastmoney.com", "push2delay.eastmoney.com")
+_UT = "7eea3edcaed734bea9cbfc24409ed989"        # 东财公开 ut token（缺它返回空）
+_FLOW_F2 = "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65"
+
+
+def fund_flow_series(secid: str, days: int = 10,
+                     source: str = "资金流日序列") -> dict:
+    """东财主力资金**日序列** —— 「连续 N 日主力净流出」类判据的判据源。
+
+    实测（2026-09-17）：
+      ✅ `push2his` → **返回全序列**（实测 121 条）。
+      🔴 但**有 IP 级限流**：同一分钟连打 19 次请求**全部 `RemoteDisconnected`**。
+         ⇒ 本函数纳入 `_BANNED` 冷处理；**调用要省**（一次拿够，勿循环重试）。
+      ⚠️ `push2delay` / `push2` → 同路径**只回当日 1 条**，仅作「完全无值」兜底。
+
+    返回::
+
+        {"secid", "name", "rows": [{"date","main_net_yi","main_pct"}, ...],
+         "count": 实际条数, "complete": count >= days, "close_confirmed": False}
+
+    🔴 `complete=False` 时**不得**据此判「连续 N 日」—— 序列不足即判据不成立，
+       调用方应显式声明缺口，**不得以「当日为负」外推**。
+
+    ⚠️ `close_confirmed` 恒为 False：**当日那条在 15:00 前是盘中值**（附录E · F5）。
+    """
+    key = f"flow:{secid}:{days}"
+    if key in _CACHE:
+        return _CACHE[key]                                  # type: ignore[return-value]
+
+    now = time.time()
+    hosts = [h for h in _FLOW_HOSTS if _BANNED.get(h, 0.0) < now] or list(_FLOW_HOSTS)
+    rows: list[dict] = []
+    name = None
+
+    for attempt, host in enumerate(hosts):
+        if attempt:
+            time.sleep(_BACKOFF[min(attempt, len(_BACKOFF)) - 1])
+        url = (f"https://{host}/api/qt/stock/fflow/daykline/get"
+               f"?lmt=0&klt=101&ut={_UT}&secid={secid}"
+               f"&fields1=f1,f2,f3,f7&fields2={_FLOW_F2}")
+        rc, body = _http(url, "https://quote.eastmoney.com/", 20, "utf-8")
+        if rc != 200:
+            _record(source, url, False, body)
+            _BANNED[host] = time.time() + _BAN_SECONDS      # 网络层失败 → 冷处理
+            continue
+        try:
+            js = json.loads(body)
+        except json.JSONDecodeError:
+            _record(source, url, False, f"非 JSON: {body[:80]}")
+            continue
+        data = js.get("data")
+        if data is None:
+            _record(source, url, False, f"rc={js.get('rc')} data=null")
+            return {"secid": secid, "name": None, "rows": [], "count": 0,
+                    "complete": False, "close_confirmed": False}
+        name = data.get("name")
+        for r in (data.get("klines") or []):
+            c = r.split(",")
+            if len(c) < 7:
+                continue
+            try:
+                rows.append({"date": c[0],
+                             "main_net_yi": round(float(c[1]) / 1e8, 4),
+                             "main_pct": float(c[6])})
+            except (TypeError, ValueError):
+                continue
+        _record(source, url, True, f"{secid} {len(rows)} 条 host={host}")
+        break
+
+    if not rows:
+        _record(source, f"fflow/{secid}", False, "所有 host 均失败")
+
+    out = {"secid": secid, "name": name, "rows": rows[-days:] if days > 0 else rows,
+           "count": len(rows), "complete": len(rows) >= days,
+           "close_confirmed": False}
+    _CACHE[key] = out
+    return out
 
 
 # ---------------------------------------------------------------- 自检

@@ -6,6 +6,7 @@ Anchor 决策日志统计测试（test_decision_log.py，C2 新增）
       止损执行率、准确率口径。数据全部注入，不依赖真实 decision_log.json。
 运行: python test_decision_log.py
 """
+import datetime
 import os
 import sys
 import unittest
@@ -87,15 +88,29 @@ class TestDueFiltering(unittest.TestCase):
     def tearDown(self):
         dl.load_log = self._orig
 
+    # ⚠️ 2026-09-17 修：原断言调 `dl.due_list()` / `dl.pending_list()` **不注入"今天"**，
+    #    而这两个函数当时【没有注入口】，`datetime.now()` 写死在函数体里 ——
+    #    于是断言真值随【运行日期】双向漂移：
+    #      实跑 now=2026-01-05 → ['b2'] ✅ ／ now=2026-01-03 → [] ❌ ／ now=2026-01-01 → [] ❌
+    #    夹具是 2026-01-0x 的固定日期，只有挂钟走到 1/5 之后才"刚好"通过。
+    #    → 已给两个函数加 `today=` 注入口（对齐 freshness_watchdog.trading_lag 的样板），
+    #      并在此显式注入固定基准日 —— **测试里的时间必须注入，不能读钟。**
+    FIXED = datetime.datetime(2026, 1, 5)   # b2(01-02) 的 T+3 到期日
+
     def test_due_excludes_backfilled_and_superseded(self):
-        due = dl.due_list()
+        due = dl.due_list(today=self.FIXED)
         ids = [d["id"] for d in due]
         self.assertEqual(ids, ["b2"])
 
     def test_pending_excludes_backfilled_and_superseded(self):
-        pend = dl.pending_list()
+        pend = dl.pending_list(today=self.FIXED)
         ids = [d["id"] for d in pend]
         self.assertEqual(ids, ["b2"])
+
+    def test_due_list_not_yet_due_when_today_earlier(self):
+        """反向断言：基准日早于到期日时必须【不】到期 —— 防只测单向。"""
+        self.assertEqual([d["id"] for d in dl.due_list(today=datetime.datetime(2026, 1, 3))], [])
+        self.assertEqual([d["id"] for d in dl.pending_list(today=datetime.datetime(2026, 1, 3))], [])
 
 
 class TestDueDate(unittest.TestCase):

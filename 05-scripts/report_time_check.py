@@ -108,7 +108,48 @@ def _blocks(lines: list[str]) -> list[tuple[int, list[str]]]:
     return out
 
 
-def check_text(text: str, year: int, *, do_b: bool = True) -> dict:
+_FULLDATE_RE = re.compile(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})")
+_YEAR_CN_RE = re.compile(r"(20\d{2})\s*年")
+
+
+def infer_year(text: str, path=None):
+    """从【文档自身】推断年份 —— **不读挂钟**。返回 (year|None, source)。
+
+    🔴 为什么必须这样（2026-09-17 全库「读挂钟」审计，两个门禁共用同一未注入的 year）：
+       原调用方传 `datetime.date.today().year` —— 后果是 **2027-01-01 一过，
+       同一批历史归档被新年份重算**：
+         `report_time_audit.py --check` 的存量基线从 🔴28（＝基线 28 ✅）
+         跳到 🔴409，于是**恒报「有新增时间错标」而真实存量一处未增**；
+         `smoke_test.py` 实跑同一份报告 `--year 2026`→🔴2、`--year 2027`→🔴15。
+       假失败一旦落地，维护者的正确反应是「加白名单」—— **然后白名单吃掉真错**，
+       正是该脚本 `:28` 自己写下的教训。
+       **星期是【可计算事实】，其年份必须来自被检查的文档，而不是「你在哪天看它」。**
+
+    优先级：文件名里的完整年月日 → 正文首个完整年月日 → 正文首个「20XX 年」。
+    实测（全库 217 份）：102 走文件名、75 走正文日期、37 走「20XX 年」，
+    **仅 3 份推不出**（均为模板/指南，非带星期标注的报告）。
+    ⚠️ 推不出时返回 (None, "unknown")，调用方**必须跳过星期校验并显式说明**，
+       **不得回落挂钟** —— 否则等于把「编造一个年份」写进检查器。
+    """
+    if path is not None:
+        m = _FULLDATE_RE.search(Path(path).name)
+        if m:
+            return int(m.group(1)), "filename"
+    m = _FULLDATE_RE.search(text or "")
+    if m:
+        return int(m.group(1)), "body-date"
+    m = _YEAR_CN_RE.search(text or "")
+    if m:
+        return int(m.group(1)), "body-year-cn"
+    return None, "unknown"
+
+
+def check_text(text: str, year=None, *, do_b: bool = True, path=None) -> dict:
+    # year=None → 从文档自推（推荐）。显式传入者仍按传入值（向后兼容 + 测试可注入）。
+    if year is None:
+        year, year_src = infer_year(text, path)
+    else:
+        year_src = "explicit"
     lines = _norm(text)
     blocks = _blocks(lines)
     blk_of: dict[int, list[str]] = {}
@@ -125,7 +166,9 @@ def check_text(text: str, year: int, *, do_b: bool = True) -> dict:
         skipped = any(m in ln for m in SKIP_MARKERS)
 
         # ── A：星期实算 ──
-        if not skipped:
+        # year 为 None（文档推不出年份）时【整段跳过】—— 见 infer_year 的说明：
+        # 宁可显式说「没校验」，也不拿运行年份去凑一个。
+        if not skipped and year is not None:
             spans, seen = [], set()
             for rx in (A_PAREN, A_BARE):
                 for m in rx.finditer(ln):
@@ -165,7 +208,8 @@ def check_text(text: str, year: int, *, do_b: bool = True) -> dict:
                         "context": ln.strip()[:100],
                     })
 
-    return {"a": a_hits, "b": b_hits, "lines": len(lines)}
+    return {"a": a_hits, "b": b_hits, "lines": len(lines),
+            "year": year, "year_source": year_src}
 
 
 # 排除：本校验器的「存量登记表」由 report_time_audit.py 生成，其内容按设计
@@ -225,7 +269,10 @@ def main(argv: list[str]) -> int:
     ap.add_argument("files", nargs="*", help="待校验的 .md 文件")
     ap.add_argument("--latest", action="store_true", help="校验 04-reviews 下 mtime 最新报告")
     ap.add_argument("--all", action="store_true", help="全库只读审计（恒退出码 0）")
-    ap.add_argument("--year", type=int, default=datetime.date.today().year)
+    ap.add_argument("--year", type=int, default=None,
+                    help="星期实算用的年份。默认 None = 从【文档自身】推断"
+                         "（文件名 → 正文日期 → 「20XX 年」）；"
+                         "⛔ 不再默认取运行年份——那会让历史归档在跨年后被重算成假失败")
     ap.add_argument("--json", action="store_true", help="输出 JSON（供 hook 消费）")
     ap.add_argument("--no-b", action="store_true", help="只跑 A 检测器（确定性）")
     ap.add_argument("--quiet", action="store_true")
@@ -256,7 +303,7 @@ def main(argv: list[str]) -> int:
             print(f"⚠️ 跳过（非文件）：{p}")
             continue
         text = io.open(p, "rb").read().decode("utf-8", "ignore") if p else sys.stdin.read()
-        res = check_text(text, args.year, do_b=not args.no_b)
+        res = check_text(text, args.year, do_b=not args.no_b, path=p)
         payload.append({"path": str(p) if p else "(stdin)", **res})
         if args.json:
             continue

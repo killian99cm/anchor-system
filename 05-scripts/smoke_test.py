@@ -233,11 +233,20 @@ def main():
             try:
                 sys.path.insert(0, str(SCRIPTS))
                 from report_time_check import check_text
+                # 🔴 2026-09-17 修·年份炸弹：原传 `datetime.now().year` ——
+                #    实跑同一份报告：--year 2026 → 🔴2；--year 2027 → 🔴15。
+                #    今天不炸只因最新报告恰好无星期标注；下一位把含「M/D（周X）」的
+                #    报告放到 04-reviews 最新位的人，会在跨年时收到一条与他改动无关的红灯。
+                #    → 改由【文档自身】推年份（path=latest 优先读文件名里的日期）。
                 _res = check_text(latest.read_text(encoding='utf-8', errors='replace'),
-                                  datetime.now().year)
+                                  path=latest)
+                if _res.get('year') is None:
+                    # 推不出年份 → 不校验星期。**显式说出来**，不当作通过。
+                    print("      ⚠️ 该报告推不出年份（文件名/正文均无 20XX），"
+                          "星期校验已跳过 —— 不判负，但也不冒充通过")
                 bad = [f"行{h['line']}「{h['text']}」应为{h['expected']}" for h in _res['a']]
-                check(f"最新报告无星期错标（{latest.name[:32]}）", not bad,
-                      f"({'；'.join(bad[:2])})")
+                check(f"最新报告无星期错标（{latest.name[:32]}，年份源 {_res.get('year_source')}）",
+                      not bad, f"({'；'.join(bad[:2])})")
                 # 🟡 只记录不判负：场外「收盘价」作触发线是待整改的表述习惯，非硬错误
                 if _res['b']:
                     print(f"      ⚠️ 时点可执行性存疑 {len(_res['b'])} 处（提示级，不计失败）")

@@ -39,7 +39,12 @@ def scan() -> list[dict]:
             text = io.open(p, "rb").read().decode("utf-8", "ignore")
         except OSError:
             continue
-        res = check_text(text, datetime.date.today().year)
+        # 🔴 2026-09-17 修·年度炸弹：原为 `check_text(text, datetime.date.today().year)`，
+        #    与下面的「基线只增不减」比对组合成【每年 1/1 必然误报】——
+        #    实算：year=2026 → 🔴28（＝基线 28 ✅）；year=2027 → 🔴409
+        #    → `--check` 恒 return 1 报「有新增时间错标」，而真实存量一处未增。
+        #    一张按年解冻的存量冻结表不是门禁，是钟表。改为【按每份文档自身的年份】扫描。
+        res = check_text(text, path=p)
         if not res["a"] and not res["b"]:
             continue
         try:

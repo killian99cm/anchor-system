@@ -218,6 +218,103 @@ def _classify_failure(exc_errors, tried):
     return ("source_error", f"源报错 ×{n} 次：{joined[:200]}")
 
 
+# ── 语义绑定（2026-09-17 新增）────────────────────────────────────
+# 🔴 根因实证（9/17 00:08 探针，见 CHANGELOG v4.4.11 §⑧）：
+#   mx 单次查询返回的是【异质行列表】，一次同时给出：
+#     最新涨跌幅 / 单位净值 / 单位净值增长率 / 复权单位净值增长率 /
+#     近1周回报 / 近3月回报 / 近1年回报 / 今年以来回报 / 各种排名 / 收盘价
+#   而旧逻辑「取第一个能转 float 的行」会稳定地抓错两类：
+#     ① 抓到【单位净值本身】—— 黄金 3.378、通利 2.599（量纲完全不是百分比）
+#     ② 抓到【别的基金】—— 查 515180 返回 招商 515080 的最新涨跌幅
+#   ⚠️ 二者抓错时【都不报错】，只是给出一个看着像百分比的数。此前被误判为
+#      「mx 返回指数而非净值」的口径错配；真相是【取数层 ⊥ 语义层无绑定】——
+#      与 #135 / #137 / #138 同一处的【第四次】复发，且长在修前三次的代码里。
+#   ✅ 正确列 = `单位净值增长率`，实测与 App day_pct 精确吻合：
+#      黄金 0.893% vs App 0.8931%；通利 0% vs App 0.00%。
+PCT_FIELDS_NAV = ("单位净值增长率", "复权单位净值增长率")
+PCT_FIELDS_QUOTE = ("最新涨跌幅", "涨跌幅")
+
+# ⚠️ 周期标记（2026-09-17 新增）：列名【退化包含】匹配时必须排除这些。
+#    实测：「涨跌幅」是「5日涨跌幅」的子串 —— 若只做包含匹配，
+#    一个 5 日累计涨跌会被当成【当日】涨跌取走，且同样不报错。
+_PERIOD_MARK = re.compile(r"\d+\s*(日|周|月|季|年)|今年以来|成立以来|年初至今|区间|近\d")
+
+
+def _row_identity(row: dict) -> str:
+    """把一行的可识别字段拼成一串，供实体/代码绑定用。
+
+    ⚠️ 必须四个字段都拼：mx 的板块类接口会把 entity / name / date 三列【错位】
+       （实测：entity='2026-09-17 00:08'、date='招商中证红利ETF(515080.SH)'），
+       只认 entity 会漏掉真身。
+    """
+    return " ".join(str(row.get(k) or "") for k in ("entity", "name", "date", "value"))
+
+
+def _pick_row(rows: list, spec: dict, query: str):
+    """按【列名 + 代码 + 实体 + 结算日】四重绑定，挑出「当日涨跌」口径的那一行。
+
+    任一层不满足即弃用该行；全都挑不到时**返回 None（报缺口）而不是退回「第一个数」**
+    —— 宁可显式缺数据，也不给一个张冠李戴却看着合理的值。
+    """
+    kind = (spec or {}).get("target_kind")
+    want = PCT_FIELDS_NAV if kind == "nav" else PCT_FIELDS_QUOTE
+    keywords = [k for k in ((spec or {}).get("match") or []) if k]
+    codes = set(re.findall(r"\d{6}", query or ""))
+    cands = []
+    for r in rows:
+        name = str(r.get("name") or "").strip()
+        raw = str(r.get("value") or "").strip()
+        rdate = str(r.get("date") or "")
+        # ① 列名绑定：先精确、后退化包含（含周期标记的一律不作退化匹配）。
+        #    须在单位校验之前——「单位净值增长率」含「净值」二字，不能靠子串黑名单排除。
+        rank = next((i for i, f in enumerate(want) if f == name), None)
+        if rank is None:
+            for i, f in enumerate(want):
+                if f and f in name and not _PERIOD_MARK.search(name):
+                    rank = i + 0.5
+                    break
+        if rank is None:
+            continue
+        ident = _row_identity(r)
+        # ② 代码绑定 —— ⚠️ 方向是【反向】的，2026-09-17 探针实测后订正：
+        #    第一版写成「问句带代码 → 行内必须出现同一代码」，**方向错了**。
+        #    实测 mx 对【按代码提问】的回答根本不回显代码：
+        #      问 "515180 涨跌幅" → entity='易方达中证红利ETF'/name='最新涨跌幅'
+        #      /date='2026-09-17 00:13' —— 全行找不到 "515180"，
+        #    于是第一版把【正确的值】拒了；而它本意要拦的 515080，
+        #    恰恰是【行内明写 515080】的那种行。
+        #    → 取反：行内出现【别的】6 位代码即弃用（「不得张冠李戴」比「必须自证」更可靠）。
+        if codes and any(c not in codes for c in re.findall(r"\d{6}", ident)):
+            continue
+        # ③ 实体绑定：行内须含注册表声明的预期关键词
+        if keywords and not any(k in ident for k in keywords):
+            continue
+        # ④ 单位校验：带「元」的是价格/净值，不是百分比
+        if "元" in raw:
+            continue
+        try:
+            pct = float(raw.replace("%", "").strip())
+        except ValueError:
+            continue
+        # ⑤ 结算日绑定（2026-09-17 新增）：带【钟点】的 date 是查询时刻的【快照】，
+        #    不带钟点或带「(日)」的是【已结算日线】。同一列名两者并存时优先取已结算的。
+        #    实测（红利 515180 行情查询）同名「最新涨跌幅」有两行：
+        #      date='2026-09-17 00:13' value='-0.42%'    ← 查询时刻快照
+        #      date='2026-09-16(日)'   value='-0.4219'   ← 9/16 已结算日线
+        #    若只按列名排序，先出现的快照会赢 —— 于是【9/16 的收盘值被标成 9/17 的数据】，
+        #    违反时间准确性铁律，且 close_confirmed 会按 9/17 判（当日的尚未收盘）。
+        snap = bool(re.search(r"\d{1,2}:\d{2}", rdate))
+        cands.append((rank + (0.25 if snap else 0.0), pct, r, name, snap))
+    if not cands:
+        return None
+    cands.sort(key=lambda x: x[0])
+    _, pct, r, name, snap = cands[0]
+    return {"pct": pct, "date": clean_date(r.get("date")),
+            "entity": str(r.get("entity") or "").strip(),
+            "field": name, "query": query,
+            "raw_date": str(r.get("date") or ""), "snapshot": snap}
+
+
 def fetch_latest_pct(spec: dict, matrix=None, target=None) -> dict:
     """对 spec.queries × 后缀依次尝试，取第一个可解析为百分比的结果。
 
@@ -248,27 +345,18 @@ def fetch_latest_pct(spec: dict, matrix=None, target=None) -> dict:
             # 节流（2026-09-16 实测）：连续发问会触发妙想 code=112「请求频率过高」，
             # 与 #131 的日配额（113）不是同一回事——112 靠拉开间隔即可规避。
             time.sleep(QUERY_GAP_SEC)
-            hit = None
-            for r in rows:
-                val = str(r.get("value", "")).replace("%", "").strip()
-                try:
-                    pct = float(val)
-                except ValueError:
-                    continue
-                hit = {
-                    "pct": pct,
-                    "date": clean_date(r.get("date")),
-                    "entity": r.get("entity", ""),
-                    "query": v,
-                }
-                break
+            # v3.2（2026-09-17）：由「取第一个能转 float 的」改为
+            # _pick_row 的【列名 + 代码 + 实体】三重绑定 —— 见其 docstring 的根因说明。
+            hit = _pick_row(rows, spec, v)
             if matrix and target:
-                matrix.attempt(
-                    target,
-                    f"mx-data: {v}",
-                    f"OK pct={hit['pct']}% date={hit['date']}" if hit else (err or "无可解析百分比"),
-                    ok=bool(hit),
-                )
+                if hit:
+                    # 留痕【必须带列名】—— 抓错列时唯一的可见线索就是它。
+                    # （9/16 那批「看着对」的值，若留痕带列名，当晚就能看出抓的是
+                    #   单位净值 / 别的基金，不必等到第二天探针。）
+                    detail = f"OK pct={hit['pct']}% date={hit['date']} 取列={hit.get('field')}"
+                else:
+                    detail = err or "无可解析百分比（无『当日涨跌』口径列，或实体/代码不匹配）"
+                matrix.attempt(target, f"mx-data: {v}", detail, ok=bool(hit))
             if hit:
                 return hit
     kind, msg = _classify_failure(exc_errors, tried)
@@ -308,7 +396,8 @@ def main():
     print(f"=== 数据回填候选生成（{today} {now.strftime('%H:%M')}）===")
     print(f"持仓载入 {len(holdings)} 条（holdings_summary {sum(1 for h in holdings if h['segment']=='holdings_summary')}"
           f" ＋ stock_holdings {sum(1 for h in holdings if h['segment']=='stock_holdings')}）")
-    print(f"{'标的':<10}{'查询涨跌':>10}{'现日盈亏':>11}{'估算日盈亏':>12}{'差值':>9}  {'收盘确认':<8}数据日期")
+    print(f"{'标的':<10}{'查询涨跌':>10}{'现日盈亏':>11}{'估算日盈亏':>12}{'差值':>9}  "
+          f"{'收盘确认':<8}{'数据日期':<12}取值列")
 
     for spec in specs:
         label = spec["label"]
@@ -342,19 +431,28 @@ def main():
         #   同一标的在同一晚被反复发问（实测 23:52 已取到创新药 −1.25%，23:54 又查一次
         #   → code=112），既烧 6-skill 共用池，又让后一次的失败把前一次取到的 grade
         #   覆盖成 unavailable。**已经知道的值不该再问一次，更不该被一次失败抹掉。**
+        # ⚠️ 复用条件必须含【读数自带的数据日期】（2026-09-17 修，一次真事故）：
+        #    旧版只判 at[:10]==today，复用时又把 date 硬写成 today —— 于是
+        #    【9/16 的净值涨跌被标成 9/17 的数据】（实测：创新药/鹏华畅享/通利），
+        #    连 close_confirmed 也跟着按「9/17 尚未收盘」误判成 🟡盘中。
+        #    编造日期是时间准确性铁律明令禁止的（「不确定标未知，不得编造一个」）。
+        #    → 无 data_date 的旧读数一律【不复用】：宁可重问一次，也不猜日期。
         reused = None
         if has_dsh and matrix:
             _lr = matrix.latest_reading(label)
-            if _lr and str(_lr.get("at", ""))[:10] == today and _lr.get("close_confirmed") is True:
+            if (_lr and str(_lr.get("at", ""))[:10] == today
+                    and _lr.get("close_confirmed") is True and _lr.get("data_date")):
                 reused = _lr
 
         if reused is not None:
-            r = {"pct": reused["value"], "date": today, "entity": "",
+            # date 取【读数自带的数据日期】，不是 today —— 这是本次修复的要点。
+            r = {"pct": reused["value"], "date": reused.get("data_date"), "entity": "",
+                 "field": reused.get("field"), "snapshot": None,
                  "query": reused.get("source") or "cache", "reused_at": reused["at"]}
             if matrix:
                 matrix.attempt(label, "cache: 当日已收盘确认读数",
                                f"复用 {str(reused['at'])[:19]} 的读数 {reused['value']}%"
-                               f"（未重复发问，省共用配额）", ok=True)
+                               f"（数据日期 {reused.get('data_date')}，未重复发问，省共用配额）", ok=True)
         else:
             r = fetch_latest_pct(spec, matrix=matrix, target=label)
         base_mv = holding["mv"] if holding else 0
@@ -409,7 +507,8 @@ def main():
             if have_value and reused is None:   # 复用来的读数已在矩阵里，不重复登记
                 matrix.reading(label, r["pct"], close_confirmed=cc,
                                source=r.get("query"), close_class=spec.get("close_class"),
-                               note=cc_reason)
+                               note=cc_reason, data_date=r.get("date"),
+                               field=r.get("field"))
         entry["grade"] = resolved
         # 序列天数：本脚本只取单日（D-3：不得据此断言「连续 N 日」）
         entry["series_days"] = 1 if "pct" in r else 0
@@ -420,7 +519,8 @@ def main():
             cur_s = f"{cur_day_pnl:+.1f}" if isinstance(cur_day_pnl, (int, float)) else "--"
             est_s = f"{est:+.1f}" if est is not None else "--"
             cc_s = ("✅已收盘" if cc else "🟡盘中") if cc is not None else "--"
-            print(f"{label:<10}{r['pct']:>+9.2f}%{cur_s:>11}{est_s:>12}{diff_s:>9}  {cc_s:<8}{r.get('date','')}")
+            print(f"{label:<10}{r['pct']:>+9.2f}%{cur_s:>11}{est_s:>12}{diff_s:>9}  {cc_s:<8}"
+                  f"{r.get('date',''):<12}{r.get('field','')}")
         else:
             failed.append(f"{label}（{r.get('error')}）")
             entry["error_kind"] = r.get("error_kind")

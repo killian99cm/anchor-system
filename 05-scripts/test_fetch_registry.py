@@ -83,8 +83,18 @@ for cls in ("hk", "a_share", "cn_fund_nav"):
     ck(f"盘中时刻 close_confirmed({cls}) = False", ok is False)
 ok, _ = dsh.close_confirmed("us", now=_CLOSED)
 ck("美股盘中 → close_confirmed=False", ok is False)
-ok, _ = dsh.close_confirmed("us", data_date="2026-09-15")
+# ⚠️ 2026-09-17 全库「读挂钟」审计抓出的【漏网孪生】：本行原为
+#      dsh.close_confirmed("us", data_date="2026-09-15")     ← 未注入 now
+#    就紧挨着上面那段修复注释往下 9 行，却没被一起改到。
+#    实跑证明它同样按钟点翻脸：now=2026-09-15 22:00 → False、now=2026-09-14 22:00 → False，
+#    【只有挂钟走到 9/16 之后才 True】—— 断言名写「历史数据日期一律判为已结算」，
+#    可它测到 data_date 分支纯属【跑得够晚】，不是设计。今天通过 ≠ 逻辑成立。
+ok, _ = dsh.close_confirmed("us", now=_CLOSED, data_date="2026-09-15")
 ck("历史数据日期一律判为已结算", ok)
+# 同一分支的【反向】断言：数据日期就是当天、且当天未收盘时，必须判 False。
+_OPEN_0916 = __import__("datetime").datetime(2026, 9, 16, 10, 0)
+ok, _ = dsh.close_confirmed("cn_fund_nav", now=_OPEN_0916, data_date="2026-09-16")
+ck("数据日期=当天且未收盘 → False（不得把盘中快照当收盘价）", ok is False)
 ok, _ = dsh.close_confirmed("未识别类别")
 ck("未知资产类别 → False（不得当地收盘价用）", ok is False)
 

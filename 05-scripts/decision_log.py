@@ -122,10 +122,17 @@ def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "") -
     print(f"❌ 未找到决策 #{did}")
 
 
-def pending_list(days: int = 3) -> list:
-    """待复盘项：已过 T+days 但仍未回填的决策（8/31 审计：排除 backfilled 历史补录噪声）"""
+def pending_list(days: int = 3, today=None) -> list:
+    """待复盘项：已过 T+days 但仍未回填的决策（8/31 审计：排除 backfilled 历史补录噪声）
+
+    ⚠️ `today` 注入口（2026-09-17 加）：本函数原先【没有注入口】，`datetime.now()`
+       写死在函数体里 —— 于是它**不可测**：`test_decision_log.py:98` 的断言
+       `pend = dl.pending_list()` 真值随运行日期双向漂移（实跑 now=2026-01-05 → `['b2']`、
+       now=2026-01-03 → `[]`）。**一个无法注入"今天"的函数，只能靠"跑得刚好"通过。**
+       与 `freshness_watchdog.trading_lag(update_str, today=None)` 对齐（那是本库最佳样板）。
+    """
     log = load_log()
-    now = datetime.now()
+    now = today or datetime.now()
     pend = []
     for d in log["decisions"]:
         if d["outcome"] is None and _is_active(d) and not d.get("backfilled"):
@@ -215,10 +222,15 @@ def due_date(d: dict) -> str:
     return (datetime.strptime(d["date"], "%Y-%m-%d") + timedelta(days=3)).strftime("%Y-%m-%d")
 
 
-def due_list() -> list:
-    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日；superseded/backfilled 跳过——8/31 审计：backfilled 历史补录为噪声）"""
+def due_list(today=None) -> list:
+    """今日已到期/超期的复盘项（outcome 为空 且 今天 >= 到期日；superseded/backfilled 跳过——8/31 审计：backfilled 历史补录为噪声）
+
+    ⚠️ `today` 注入口（2026-09-17 加）：同 `pending_list` —— 原先 `datetime.now()`
+       写死在函数体里，导致 `test_decision_log.py:93` 的 `due = dl.due_list()`
+       断言真值随运行日期漂移，**函数侧无口可注，测试侧改不了**。
+    """
     log = load_log()
-    now = datetime.now().strftime("%Y-%m-%d")
+    now = (today or datetime.now()).strftime("%Y-%m-%d")
     due = []
     for d in log["decisions"]:
         if d["outcome"] is None and _is_active(d) and not d.get("backfilled") and due_date(d) <= now:

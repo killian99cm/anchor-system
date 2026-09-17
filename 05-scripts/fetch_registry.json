@@ -149,9 +149,9 @@
       "queries": [
         {"q": "中证红利ETF 515180", "match": ["中证红利ETF"]}
       ],
-      "suffixes": [" 最新价 涨跌幅", " 今日涨跌幅"],
+      "suffixes": [" 行情", " 今日涨跌幅"],
       "fetch": "always",
-      "note": "⚠️ 该持仓在 portfolio_data.json 的【stock_holdings】段，不在 holdings_summary——取数脚本原先只读后者，故此前恒为「持仓未匹配」。"
+      "note": "⚠️ 该持仓在 portfolio_data.json 的【stock_holdings】段，不在 holdings_summary——取数脚本原先只读后者，故此前恒为「持仓未匹配」。⚠️ 2026-09-17 探针：后缀由「 最新价 涨跌幅」改为「 行情」——前者返回 47 行（含招商 515080 的同名行 + 仅「收盘价 1.416元」无百分比的行），后者返回的 23 行里同时含 9/16 已结算日线（date 带「(日)」）与查询时刻快照两行，配合 _pick_row 的⑤结算日绑定可取到【已结算】的 -0.4219%（App day_pct -0.42%）。"
     },
     {
       "key": "通利A",

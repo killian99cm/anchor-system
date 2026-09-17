@@ -181,11 +181,16 @@ class HealthMatrix:
         return m
 
     def reading(self, target, value, close_confirmed=None, at=None,
-                source=None, close_class=None, note=""):
+                source=None, close_class=None, note="", data_date=None, field=None):
         """登记一次【读数】。**append-only，永不覆盖**（#138 B-4）。
 
         同一标的当日可有多条：盘中一条（close_confirmed=false）+ 收盘后/次日清晨一条
         （true）。报告端据此判断「用的是哪一个读数」。
+
+        ⚠️ `data_date` = 该读数【所属的数据日期】（不是读到的时刻，`at` 才是时刻）。
+           2026-09-17 新增，起因是一次真事故：复用路径拿不到数据日期，就把复用时的
+           `today` 填了进去 —— 【9/16 的净值涨跌被标成 9/17 的数据】。
+           时间准确性铁律：不确定就标未知，**不得编造一个**。
         """
         t = self.targets.setdefault(str(target), {
             "official_name": None, "grade": None, "attempted_sources": [],
@@ -197,6 +202,8 @@ class HealthMatrix:
             "at": at or datetime.now().strftime("%Y-%m-%dT%H:%M:%S+08:00"),
             "close_confirmed": close_confirmed,
             "close_class": close_class,
+            "data_date": data_date,
+            "field": field,
             "source": source,
             "note": note,
         }

@@ -92,7 +92,8 @@ def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
         "snapshot": snapshot or {},
         "tags": tags or [],       # v3.4: 追高等标签，--report 分桶统计
         "outcome": None,          # correct/wrong/neutral
-        "pnl_pct": None,          # 事后收益率 %
+        "pnl_pct": None,          # 事后收益率 %（口径由 pnl_basis 声明，v4.4.16）
+        "pnl_basis": None,        # 收益率口径：realized/benefit/price_move（见 PNL_BASIS）
         "review_date": None,
         "review_note": "",
     }
@@ -104,8 +105,36 @@ def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
     return did
 
 
-def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "") -> None:
-    """事后复盘回填。outcome: correct/wrong/neutral。superseded 决策禁止复盘（前提已推翻）。"""
+# ── v4.4.16：pnl_pct 口径契约 ────────────────────────────────────────────────
+# 病灶（2026-09-17 实测）：pnl_pct 无口径声明，35 条历史里混装了 3 种语义 ——
+#   ① 已实现盈亏率（7 月清仓批：实亏-232/成本1132 → -20.50）—— 真金白银
+#   ② 标的涨跌幅（#1 创新药「HSSCID -2.38%」→ -2.40；#26 农发种业「区间+6.99%」→ +6.99）
+#   ③ 规避率（#60 证券「规避...-3.48%的下跌」→ **+3.48**，符号被人为翻正）
+# 而 accuracy_report() 直接按数值正负分 win/loss → 聚合值不可解释。
+# 处置：**不改写历史值**，改为给每条声明口径；盈亏比只在 ① 上计算。
+PNL_BASIS = {
+    "realized": "已实现盈亏率%（正=赚钱）—— ✅ 唯一可作为盈亏比分子/分母的口径",
+    "benefit": "决策受益率%（正=该决策让组合受益）—— ⛔ 禁止参与盈亏比（注意：#60 规避 3.48% 与 price_move 的 -3.48% 同义反号）",
+    "price_move": "标的/指数涨跌幅%（原始口径，符号含义按决策类型而异）—— ⛔ 禁止参与盈亏比",
+    "position_pnl": "持仓浮亏/盈率%（位置级，非整仓累计）—— ⛔ 禁止参与盈亏比",
+    "unquantified": "未量化（复盘时无可用数值，记 0）—— ⛔ 禁止参与盈亏比",
+    "legacy_unclassified": "历史遗留·口径未核实（v4.4.16 前的记录）—— ⛔ 禁止参与盈亏比",
+}
+
+
+def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "",
+                    basis: str = "realized") -> None:
+    """事后复盘回填。outcome: correct/wrong/neutral。superseded 决策禁止复盘（前提已推翻）。
+
+    basis（v4.4.16 新增）：本笔 pnl_pct 的口径，取值见 PNL_BASIS。
+      - realized  ：已实现盈亏率（默认）—— 只有这个口径进盈亏比
+      - benefit   ：决策受益率
+      - price_move：标的涨跌幅
+      ⛔ 不传 = 按 realized 记，**并会在 --report 里与 price_move 分开计数**。
+    """
+    if basis not in PNL_BASIS:
+        print(f"❌ 未知口径 basis={basis!r}，取值须为 {'/'.join(PNL_BASIS)}")
+        return
     log = load_log()
     for d in log["decisions"]:
         if d["id"] == did:
@@ -115,9 +144,10 @@ def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "") -
             d["outcome"] = outcome
             d["review_date"] = datetime.now().strftime("%Y-%m-%d")
             d["pnl_pct"] = float(pnl_pct) if pnl_pct not in ("", "0") else 0.0
+            d["pnl_basis"] = basis
             d["review_note"] = note
             save_log(log)
-            print(f"✅ #{did} 已复盘：{outcome}（pnl {d['pnl_pct']:+.2f}%）{note}")
+            print(f"✅ #{did} 已复盘：{outcome}（pnl {d['pnl_pct']:+.2f}% · 口径 {basis}）{note}")
             return
     print(f"❌ 未找到决策 #{did}")
 
@@ -169,16 +199,30 @@ def accuracy_report(decisions=None) -> dict:
         bucket["total"] += 1
         bucket[d["outcome"]] = bucket.get(d["outcome"], 0) + 1
 
-    # 收益率（有 pnl 的）
-    pnl_values = [d["pnl_pct"] for d in reviewed if d["pnl_pct"] is not None]
-    avg_pnl = sum(pnl_values) / len(pnl_values) if pnl_values else None
+    # ── 收益率（v4.4.16 口径隔离）───────────────────────────────────────────
+    # 病灶：pnl_pct 在 v4.4.16 前混装 3 种语义（已实现盈亏率 / 标的涨跌幅 / 规避率），
+    #      旧代码直接按数值正负分 win/loss → 聚合值不可解释（9/17 实测：同一批数据
+    #      按三种合理假设算出的盈亏比分别是 0.53:1 / 1.64:1 / 无意义）。
+    # 处置：**盈亏比只在 pnl_basis == "realized" 上计算**；其余口径分别计数、明确排除。
+    all_pnl = [d for d in reviewed if d.get("pnl_pct") is not None]
+    basis_counts = {}
+    for d in all_pnl:
+        b = d.get("pnl_basis") or "legacy_unclassified"
+        basis_counts[b] = basis_counts.get(b, 0) + 1
 
-    # 盈亏比分桶（v3.4）：avg_win / avg_loss / 盈亏比（赚得抠亏得大方 → 目标 ≥1.5:1）
-    wins = [d["pnl_pct"] for d in reviewed if d["pnl_pct"] is not None and d["pnl_pct"] > 0]
-    losses = [d["pnl_pct"] for d in reviewed if d["pnl_pct"] is not None and d["pnl_pct"] < 0]
+    realized = [d for d in all_pnl if (d.get("pnl_basis") or "legacy_unclassified") == "realized"]
+    realized_pnls = [d["pnl_pct"] for d in realized]
+    avg_pnl = sum(realized_pnls) / len(realized_pnls) if realized_pnls else None
+
+    # 盈亏比分桶：avg_win / avg_loss / 盈亏比（赚得抠亏得大方 → 目标 ≥1.5:1）
+    MIN_N = 5  # 样本不足不报数——宁可输出「算不出」，也不输出一个错得看不出来的数
+    wins = [p for p in realized_pnls if p > 0]
+    losses = [p for p in realized_pnls if p < 0]
     avg_win = sum(wins) / len(wins) if wins else None
     avg_loss = abs(sum(losses) / len(losses)) if losses else None
-    pnl_ratio = (avg_win / avg_loss) if (avg_win is not None and avg_loss) else None
+    pnl_ratio = None
+    if len(wins) >= MIN_N and len(losses) >= MIN_N and avg_loss:
+        pnl_ratio = avg_win / avg_loss
 
     # 追高型买入占比（v3.4，A1 标签）：目标 ≤20%
     # 8/31 审计修正：分母=买入类决策（建仓/加仓/买入 + _is_active），原分母=全部决策稀释 ~2.3 倍
@@ -208,6 +252,10 @@ def accuracy_report(decisions=None) -> dict:
         "avg_win_pct": round(avg_win, 2) if avg_win is not None else None,
         "avg_loss_pct": round(avg_loss, 2) if avg_loss is not None else None,
         "pnl_ratio": round(pnl_ratio, 2) if pnl_ratio is not None else None,
+        # v4.4.16：口径可见性——盈亏比的分母/分子只来自 realized，其余必须显式报出被排除多少
+        "pnl_basis_counts": basis_counts,
+        "pnl_ratio_sample": {"wins": len(wins), "losses": len(losses), "min_n": MIN_N},
+        "pnl_ratio_excluded": len(all_pnl) - len(realized),
         "chase_count": len(chase_buys),
         "chase_pct": round(chase_pct, 1) if chase_pct is not None else None,
         "stop_loss_triggers": len(stop_triggers),
@@ -354,8 +402,14 @@ def dashboard_html() -> str:
     acc_txt = f"{acc}%" if acc is not None else "—"
     avg = rep["avg_pnl_pct"]
     avg_txt = f"{avg:+.2f}%" if avg is not None else "—"
+    # v4.4.16：None 不是"暂无数据"而是"该指标算不出"——渲染成「算不出」并把样本量印在副标题，
+    #          ⛔ 不得渲染成 "—"（读者会以为等数据齐了就会有，实际是口径问题）
     pr = rep["pnl_ratio"]
-    pr_txt = f"{pr:.2f}:1" if pr is not None else "—"
+    _s = rep.get("pnl_ratio_sample") or {}
+    pr_txt = f"{pr:.2f}:1" if pr is not None else "算不出"
+    pr_sub = ("均盈/均亏 · 目标 ≥1.5:1（口径 realized）" if pr is not None
+              else f"realized 口径仅 盈{_s.get('wins', '?')}/亏{_s.get('losses', '?')} 笔，需各 ≥{_s.get('min_n', '?')}"
+                   f" · 已排除 {rep.get('pnl_ratio_excluded', 0)} 条异口径")
     chase = rep["chase_pct"]
     chase_txt = f"{chase:.1f}%" if chase is not None else "—"
 
@@ -411,8 +465,8 @@ def dashboard_html() -> str:
     <div class="kpi"><div class="label">已复盘</div><div class="value">{rep['reviewed']}</div><div class="sub">T+3 回填</div></div>
     <div class="kpi"><div class="label">待复盘</div><div class="value">{rep['pending_review']}</div><div class="sub">仅有效决策 · 不含已取代</div></div>
     <div class="kpi"><div class="label">准确率</div><div class="value" style="color:#36d39c">{acc_txt}</div><div class="sub">correct / (correct+wrong)</div></div>
-    <div class="kpi"><div class="label">平均收益率</div><div class="value" style="color:#3987e5">{avg_txt}</div><div class="sub">已复盘 pnl</div></div>
-    <div class="kpi"><div class="label">盈亏比</div><div class="value" style="color:{'#36d39c' if pr and pr >= 1.5 else '#fab219'}">{pr_txt}</div><div class="sub">均盈/均亏 · 目标 ≥1.5:1</div></div>
+    <div class="kpi"><div class="label">平均收益率</div><div class="value" style="color:#3987e5">{avg_txt}</div><div class="sub">已复盘 · 仅 realized 口径</div></div>
+    <div class="kpi"><div class="label">盈亏比</div><div class="value" style="color:{'#36d39c' if pr and pr >= 1.5 else '#fab219'}">{pr_txt}</div><div class="sub">{pr_sub}</div></div>
     <div class="kpi"><div class="label">追高占比</div><div class="value" style="color:{'#36d39c' if chase is not None and chase <= 20 else '#fab219'}">{chase_txt}</div><div class="sub">目标 ≤20%</div></div>
   </div>
   <h2>按类型统计</h2>
@@ -470,10 +524,19 @@ def main() -> int:
     if "--review" in sys.argv:
         idx = sys.argv.index("--review")
         args = sys.argv[idx + 1:]
+        basis = "realized"
+        if "--basis" in args:  # v4.4.16：显式声明本次 pnl 的口径
+            bi = args.index("--basis")
+            if bi + 1 >= len(args):
+                print(f"❌ --basis 缺值，取值须为 {'/'.join(PNL_BASIS)}")
+                return 1
+            basis = args[bi + 1]
+            args = args[:bi] + args[bi + 2:]
         if len(args) < 2:
-            print("用法: --review <id> <correct/wrong/neutral> [收益率%] [备注]")
+            print("用法: --review <id> <correct/wrong/neutral> [收益率%] [备注] [--basis realized|benefit|price_move]")
             return 1
-        review_decision(args[0], args[1], args[2] if len(args) > 2 else "", args[3] if len(args) > 3 else "")
+        review_decision(args[0], args[1], args[2] if len(args) > 2 else "",
+                        args[3] if len(args) > 3 else "", basis=basis)
         return 0
 
     if "--report" in sys.argv:
@@ -485,10 +548,17 @@ def main() -> int:
         else:
             print("   准确率: 无已复盘数据（需 --review 回填）")
         if rep["avg_pnl_pct"] is not None:
-            print(f"   平均收益率: {rep['avg_pnl_pct']:+.2f}%")
-        # 盈亏比分桶（v3.4 新增）
+            print(f"   平均收益率: {rep['avg_pnl_pct']:+.2f}%（仅 realized 口径）")
+        # 盈亏比分桶（v3.4 新增；v4.4.16 加口径隔离）
         if rep["pnl_ratio"] is not None:
-            print(f"   盈亏比: {rep['pnl_ratio']:.2f}:1（均盈 {rep['avg_win_pct']:+.2f}% vs 均亏 {rep['avg_loss_pct']:+.2f}%｜目标 ≥1.5:1）")
+            print(f"   盈亏比: {rep['pnl_ratio']:.2f}:1（均盈 {rep['avg_win_pct']:+.2f}% vs 均亏 {rep['avg_loss_pct']:+.2f}%｜目标 ≥1.5:1｜口径 realized）")
+        else:
+            s = rep["pnl_ratio_sample"]
+            print(f"   盈亏比: 算不出（realized 口径仅 盈{s['wins']}/亏{s['losses']} 笔，需各 ≥{s['min_n']} 笔）—— ⛔ 此值不得以任何估算替代")
+        if rep["pnl_ratio_excluded"]:
+            bs = rep["pnl_basis_counts"]
+            dist = "/".join(f"{k} {v}" for k, v in sorted(bs.items()) if k != "realized")
+            print(f"   口径分布: {dist}（共 {rep['pnl_ratio_excluded']} 条已排除在盈亏比之外；见 PNL_BASIS 定义）")
         if rep["chase_pct"] is not None:
             print(f"   追高型买入: {rep['chase_count']} 条（{rep['chase_pct']:.1f}%｜目标 ≤20%）")
         if rep["stop_loss_execution_pct"] is not None:

@@ -81,6 +81,23 @@ def latest_report(kind, keyword=""):
     return max(files, key=lambda p: p.stat().st_mtime)
 
 # ============ 数据片段构建 ============
+def _ratio_sub(rep):
+    """决策日志 KPI 副标题（v4.4.16）。
+
+    ⚠️ 不要写回 `rep.get('pnl_ratio') or '--'` —— 那会把「**该指标算不出**」
+    渲染成「**数据还没填**」，两者对读者的含义完全相反（前者要求别再引用这个数，
+    后者暗示等着就会好）。pnl_ratio 为 None 时把原因印出来。
+    """
+    acc = rep.get("accuracy_pct")
+    acc_s = f"{acc}%" if acc is not None else "--"
+    ratio = rep.get("pnl_ratio")
+    if ratio is not None:
+        return f"准确率 {acc_s} · 盈亏比 {ratio}:1（口径 realized）"
+    s = rep.get("pnl_ratio_sample") or {}
+    return (f"准确率 {acc_s} · 盈亏比 算不出"
+            f"（realized 口径 盈{s.get('wins', '?')}/亏{s.get('losses', '?')} 笔，需各 ≥{s.get('min_n', '?')}）")
+
+
 def build_kpis(processed, data, rep):
     """今日快照 KPI 行（数据全部来自 process_all 权威派生）"""
     mkt = processed.get("mkt", {}) or {}
@@ -101,7 +118,7 @@ def build_kpis(processed, data, rep):
         ("今日盈亏", signed(pnl), "基金+现金 + 股票 515180", "var(--red)" if is_positive(pnl) else "var(--green)"),
         ("持有盈亏", signed(hold_pnl), "基金 + 股票 全部未实现", "var(--red)" if is_positive(hold_pnl) else "var(--green)"),
         ("上证指数", f"{sh.get('close', '--')} {sh.get('change', '')}", "科创50 " + str(kc.get("close", "--")) + " " + str(kc.get("change", "")), "var(--amber)"),
-        ("决策日志", f"{rep.get('total_decisions', 0)} 条", f"准确率 {rep.get('accuracy_pct') or '--'}% · 盈亏比 {rep.get('pnl_ratio') or '--'}:1", "var(--purple)"),
+        ("决策日志", f"{rep.get('total_decisions', 0)} 条", _ratio_sub(rep), "var(--purple)"),
         ("现金缓冲", pct_str((cash_mv / total * 100) if total else 0), "目标 15% · 超配留进攻层", "var(--green)"),
     ]
     return "".join(
@@ -184,12 +201,20 @@ def build_signals(processed, data, rep):
     cards.append(card("🟢", "回撤安全", dd_txt, "portfolio_analysis.html", "打开主看板", "safe"))
 
     # 决策日志（09-01 修复：删除硬编码"#22/#23（8/27）"，待复盘数动态）
+    # v4.4.16：pnl_ratio 为 None 不再是"暂无数据"，而是"该指标当前算不出"——
+    #          必须把原因（realized 样本不足）印出来，否则读者会把 "--" 当成待补数据。
     ratio = rep.get("pnl_ratio")
     ratio_ok = ratio is not None and float(ratio) >= 1.5
+    if ratio is not None:
+        ratio_txt = f"盈亏比 {ratio}:1（目标 ≥1.5:1{' ✅' if ratio_ok else ''}）"
+    else:
+        s = rep.get("pnl_ratio_sample") or {}
+        ratio_txt = (f"盈亏比 算不出（口径 realized 仅 盈{s.get('wins', '?')}/亏{s.get('losses', '?')} 笔，"
+                     f"需各 ≥{s.get('min_n', '?')}）")
     status_icon = "🟢" if ratio_ok else "🟡"
     pending = rep.get("pending_review", 0)
-    dec_txt = (f"{rep.get('total_decisions', 0)} 条 · 准确率 {rep.get('accuracy_pct')}% · 盈亏比 {ratio or '--'}:1"
-               f"（目标 ≥1.5:1{' ✅' if ratio_ok else ''}）· 待复盘 {pending} 项")
+    dec_txt = (f"{rep.get('total_decisions', 0)} 条 · 准确率 {rep.get('accuracy_pct')}% · {ratio_txt}"
+               f" · 待复盘 {pending} 项")
     cards.append(card(status_icon, "决策日志", dec_txt, "decision_dashboard.html", "打开决策胜率仪表盘", "safe" if ratio_ok else "watch"))
 
     return "".join(cards)

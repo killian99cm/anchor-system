@@ -12,6 +12,12 @@ import json, os, sys, re, subprocess
 from datetime import datetime
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+try:
+    import fetch_public as fp          # 公共取数兜底层（mx 配额耗尽/失败时的换源）
+except ImportError:                     # 兜底：模块缺失不致命，仅失去兜底能力
+    fp = None
+
 # ---------- 路径 ----------
 DESKTOP = Path("C:/Users/lenovo/Desktop")
 ANCHOR = DESKTOP / "Anchor"
@@ -41,21 +47,81 @@ FALLBACK_QUERIES = {
     "创新药": ["港股通创新药 指数 最新", "恒生创新药 收盘"],
 }
 
+def _decode(raw: bytes) -> str:
+    """容错解码链。
+
+    🔴 修复记录（2026-09-17）：原实现 `subprocess.run(..., text=True, encoding="utf-8")`
+    直接读 mx_data.py 的输出，而其在 Windows 下按 **GBK/cp936** 写出 →
+    抛 `UnicodeDecodeError: 'utf-8' codec can't decode byte 0xb4` →
+    `fetch_mx` 整体走 except 返回错误串 → **指数 0 / 板块 0 / 美股 0，
+    却仍生成了一份表格全空的报告**（实发事故，违反「数据必达铁律」）。
+    修法：先收 bytes，再按 utf-8 → gbk → cp936 依次尝试，全失败用 replace 兜底。
+    """
+    if not raw:
+        return ""
+    for enc in ("utf-8", "gbk", "cp936"):
+        try:
+            return raw.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    return raw.decode("utf-8", "replace")
+
+
 def fetch_mx(query: str) -> str:
-    """调 mx_data.py，返回 stdout 文本"""
+    """调 mx_data.py，返回 stdout 文本（容错解码，绝不因编码崩溃）"""
     try:
         r = subprocess.run([str(MX_PY), str(MX_SCRIPT), query, str(MX_OUT)],
-                           capture_output=True, text=True, timeout=120, encoding="utf-8")
-        return r.stdout or ""
+                           capture_output=True, timeout=120)
+        out = _decode(r.stdout or b"")
+        if not out.strip():
+            return f"[mx-empty] rc={r.returncode} {_decode(r.stderr or b'')[:200]}"
+        return out
     except Exception as e:
         return f"[mx-error] {e}"
+
+def _val_chg(c2: str, c3: str) -> tuple[str, str]:
+    """按「哪个单元格带 %」判定列序，返回 (值, 涨跌幅)。
+
+    🔴 修复记录（2026-09-17）：mx 对不同查询返回的列序**不固定**——
+    A股指数实测返回 `| 上证指数 | -0.37% | 3877.03 |`（涨跌幅在前），
+    而美股/黄金返回 `| 收盘价 | 涨跌幅 |`。原实现只在**日期行**分支做了这个判定，
+    **名称行**分支直接 `val=c2, chg=c3` → A股指数被**静默地价/涨跌对调**
+    （报告里出现「上证 最新 -0.37%，涨跌 3877.03」）。现统一走本函数。
+    """
+    c2, c3 = (c2 or "").strip(), (c3 or "").strip()
+    if c2.endswith("%") and not c3.endswith("%"):
+        return c3, c2          # 涨跌幅在前 → 交换
+    return c2, c3              # 已正确，或两列/两空无法判定 → 不擅动
+
+
+def _pick(c2: str, c3: str, cols: tuple | None) -> tuple[str, str]:
+    """定列序取 (值, 涨跌幅)。**表头优先**，无表头退化为 `%` 启发式。
+
+    🔴 修复记录（2026-09-17）：`%` 启发式**会失效**——mx 的「最新涨跌幅」列
+    实测返回**不带 % 的纯小数**（费半 `| 2026-09-16(日) | 0.6314 | 11246.11点 |`，
+    其中 0.6314 就是 0.6314%）。此时两列都不带 % → 不交换 → 报告写成
+    「费半 最新 0.6314，涨跌 11246.11点」。mx 同页会输出表头行
+    `| date | 最新涨跌幅 | 收盘价 |`，**表头才是权威的列序定义**。
+    """
+    if cols:
+        _, n2, n3 = cols
+        is_pct = lambda n: any(k in n for k in ("涨跌", "幅度", "涨幅"))   # noqa: E731
+        is_px = lambda n: any(k in n for k in ("收盘", "最新价", "价格", "点位"))  # noqa: E731
+        if is_pct(n2) and is_px(n3):
+            return c3, c2
+        if is_px(n2) and is_pct(n3):
+            return c2, c3
+    return _val_chg(c2, c3)
+
 
 def parse_mx(text: str) -> dict:
     """从 mx_data stdout 提取 名称→(最新值, 涨跌幅)。
     兼容两种输出：①名称行（| 名称 | 值 | 涨跌 |）②标题行（**名称(代码)的xx** + 历史数据表首行=最新）"""
     out = {}
     cur_name = None
-    for line in text.splitlines():
+    cols = None                 # 当前表的表头列名——权威列序定义
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
         # 标题行：**费城半导体指数(SOX.GI)(指数)的涨跌幅、收盘价**
         m = re.match(r"\*\*(.+?)[(（][^)]*[)）]?.*?(?:指数|的)", line)
         if m:
@@ -63,25 +129,90 @@ def parse_mx(text: str) -> dict:
             if nm and len(nm) < 30:
                 cur_name = nm
                 out.setdefault(nm, {"val": None, "chg": None})
+            cols = None                      # 新表开始 → 表头作废
             continue
         # 数据行：| 2026-08-31(日) | 0.57% | 11535.05点 | 或 | 名称 | 值 | 涨跌 |
         m = re.match(r"\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|", line)
         if m:
             c1, c2, c3 = m.group(1).strip(), m.group(2).strip(), m.group(3).strip()
+            # 分隔行 | --- | --- | --- | → 跳过
+            if re.match(r"^[-:\s]+$", c2) and re.match(r"^[-:\s]+$", c3):
+                continue
+            # 表头行：**下一行是分隔行**且本行无数字 → 本行定义列序（权威列序定义）
+            nxt = lines[i + 1] if i + 1 < len(lines) else ""
+            if re.match(r"^\|[\s\-:|]+\|?\s*$", nxt) and not re.search(r"\d", c2 + c3):
+                cols = (c1, c2, c3)
+                continue
             # 首列是日期 → 表数据行（最新=第一行）；首列是中文名 → 名称行
             if re.match(r"^\d{4}-\d{2}-\d{2}", c1):
                 if cur_name and out.get(cur_name, {}).get("val") is None:
-                    # 表头可能是 涨跌幅|收盘价（美股/黄金）或 最新价|涨跌幅（A股）
-                    if c2.endswith("%") and not c3.endswith("%"):
-                        out[cur_name]["val"] = c3   # 收盘价
-                        out[cur_name]["chg"] = c2   # 涨跌幅
-                    else:
-                        out[cur_name]["val"] = c2
-                        out[cur_name]["chg"] = c3
+                    out[cur_name]["val"], out[cur_name]["chg"] = _pick(c2, c3, cols)
             elif re.match(r"^[\u4e00-\u9fa5]", c1) and len(c1) < 30:
                 name = re.split(r"[(（]", c1)[0].strip()
-                out[name] = {"val": c2, "chg": c3}
+                v, ch = _pick(c2, c3, cols)
+                out[name] = {"val": v, "chg": ch}
     return out
+
+# 公共 API 兜底映射（东财 secid）。mx 取不到的类别走这里换源，
+# 落实「📡 数据必达铁律：禁止空值占位，拿不到就换源重试」。
+# ⛔ 纳指100 **刻意不列** —— 东财 `100.NDX` 实为纳斯达克综合（差约 3000 点，已禁用），
+#    该类别改走 ETF 513100 替代口径（见《报告深度标准 v2.3》§二.13 替代口径 O1）。
+_PUBLIC_IDX = {
+    "上证": "1.000001", "科创50": "1.000688", "沪深300": "1.000300",
+    "中证红利": "1.000922",
+}
+# 🔴 修复记录（2026-09-17）：板块项原先混在 _PUBLIC_IDX 里，而兜底只回填
+# `market["indices"]` → **板块永远拿不到兜底**，熔断时恒报「板块 0/3」。
+# 现按落地类别拆成两张表，`_public_fallback` 各归其位。
+_PUBLIC_SECTOR = {
+    "证券": "0.399975",        # 中证全指证券公司指数
+    "半导体": "0.980017",      # 国证芯片（⛔ 勿用 sz399811＝CSSW电子，量级差 2.2 倍）
+    "创新药": "124.HSSCID",    # 恒生港股通创新药指数（⛔ 非 987018＝港股通创新药，差约 39%）
+}
+# ⚠️ 费半（SOX）**无免费公共源**：实测 `100.SOX/SOXS/PHLX/SOXX` 全部 data:null，
+#    而同批 `100.DJIA/SPX/N225/KS11/TWII` 均可用 → 东财确实不收录 SOX。
+#    → 费半只能取自 mx-data；mx 失败时按「数据必达铁律」显式标缺口，不得占位。
+_PUBLIC_OTHER = {"COMEX黄金": "101.GC00Y"}
+_PUBLIC_SUB = {"纳指100": ("1.513100", "纳指100ETF(513100)")}
+
+
+def _public_fallback(market: dict) -> None:
+    """mx 缺失项 → 公共 API 换源补齐。补齐的每条打 `_src` 标记，报告须据实标注来源。"""
+    if fp is None:
+        return
+    q = fp.index_quotes(list(_PUBLIC_IDX.values()) + list(_PUBLIC_SECTOR.values()),
+                        source="兜底·指数/板块")
+    for cat, mp in (("indices", _PUBLIC_IDX), ("sectors", _PUBLIC_SECTOR)):
+        for label, secid in mp.items():
+            if market[cat].get(label, {}).get("val"):
+                continue                                # mx 已有值，不覆盖（权威源优先）
+            d = q.get(secid)
+            if d and d.get("price") is not None:
+                market[cat][label] = {
+                    "val": d["price"], "chg": f"{d['chg_pct']}%", "_src": "东财·公共API"}
+
+    q2 = fp.index_quotes(list(_PUBLIC_OTHER.values()), source="兜底·外盘")
+    for label, secid in _PUBLIC_OTHER.items():
+        cat = "gold" if label == "COMEX黄金" else None
+        cur = market["gold"] if cat else market["us"].get(label)
+        if cur and cur.get("val"):
+            continue
+        d = q2.get(secid)
+        if d and d.get("price") is not None:
+            item = {"val": d["price"], "chg": f"{d['chg_pct']}%", "_src": "东财·公共API"}
+            if cat:
+                market["gold"] = item
+            else:
+                market["us"][label] = item
+
+    for label, (secid, shown) in _PUBLIC_SUB.items():
+        if market["us"].get(label, {}).get("val"):
+            continue
+        d = fp.index_quotes([secid], source="兜底·纳指替代口径").get(secid)
+        if d and d.get("price") is not None:
+            market["us"][label] = {"val": d["price"], "chg": f"{d['chg_pct']}%",
+                                   "_src": f"替代口径 {shown}（非指数点位）"}
+
 
 def collect_market() -> dict:
     """全自动采集：8 查询 → 汇总 dict"""
@@ -110,11 +241,87 @@ def collect_market() -> dict:
                     elif key == "费半" and ("费城" in k or "半导体" in k): market["us"]["费半"] = v
                     elif key == "纳指100" and "纳斯达克" in k: market["us"]["纳指100"] = v
                     elif key == "创新药" and "创新药" in k: market["sectors"]["创新药"] = v
+    # 二级兜底：公共 API 换源（mx 配额耗尽时唯一出路）
+    _public_fallback(market)
+    # 补充数据块：板块资金两端 / 南向 / 中国10Y（含替代口径）—— 免费公开 API
+    if fp is not None:
+        market["sector_flow"] = fp.sector_flow(top=10)
+        market["southbound"] = fp.southbound()
+        market["cn10y"] = fp.cn10y()
+        market["bond_refs"] = fp.bond_refs()
     return market
+
+
+def coverage(market: dict) -> dict:
+    """各类别**实际取到值**的条数——零值熔断的判据。"""
+    n = lambda d: sum(1 for v in d.values() if v and v.get("val") is not None)  # noqa: E731
+    return {
+        "指数": n(market["indices"]), "指数_需": len(_PUBLIC_IDX),
+        "板块": n(market["sectors"]), "板块_需": len(_PUBLIC_SECTOR),
+        "美股": n(market["us"]), "美股_需": 2,
+        "黄金": 1 if (market.get("gold") or {}).get("val") else 0, "黄金_需": 1,
+    }
 
 # ---------- 持仓数据 ----------
 def load_portfolio() -> dict:
     return json.loads(DATA.read_text(encoding="utf-8"))
+
+# ---------- 渲染辅助 ----------
+def _srcmark(d: dict | None) -> str:
+    """来源标记：非 mx 权威源取到的值必须标出，供读者判断可信度。"""
+    s = (d or {}).get("_src")
+    return f" ⚠️源:{s}" if s else ""
+
+
+def _append_flow(lines: list, market: dict) -> None:
+    """板块资金两端 / 南向资金 / 中国10Y —— 三个 2026-09-17 修复项的输出段。"""
+    sf = market.get("sector_flow")
+    if sf:
+        lines.append(f"\n### 板块资金（东财公共API｜{sf['ts']} 快照，**非收盘**）\n")
+        lines.append(f"板块总数 **{sf['total_sectors']}**"
+                     "（⚠️ 只取单端前 N 名会得「全部净流入」的取样假象——"
+                     "本表**两端都取**，故能看见真实分化）\n")
+        lines.append("| 净流入端（主力） | 亿 | 板块涨跌 | ｜ | 净流出端（主力） | 亿 | 板块涨跌 |")
+        lines.append("|---|---|---|---|---|---|---|")
+        for i in range(max(len(sf["inflow"]), len(sf["outflow"]))):
+            a = sf["inflow"][i] if i < len(sf["inflow"]) else None
+            b = sf["outflow"][i] if i < len(sf["outflow"]) else None
+            ca = f"**{a['name']}** | {a['net_yi']:+} | {a['chg_pct']}%" if a else "— | — | —"
+            cb = f"**{b['name']}** | {b['net_yi']:+} | {b['chg_pct']}%" if b else "— | — | —"
+            lines.append(f"| {ca} ｜ | {cb} |")
+    else:
+        lines.append("\n### 板块资金\n- 🔴 **取数失败**（已试 mx + 东财公共API 两端）\n")
+
+    sb = market.get("southbound")
+    if sb and sb.get("ok"):
+        lines.append(f"\n### 南向资金（东财 datacenter）\n")
+        flag = "⚠️ **T-1 日终值**（当日须港股收盘后才有）" if sb.get("is_t_minus_1") else "当日"
+        lines.append(f"**数据日期 {sb['date']}**（{flag}）｜单位：{sb['unit']}\n")
+        lines.append("| 通道 | 净流入(百万港元) | 买入 | 卖出 |")
+        lines.append("|---|---|---|---|")
+        for d in sb["detail"]:
+            lines.append(f"| {d['label']} | {d['net_mhkd']:+} | {d['buy_mhkd']} | {d['sell_mhkd']} |")
+        lines.append(f"| **合计** | **{sb['total_mhkd']:+}（{sb['total_yi']:+} 亿）** | | |")
+    else:
+        lines.append(f"\n### 南向资金\n- 🔴 **取数失败**：{(sb or {}).get('note', '未知')}\n")
+
+    c = market.get("cn10y") or {}
+    br = market.get("bond_refs") or {}
+    lines.append("\n### 中国 10 年期国债收益率\n")
+    if c.get("value") is not None:
+        lines.append(f"- **{c['value']}%**（{c['ts']}）\n")
+    else:
+        lines.append(f"- 🔴 **无法获取** —— 已试 **{c.get('n_sources_tried', 0)} 源**全部失败；"
+                     f"{c.get('note', '')}\n")
+        q = br.get("quotes") or {}
+        if q:
+            lines.append("- **替代口径**（国债现券 / 国债ETF 价格）：")
+            for k, v in q.items():
+                if v:
+                    lines.append(f"\n  - {k}：**{v['price']}**（{v['chg_pct']:+}%）")
+            lines.append(f"\n  - ⚠️ 已知偏差方向：{br.get('direction_note', '')}")
+            lines.append("\n  - ⛔ 禁止用途：**不得当作收益率数值引用**（量纲不同、方向相反）")
+
 
 # ---------- 六段式模板 ----------
 def render_report(market: dict, data: dict, ts: str) -> str:
@@ -122,24 +329,30 @@ def render_report(market: dict, data: dict, ts: str) -> str:
     g = lambda d, k, f: d[k][f] if k in d else "—"
     lines = []
     lines.append(f"# 📈 Anchor 盘中研究报告 — {ts}")
-    lines.append(f"\n**数据时点**：{ts}（mx-data 全自动采集 {market['queries']} 查询）｜ 持仓 = {data.get('update_date','?')}")
+    lines.append(f"\n**数据时点**：{ts}（mx-data 全自动采集 {market['queries']} 查询 ＋ 东财公共API 兜底）"
+                 f"｜ 持仓 = {data.get('update_date','?')}")
+    lines.append("\n> ⚠️ **本表行情为采集时点的盘中快照，非收盘价**。"
+                 "按《报告深度标准 v2.3》§二.13 与手册附录E · **F5**，"
+                 "**未经收盘确认的价不得作任何触发线判据**。标 `⚠️源:` 者来自兜底源，非 mx 权威源。")
     lines.append("\n---\n\n## 一、市场实时全景\n")
     lines.append("| 指数 | 最新 | 涨跌 |")
     lines.append("|------|------|------|")
     for k in ("上证","科创50","沪深300","中证红利"):
-        if k in idx: lines.append(f"| {k} | {idx[k]['val']} | {idx[k]['chg']} |")
+        if k in idx: lines.append(f"| {k} | {idx[k]['val']} | {idx[k]['chg']}{_srcmark(idx[k])} |")
     lines.append("\n### 板块\n")
     lines.append("| 板块 | 最新 | 涨跌 |")
     lines.append("|------|------|------|")
     for k in ("证券","半导体","创新药"):
-        if k in sec: lines.append(f"| {k} | {sec[k]['val']} | {sec[k]['chg']} |")
+        if k in sec: lines.append(f"| {k} | {sec[k]['val']} | {sec[k]['chg']}{_srcmark(sec[k])} |")
     lines.append(f"\n### 隔夜美股（自动采集）\n")
     lines.append("| 指数 | 收盘 | 涨跌 |")
     lines.append("|------|------|------|")
     for k in ("费半","纳指100"):
-        if k in us: lines.append(f"| {k} | {us[k]['val']} | {us[k]['chg']} |")
+        if k in us: lines.append(f"| {k} | {us[k]['val']} | {us[k]['chg']}{_srcmark(us[k])} |")
     if market["gold"]:
-        lines.append(f"\n**COMEX 黄金**：{market['gold']['val']}（{market['gold']['chg']}）")
+        g = market["gold"]
+        lines.append(f"\n**COMEX 黄金**：{g['val']}（{g['chg']}）{_srcmark(g)}")
+    _append_flow(lines, market)
     lines.append("\n---\n\n## 二、持仓全景（自动）\n")
     lines.append("| 持仓 | 市值(估) | 备注 |")
     lines.append("|------|---------|------|")
@@ -162,20 +375,74 @@ def render_report(market: dict, data: dict, ts: str) -> str:
     lines.append("- 板块数据见上表；**人工补充**：候选板块连红天数/触发条件（数据驱动）")
     lines.append("\n---\n\n## 六、风险快照\n")
     lines.append("- 自动提示：板块涨跌极端值/黄金方向/美股联动（人工确认 B5/止损线）")
-    lines.append(f"\n---\n\n*全自动生成：{ts} ｜ gen_intraday_auto.py v2.0（#18 提案）｜ 行情 mx-data 实时，非记忆值*")
+    lines.append(f"\n---\n\n*全自动生成：{ts} ｜ gen_intraday_auto.py v2.1（#18 提案 ＋ 2026-09-17 修复）"
+                 "｜ 行情 mx-data 为主、东财公共API 兜底，非记忆值*")
+    if fp is not None and fp.PROBE_LOG:
+        ok = sum(1 for r in fp.PROBE_LOG if r["ok"])
+        lines.append(f"\n**附·取数留痕**：本报告共发起 {len(fp.PROBE_LOG)} 次公共API 请求，"
+                     f"成功 {ok} 次。逐条明细见脚本 `fetch_public.PROBE_LOG`。")
     return "\n".join(lines)
 
 # ---------- main ----------
 def main() -> int:
+    dry = "--dry-run" in sys.argv
     ts = datetime.now().strftime("%Y-%m-%d %H:%M")
     market = collect_market()
+    cov = coverage(market)
+
+    # ---------- 🚨 零值熔断（2026-09-17 新增）----------
+    # 取数全灭时**拒绝出报告**，而不是产出一份表格全空的骨架、打印「✅ 已生成」。
+    # 触发本熔断的真实事故：GBK 解码崩溃 → 指数 0/板块 0/美股 0，报告照出（2968 字节）。
+    # 语义：**「拿到一个价」与「拿到报告」是两回事**——没有数据就没有报告。
+    dead = [k for k in ("指数", "板块", "美股") if cov[k] == 0]
+    if dead:
+        print("🔴 零值熔断：以下类别完全没有取到任何值 → **拒绝生成报告**")
+        for k in dead:
+            print(f"   ✗ {k}：0/{cov[k + '_需']}")
+        print(f"   取数覆盖度：{json.dumps(cov, ensure_ascii=False)}")
+        if fp is not None:
+            fails = [r for r in fp.PROBE_LOG if not r["ok"]]
+            for r in fails[:8]:
+                print(f"   · [{r['source']}] {r['note']}")
+            if len(fails) > 8:
+                print(f"   · …另有 {len(fails) - 8} 条失败留痕")
+        print("\n   处置：① 查 mx-data 配额（返回 code=113 ＝ 6 个妙想 skill 共用池耗尽）"
+              "\n         ② 公共 API 兜底已自动启用；仍为空说明网络亦不可达"
+              "\n         ③ ⛔ 不得手工放行空报告 —— violates「📡 数据必达铁律」")
+        return 2
+
     data = load_portfolio()
     md = render_report(market, data, ts)
+    if dry:
+        print(f"[dry-run] 熔断通过，覆盖度 {json.dumps(cov, ensure_ascii=False)}；未落盘")
+        print(md[:600])
+        return 0
+
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     fname = OUT_DIR / f"{datetime.now().strftime('%Y-%m-%d')}-盘中研究报告.md"
+
+    # ---------- 🛡️ 防覆盖护栏（2026-09-17 新增）----------
+    # 本脚本与人工正式报告**共用同一路径**。若无条件写入，一次误跑就会把
+    # 指挥端手写的完整报告换成自动骨架 —— 而「历史归档是时点记录，
+    # 改写破坏审计链」。故：目标文件若**不含自动生成标记**即判定为人工报告，
+    # 拒绝覆盖，改写入 `<名>.auto.md`。
+    if fname.exists():
+        try:
+            existing = fname.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            existing = ""
+        if "gen_intraday_auto.py" not in existing:
+            alt = fname.with_suffix(".auto.md")
+            print(f"🛡️ 防覆盖护栏：{fname.name} 为**人工报告**（无自动生成标记）")
+            print(f"   → 拒绝覆盖，改写 {alt.name}")
+            fname = alt
+
     fname.write_text(md, encoding="utf-8")
     print(f"✅ 全自动报告已生成: {fname}")
-    print(f"   行情查询 {market['queries']} 组 | 指数 {len(market['indices'])} | 板块 {len(market['sectors'])} | 美股 {len(market['us'])}")
+    print(f"   取数覆盖度: {json.dumps(cov, ensure_ascii=False)}")
+    if fp is not None:
+        ok = sum(1 for r in fp.PROBE_LOG if r["ok"])
+        print(f"   取数留痕: {ok}/{len(fp.PROBE_LOG)} 次请求成功")
     return 0
 
 if __name__ == "__main__":

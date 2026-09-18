@@ -43,6 +43,13 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
   ✗ 新浪 hq.sinajs.cn          —— 需 Referer 才 200，且**只有现券价格，无收益率**
   ✗ 中债 / 中国货币网           —— 公开路径 404，无稳定 JSON
   ✗ 100.NDX                    —— 实为纳斯达克综合、非纳指100（差约 3000 点，禁用）
+                                  🔴 **本条曾衍生出一个错误结论，务必连读**：
+                                  「禁用**错码**」≠「**无源**」。2026-09-18 实测该码确为综合
+                                  （26,404.86），据此写下「纳指100 无免费公共源」——
+                                  **而正确码 `100.NDX100` 一直可用**（29,462.74）。
+                                  与 v4.4.13 B4'（push2his 被误判无源，实为端点没找对）、
+                                  v4.4.8（用错码 sz399811 ⇒ 结论反了）**同型**。
+                                  ⇒ **判「无源」前必须穷尽端点，且须记录「正确码是什么」**
   ✗ 100.SOX / SOXS / PHLX      —— 费城半导体指数东财**不收录**（同批 DJIA/SPX/N225/KS11/TWII 均可用）
                                   → 费半只能取自 mx-data，失败即标缺口
 
@@ -54,6 +61,11 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
   证券公司                      → 0.399975
   COMEX 黄金                    → 101.GC00Y
   道指 / 标普 / 恒生            → 100.DJIA / 100.SPX / 100.HSI
+  **纳指100（纳斯达克100）**    → **100.NDX100**
+                                  ⛔ 100.NDX 是**纳斯达克综合**（差约 3000 点，见上「已知不可用」）
+                                  ⛔ 新浪 `gb_$ndx` ＝纳指100（可作第三源，需 Referer）
+                                  📌 日K 序列 → 腾讯 `usfqkline`／code `usNDX`
+                                     （`daily_kline("usNDX")` 已支持，见其 us 分支）
 
 口径纪律（与《报告深度标准 v2.3》§二.13 对齐）
 --------------------------------------------------------------------------------
@@ -704,12 +716,22 @@ def bond_refs() -> dict:
 # ---------------------------------------------------------------- 日K / MA
 
 def daily_kline(code: str, n: int = 30) -> list[dict]:
-    """腾讯前复权日K。code 例 'sh000001' / 'sz399975' / 'sh515180'。
+    """腾讯前复权日K。code 例 'sh000001' / 'sz399975' / 'sh515180' / 'usNDX'。
 
     ⚠️ 返回的**最后一根若为当日，其收盘价＝盘中即时价**（盘中调用时），
     不是收盘价 —— 不得作收盘价判据（附录E · F5）。
+
+    🔴 **A 股与美股走不同 host**（2026-09-18 实测，勿凭直觉合并）：
+         A 股 `fqkline`   → `data.<code>.qfqday`（真前复权）
+         美股 `usfqkline` → `data.<code>.day`（**无 qfqday**，下面已兜底）
+       ⛔ **用错 host 的失败长相是「静默只回 1 条」而不是报错**：
+          `fqkline` + `usNDX` → **rows=1**（rc=200，无异常）。
+       这正是入库 note 里「腾讯仅回 1 条」的真因 —— **不是无源，是 host 用错**，
+       与 v4.4.13 B4'「push2delay 只回当日 1 条被当成全部」**同型**。
+       ⇒ 调用方见 `len(rows) <= 1` 时**不得**当成「该标的无历史序列」。
     """
-    url = ("https://web.ifzq.gtimg.cn/appstock/app/fqkline/get"
+    host = "usfqkline" if code.lower().startswith("us") else "fqkline"
+    url = (f"https://web.ifzq.gtimg.cn/appstock/app/{host}/get"
            f"?param={code},day,,,{n},qfq")
     rc, body = _http(url, "https://gu.qq.com/", 15, "utf-8")
     if rc != 200:

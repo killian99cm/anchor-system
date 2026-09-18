@@ -226,10 +226,41 @@ class TestPublicFallbackWiring(unittest.TestCase):
     def test_fetch_public_imported(self):
         self.assertIsNotNone(g.fp, "fetch_public 未接入 —— 失去换源兜底能力")
 
-    def test_nasdaq_not_in_public_map(self):
-        """⛔ 纳指100 刻意不入公共映射：东财 100.NDX 实为纳斯达克综合（禁用）。"""
-        self.assertNotIn("纳指100", g._PUBLIC_IDX)
-        self.assertIn("纳指100", g._PUBLIC_SUB)             # 只能走 ETF 替代口径
+    def test_nasdaq_uses_real_index_not_etf_substitute(self):
+        """🔴 纳指100 必须走**真指数** `100.NDX100`，ETF 只作二级兜底。
+
+        **本条替换掉旧的 `test_nasdaq_not_in_public_map`** —— 旧断言
+        `assertNotIn("纳指100", _PUBLIC_IDX)` **把一条错误结论固化成了测试**：
+        它当时的依据是「东财 `100.NDX` 实为纳斯达克综合」，
+        **前半句对，但推出的「所以纳指100 无源」是错的** ——
+        **禁用一个错码 ≠ 该指数无源**，正确码 `100.NDX100` 一直可用（实测 29,462.74）。
+
+        反向断言：若有人把 `100.NDX100` 改回/删掉，或退回「只能用 ETF」，
+        本条必失败 —— 它钉的是「真指数点位」而非「有个数就行」。
+        """
+        self.assertEqual(g._PUBLIC_OTHER.get("纳指100"), "100.NDX100")
+        self.assertNotEqual(g._PUBLIC_OTHER.get("纳指100"), "100.NDX",
+                            "100.NDX 是纳斯达克综合，差约 3000 点，不得写回")
+        # ETF 仍在，但已降级 —— 存在本身不能作为「该类别走替代口径」的证据
+        self.assertIn("纳指100", g._PUBLIC_SUB)
+
+    def test_nasdaq_index_wins_over_etf_substitute(self):
+        """优先级顺序断言：真指数取到时，ETF 兜底**必须让位**（不得覆盖真值）。
+
+        反向断言：若 `_PUBLIC_OTHER` 与 `_PUBLIC_SUB` 的执行顺序被调换，
+        或 `_PUBLIC_SUB` 的 `continue` 守卫被移除，则 `market["us"]["纳指100"]`
+        会被 ETF 价（约 1.x 元）覆盖真指数（约 29,4xx 点）—— 量级差 4 个数量级。
+        """
+        m = empty_market()
+        fake = {"100.NDX100": {"name": "纳斯达克100", "price": 29462.74, "chg_pct": 0.05},
+                "1.513100": {"name": "纳指100ETF", "price": 1.234, "chg_pct": 0.05}}
+        with mock.patch.object(g.fp, "index_quotes", return_value=fake):
+            g._public_fallback(m)
+        v = m["us"].get("纳指100")
+        self.assertIsNotNone(v, "纳指100 应被兜底写入 market['us']")
+        self.assertEqual(v["val"], 29462.74)
+        self.assertNotIn("替代口径", v.get("_src", ""))       # 用的是真指数，不是替代口径
+        self.assertGreater(v["val"], 1000, "量级守卫：ETF 价（约1元）不得冒充指数点位")
 
     def test_srcmark(self):
         """来源标记必须原样带出 `_src`（读者据此判断可信度）。"""
@@ -270,6 +301,61 @@ class TestPublicFallbackWiring(unittest.TestCase):
         self.assertEqual(m["sectors"]["证券"]["chg"], "-1.04%")
         self.assertIn("_src", m["sectors"]["证券"])
         self.assertEqual(m["indices"], {})                  # 不得污染指数区
+
+
+class TestUSKlineHostRouting(unittest.TestCase):
+    """🔴 纳指100 日K —— A 股与美股**必须走不同 host**。
+
+    2026-09-18 实测：`fqkline` + `usNDX` 返回 **rows=1**（rc=200、不报错），
+    而 `usfqkline` + `usNDX` 返回 **91 根**。
+    ⇒ **用错 host 的失败长相是「静默只回 1 条」，不是异常** ——
+       与 v4.4.13 B4'「push2delay 只回当日 1 条被当成全部」**同型**，
+       也正是入库 note 里「腾讯仅回 1 条」的真因（**不是无源，是 host 用错**）。
+    """
+
+    @staticmethod
+    def _fake_http(captured):
+        def _h(url, referer, timeout, enc):
+            captured.append(url)
+            rows = [["2026-09-18", "1", "2", "3", "4"] for _ in range(91)]
+            return 200, json.dumps({"data": {"usNDX": {"day": rows},
+                                             "sh515180": {"qfqday": rows}}})
+        return _h
+
+    def test_us_prefix_routes_to_usfqkline(self):
+        """us 前缀 → `usfqkline`（正向）。"""
+        import fetch_public as fpmod
+        seen = []
+        with mock.patch.object(fpmod, "_http", side_effect=self._fake_http(seen)):
+            rows = fpmod.daily_kline("usNDX", 90)
+        self.assertEqual(len(seen), 1)
+        self.assertIn("usfqkline", seen[0])
+        self.assertGreater(len(rows), 1, "美股日K不得只回 1 条（host 用错的典型长相）")
+
+    def test_a_share_still_routes_to_fqkline(self):
+        """A 股仍走 `fqkline`（反向断言：修美股不得改坏 A 股）。"""
+        import fetch_public as fpmod
+        seen = []
+        with mock.patch.object(fpmod, "_http", side_effect=self._fake_http(seen)):
+            fpmod.daily_kline("sh515180", 30)
+        self.assertIn("/fqkline/", seen[0])
+        self.assertNotIn("usfqkline", seen[0])
+
+    def test_reverse_wrong_host_yields_single_row(self):
+        """🔴 **反向断言** —— 证明「旧写法确实会错」，否则本测试可能在假阳性下通过。
+
+        故意用 `fqkline` 打 `usNDX`（＝修复前的行为），断言**只得 1 条**。
+        若某天该端点行为变了（也开始回全序列），本条会失败 —— 那说明 host
+        分流不再是必需的，应重新评估；**但在它失败之前，分流必须保留**。
+        """
+        import fetch_public as fpmod
+        one = json.dumps({"data": {"usNDX": {"day": [["2026-09-18", "1", "2", "3", "4"]]}}})
+        with mock.patch.object(fpmod, "_http", return_value=(200, one)):
+            rows = fpmod.daily_kline("usNDX", 90)
+        self.assertEqual(len(rows), 1,
+                         "本用例模拟的是旧行为；若为 91 条则说明分流已不必要")
+        self.assertIsNone(fpmod.ma([r["close"] for r in rows], 5),
+                          "⚠️ 1 条数据必须算出 None（静默失效的最终形态：ma() 返回 None 而非报错）")
 
 
 class TestSectorFlowRegression(unittest.TestCase):

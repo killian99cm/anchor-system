@@ -211,15 +211,53 @@ def sensitive_tokens_from_input(data):
     return sorted(tokens, key=len, reverse=True)
 
 
+# CSS 长度单位：`1366px` 是布局字面量，不是数据（详见 contains_sensitive_token docstring）。
+# 🔴 故意**不含** `%` / `s` / `ms` / `deg` —— 那些形态与真实数据（涨跌幅、时长）无法区分，纳入即松绑。
+# 🔴 边界用 `(?![A-Za-z0-9])` 而**不是 `\b`**：`contains_sensitive_token` 会先做去空白压缩，
+#    压缩后中文注释里的 `1366px不出视口` 紧贴成 `px不…`，而 Unicode 下 `\b` 认为中文是词字符
+#    ⇒ 词边界不成立 ⇒ 豁免失效（实测踩到过，见 test_anchor_pro_privacy.py::test_cjk_after_unit）。
+_CSS_LEN_AFTER = re.compile(
+    r"^(?:px|rem|em|vh|vw|vmin|vmax|fr|ch|ex|pt|pc|cm|mm|in|q)(?![A-Za-z0-9])", re.I)
+
+
+def _token_hit(text, token):
+    """在 text 中找 token；纯整数 token 若**每一处**命中都紧跟 CSS 长度单位，判为未命中。"""
+    if token not in text:
+        return False
+    if not token.isdigit():
+        return True
+    for m in re.finditer(re.escape(token), text):
+        if not _CSS_LEN_AFTER.match(text[m.end():m.end() + 6]):
+            return True
+    return False
+
+
 def contains_sensitive_token(text, token):
-    """Match direct and whitespace-spaced variants of private tokens."""
+    """Match direct and whitespace-spaced variants of private tokens.
+
+    🔴 2026-09-18（v4.5.4）：**纯整数 token 紧跟 CSS 长度单位时不算命中**。
+      缘起（实测）：`total_hold_pnl_est` 由人工维护改为派生后取值为 1366.36，
+      `numeric_token_forms()` 会额外产出整数形态 `1366`；而 anchor-pro.html 的一条
+      CSS 注释里写着「≥1366px 不出视口」⇒ **公开页生成被误报拦下**（sync_all 步骤 4 失败）。
+      判定**不是泄漏**的依据：该 1366 全文件仅出现 1 次、位于注释的 `1366px` 中，
+      而公开数据块（`var D=`）内不含 1366。
+      🔴 定性：这不是一次意外，而是**机制缺陷** —— token 集由真实字段派生，
+      任何取整落在 4 位数的字段值（布点 1024/1280/1366/1440/1920、年份 2026、z-index …）
+      都会撞上 HTML 里的字面量，且**每次撞都表现为「公开页生成失败」而非「泄漏」**。
+      ⚠️ 豁免面**收到最窄**，三条同时满足才生效：
+          ① 只对**纯整数** token（`1366.36` 这类小数形态一律照旧扫描）；
+          ② 只对**紧跟 CSS 长度单位**的命中（裸 `1366` 仍然命中，注释里的 `2026` 仍会命中）；
+          ③ 要求**该 token 的每一处命中**都落在 CSS 长度上 —— 只要有一处裸命中即判泄漏。
+      ⛔ 不得扩大此豁免面（尤其不得把 `%`/`s`/`deg` 纳入）。若将来别的 token 撞上字面量，
+         须逐个查明成因再决定，**不得笼统放过**。
+    """
     if not token:
         return False
-    if token in text:
+    if _token_hit(text, token):
         return True
     compact_text = re.sub(r"\s+", "", text)
     compact_token = re.sub(r"\s+", "", token)
-    return bool(compact_token and compact_token in compact_text)
+    return bool(compact_token and _token_hit(compact_text, compact_token))
 
 
 def leaked_tokens(text, data):

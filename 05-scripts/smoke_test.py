@@ -435,6 +435,25 @@ def main():
     check("规则门禁回归测试通过", "全绿" in r_rg.stdout and r_rg.returncode == 0,
           f"(rc={r_rg.returncode}) {r_rg.stdout.strip().splitlines()[-1] if r_rg.stdout.strip() else r_rg.stderr[-200:]}")
 
+    # 7-c2e. 公开页隐私护栏回归测试（v4.5.4）
+    #   缘起：total_hold_pnl_est 转派生后取值 1366.36，整数形态 `1366` 撞上 anchor-pro.html
+    #   注释里的 `≥1366px` ⇒ sync_all 步骤 4 以「包含私有标记」**误报失败**。
+    #   🔴 接入理由同 7-c2d：护栏的豁免面**只能靠测试钉住** —— 它既要拦真泄漏、
+    #   又要放行 CSS 字面量，且这次**误报的表现形式与真泄漏完全一样**（都报「包含私有标记」），
+    #   人眼无法区分 ⇒ 必须由测试而非人来判。
+    print("\n[7-c2e] 公开页隐私护栏测试 test_anchor_pro_privacy.py")
+    r_ap = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_anchor_pro_privacy.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    # ⚠️ unittest.TextTestRunner 默认把进度与 `OK` 写 **stderr** 而非 stdout
+    #    （其余 7-c2x 套件自带自定义 runner 才打在 stdout）⇒ 判据必须两路并取，
+    #    否则**套件全绿而本 check 报红**，造成「测试通过了但门禁说没过」的新假象。
+    _ap_out = (r_ap.stdout or "") + (r_ap.stderr or "")
+    check("公开页隐私护栏测试通过", "OK" in _ap_out and r_ap.returncode == 0,
+          f"(rc={r_ap.returncode}) {_ap_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

@@ -358,6 +358,118 @@ class TestAuditRegression(unittest.TestCase):
         self.assertEqual(drawdown_status(peak * 0.951, peak)['level'], 'safe')
 
 
+class TestDerivedFields(unittest.TestCase):
+    """v4.5.4：total_hold_pnl_est 由「人工维护」改为「派生」+ V8 顺序护栏。
+
+    缘起（实测，非假想）：该字段被 5 处消费却无任何自动写入方，
+    漂移 9/1 +380.22、9/18 -190.39（9/10/9/14/9/16/9/17 均为 0）。
+    🔴 本类每个测试都带**反向断言**：不只测「改对了」，还测「原写法确实会错」。
+    """
+
+    @staticmethod
+    def _fixture(field_value, extra_zero_mv_pnl=0.0):
+        return {
+            "holdings_summary": [
+                {"name": "甲基金", "mv": 1000.0, "pnl": 100.0},
+                {"name": "乙基金", "mv": 2000.0, "pnl": -50.0},
+                # 已清仓：mv=0 但残留 pnl —— 定义式必须把它排除
+                {"name": "已清仓基金", "mv": 0.0, "pnl": extra_zero_mv_pnl},
+            ],
+            "stock_holdings": [{"name": "股票", "mv": 500.0, "pnl": 30.0}],
+            "total_hold_pnl_est": field_value,
+        }
+
+    def test_definition_sums_only_nonzero_mv(self):
+        from data_processor import total_hold_pnl
+        d = self._fixture(field_value=0, extra_zero_mv_pnl=-999.0)
+        self.assertEqual(total_hold_pnl(d), 80.0, "定义式 = 100 - 50 + 30 = 80")
+
+    def test_zero_mv_pnl_is_excluded(self):
+        """🔴 反向断言：把 mv>0 过滤器拿掉，结果必须不同 —— 证明该过滤是承重的而非装饰。"""
+        from data_processor import total_hold_pnl
+        d = self._fixture(field_value=0, extra_zero_mv_pnl=-999.0)
+        with_filter = total_hold_pnl(d)
+        without_filter = round(sum(h["pnl"] for h in d["holdings_summary"])
+                               + sum(s["pnl"] for s in d["stock_holdings"]), 2)
+        self.assertEqual(with_filter, 80.0)
+        self.assertEqual(without_filter, -919.0)
+        self.assertNotEqual(with_filter, without_filter,
+                            "若两者相等，本测试就测不到东西（夹具失效）")
+
+    def test_old_read_raw_field_is_wrong_when_stale(self):
+        """🔴 反向断言：模拟修复前的读法（直接读字段）在漂移文件上必须给出错值。"""
+        from data_processor import total_hold_pnl, sync_total_hold_pnl
+        d = self._fixture(field_value=1175.97)          # 真实漂移值
+        old_behavior = d["total_hold_pnl_est"]           # 修复前：直接读
+        calc = total_hold_pnl(d)
+        self.assertNotAlmostEqual(old_behavior, calc, places=2,
+                                  msg="夹具未体现漂移，测试失效")
+        r = sync_total_hold_pnl(d)
+        self.assertTrue(r["changed"])
+        self.assertEqual(r["old"], 1175.97)
+        self.assertEqual(r["new"], 80.0)
+        self.assertEqual(r["delta"], -1095.97)
+        self.assertEqual(d["total_hold_pnl_est"], 80.0)
+
+    def test_sync_is_idempotent_and_reports_no_change(self):
+        from data_processor import sync_total_hold_pnl
+        d = self._fixture(field_value=80.0)
+        self.assertFalse(sync_total_hold_pnl(d)["changed"])
+        self.assertFalse(sync_total_hold_pnl(d)["changed"])
+
+    def test_v8_fires_on_stale_field(self):
+        """🔴 门禁真伪：字段漂移时 validate_integrity 必须出 🔴 V8（不是静默放行）。"""
+        from data_processor import validate_integrity
+        d = self._fixture(field_value=1175.97)
+        hard = [p for p in validate_integrity(d) if p.startswith("🔴")]
+        self.assertTrue(any("V8" in p for p in hard),
+                        f"漂移未被 V8 拦下，实际硬项={hard}")
+
+    def test_v8_passes_after_sync(self):
+        from data_processor import validate_integrity, sync_total_hold_pnl
+        d = self._fixture(field_value=80.0)
+        self.assertFalse([p for p in validate_integrity(d) if "V8" in p])
+        d2 = self._fixture(field_value=1175.97)
+        self.assertTrue([p for p in validate_integrity(d2) if "V8" in p])  # 修前必响
+        sync_total_hold_pnl(d2)
+        self.assertFalse([p for p in validate_integrity(d2) if "V8" in p])  # 修后必静
+
+    def test_v8_fires_when_field_missing_or_non_numeric(self):
+        from data_processor import validate_integrity
+        for bad in (None, "1175.97", [], {}):
+            d = self._fixture(field_value=80.0)
+            d["total_hold_pnl_est"] = bad
+            hard = [p for p in validate_integrity(d) if p.startswith("🔴")]
+            self.assertTrue(any("V8" in p for p in hard),
+                            f"非数值/缺失 {bad!r} 未被 V8 拦下")
+
+    def test_check_mode_writes_nothing(self):
+        """🔴 隔离靠【换路径】，不靠 try/finally —— 生产文件全程不得被本测试触碰。"""
+        import tempfile
+        import sync_derived_fields as sdf
+        with tempfile.TemporaryDirectory() as td:
+            p = os.path.join(td, "portfolio_data.json")
+            payload = self._fixture(field_value=1175.97)
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False)
+            with open(p, "rb") as f:
+                before = f.read()
+            rc = sdf.run(check_only=True, path=p)
+            self.assertEqual(rc, 1, "只读模式遇漂移应返回 1（声张），而非静默 0")
+            with open(p, "rb") as f:
+                self.assertEqual(f.read(), before, "只读模式改动了文件")
+            rc2 = sdf.run(check_only=False, path=p)
+            self.assertEqual(rc2, 0)
+            after = json.load(open(p, encoding="utf-8"))
+            self.assertEqual(after["total_hold_pnl_est"], 80.0, "写回后字段应等于定义式")
+
+    def test_real_file_matches_definition(self):
+        """生产文件当前必须自洽（sync_all 步骤 0.0 跑过即满足）。"""
+        from data_processor import total_hold_pnl
+        d = json.load(open(paths.DATA_PATH, encoding="utf-8"))
+        self.assertAlmostEqual(float(d.get("total_hold_pnl_est")), total_hold_pnl(d), places=2)
+
+
 class TestRealPortfolioData(unittest.TestCase):
     """Integration test: validate actual portfolio_data.json"""
 

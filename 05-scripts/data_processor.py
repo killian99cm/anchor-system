@@ -1373,6 +1373,47 @@ def _fnum(v):
         return None
 
 
+def total_hold_pnl(data: dict) -> float:
+    """持有盈亏估计的【单一真源】（定义式，见 `_meta.pnl_total_note`）。
+
+        total_hold_pnl_est = Σ holdings_summary.pnl(mv>0) + Σ stock_holdings.pnl(mv>0)
+
+    🔴 为什么要有这个函数（2026-09-18 v4.5.4）：
+      本字段此前**全仓无任何自动写入方**（唯一写入者是 `setup.py` 的一次性初始化，其余全是读），
+      却被 **5 处消费**（gen_anchor_pro 公开页 / gen_weekly_report 周报 / sync_all 日快照 /
+      ai_bridge_sync 信息桥 / stop_profit_backtest），**且数据更新协议第 77-78 行的入库字段清单
+      里没有它** ⇒ 只能靠人工入库时手改。
+      实测漂移史：**9/1–9/2 漂 +380.22**（持续 3 个备份快照）、**9/18 漂 -190.39**；
+      9/10 / 9/14 / 9/16 / 9/17 均为 0（说明它确实在被人工维护，只是**必然周期性漏**）。
+      ⇒ 结论：**它不是「一个待更新的字段」，而是「一个可派生的标量」**。
+         改为派生后人工彻底退出该环 —— 这是「缺的是机制不是补丁」在本字段上的落地。
+    """
+    h = sum((_fnum(x.get("pnl")) or 0.0)
+            for x in (data.get("holdings_summary") or [])
+            if (_fnum(x.get("mv")) or 0) > 0)
+    s = sum((_fnum(x.get("pnl")) or 0.0)
+            for x in (data.get("stock_holdings") or [])
+            if (_fnum(x.get("mv")) or 0) > 0)
+    return round(h + s, 2)
+
+
+def sync_total_hold_pnl(data: dict) -> dict:
+    """按定义式重算 `total_hold_pnl_est` 并写入 `data`（**本函数不落盘**，由调用方决定）。
+
+    返回 `{"old","new","changed","delta"}`。
+    🔴 `changed=True` 时调用方**必须声张**（🔧 打印 old→new）——
+      **静默自愈与静默漂移是同一个病的两面**：若只在漂移时悄悄改掉，
+      就没人知道「它曾漂过、漂了多少」，与 v4.5.2「把静默失效变响」同旨。
+    ⛔ 只有当 `mv>0` 的持仓计入（已清仓的零市值条目上残留的 pnl 不参与），与定义式一致。
+    """
+    old = data.get("total_hold_pnl_est")
+    new = total_hold_pnl(data)
+    data["total_hold_pnl_est"] = new
+    changed = not (isinstance(old, (int, float)) and abs(float(old) - new) < 0.005)
+    return {"old": old, "new": new, "changed": changed,
+            "delta": (round(new - float(old), 2) if isinstance(old, (int, float)) else None)}
+
+
 def validate_integrity(data: dict) -> list:
     """结构化入库自检（v4.4.0）。返回问题 list；严重问题以 '🔴' 开头（应阻断），提示以 '🟡' 开头（仅提示）。
 
@@ -1458,6 +1499,20 @@ def validate_integrity(data: dict) -> list:
     meta_fresh = str((((data.get("_meta") or {}).get("data_freshness") or {}).get("holdings")) or "").strip()
     if meta_fresh and meta_fresh[:10] != update_date[:10]:
         issues.append(f"🟡 V7 _meta.data_freshness.holdings 为 {meta_fresh[:10]}，落后 update_date {update_date[:10]}（该字段由人工入库维护，见协议 v1.5）")
+
+    # ---- V8 🔴 total_hold_pnl_est 必须等于定义式（v4.5.4）----
+    #   本字段被 5 处消费（公开页/周报/日快照/信息桥/回测脚本）却此前无自动写入方，
+    #   只能人工手改 ⇒ 实测漂移 9/1 +380.22、9/18 -190.39。现改为**派生**：
+    #   `sync_derived_fields.py` 在 sync_all 中**先于本自检**重算写回。
+    #   🔴 本断言是**顺序护栏**：若归一化步骤被跳过 / 被排到自检之后 / 被改名，
+    #      此处必须响 —— 「步骤存在」与「步骤在自检之前跑过」是两件事。
+    _cur = data.get("total_hold_pnl_est")
+    _calc = total_hold_pnl(data)
+    if not isinstance(_cur, (int, float)):
+        issues.append(f"🔴 V8 total_hold_pnl_est 非数值（{_cur!r}），定义式应得 {_calc}")
+    elif abs(float(_cur) - _calc) > 0.01:
+        issues.append(f"🔴 V8 total_hold_pnl_est {_cur} ≠ 定义式 Σpnl(mv>0) {_calc}"
+                      f"（差 {round(_calc - float(_cur), 2)}）—— 归一化步骤（sync_derived_fields.py）未跑或跑在其后")
 
     return issues
 

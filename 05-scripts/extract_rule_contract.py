@@ -283,7 +283,11 @@ def main() -> None:
     out.write_text(json.dumps(contract, ensure_ascii=False, indent=2), encoding="utf-8")
 
     print(f"[rules] contract written: {out}")
-    print(f"[rules] version={version} extracted={len(rules) - 1} keys")
+    # 🔴 2026-09-18 修正：原为 `len(rules) - 1`，**比实际落盘键数少 1**（实测 33 键报成 32）
+    #    `rules` 里没有任何非规则键（逐键核过），那个 `-1` 是**没有依据的**。
+    #    属「转述层与定义层无绑定」的同族：脚本**自报的数**与**它刚写进产物的数**对不上，
+    #    而自报数是人唯一会看到的东西。
+    print(f"[rules] version={version} extracted={len(rules)} keys")
     if warns:
         print(f"[rules] WARN 提取失败（使用默认值）: {', '.join(warns)}")
 

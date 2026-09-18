@@ -276,6 +276,13 @@ def build_status(data: dict, contract: dict, now: datetime,
     record = (fp.board_history_record(allboards, ref_date, now) if record_history
               else {"recorded": False, "reason": "本次未落盘（dry-run / --json）"})
 
+    # ---- 缓存缺口自检（v4.5.2）----
+    # 🔴 病灶：缓存只由**当日实跑**写入，而东财**只给当日板块** ⇒ **漏跑一天＝永久空洞**，
+    #    于是「结构性无源」被换成了「**结构性依赖运维执行**」，且**新的失败模式是静默的**
+    #    —— 没人会注意昨晚 sync 没跑，直到某天 A2 又冒出一句「判不了」，那时原因已看不见。
+    #    本行把原因**在当时**就说出来（须排在 record **之后**，否则今日刚落盘会被误报成缺口）。
+    gaps = fp.board_history_gaps(ref_kl, ref_date)
+
     # 🔴 绑定校验：手册 §2.1 声称的判据源文件名 vs 代码**实际**读的文件名。
     #    不符即报警 —— 这正是本系统反复出现的那族缺陷（转述层与定义层无绑定）
     #    的对症解法：让「声称」与「实际」在**同一次运行里**被比对，
@@ -312,6 +319,7 @@ def build_status(data: dict, contract: dict, now: datetime,
             "source": "board_pct_history.json" if prev_day else None,
         },
         "history_record": record,
+        "history_gaps": gaps,
         "source_binding": source_binding,
         "entries": entries,
         "any_missing_source": any(e["missing"] for e in entries),
@@ -350,6 +358,7 @@ def main() -> int:
     else:
         _hr_txt = f"⏭ 未写 —— {hr.get('reason')}"
     print(f"日序列落盘：{_hr_txt}")
+    print(fp.board_history_gap_msg(status.get("history_gaps") or {}))
     sb = status.get("source_binding") or {}
     if sb.get("ok"):
         print(f"判据源绑定：✅ 一致（{sb.get('actual')}）")

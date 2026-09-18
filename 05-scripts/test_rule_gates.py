@@ -568,6 +568,97 @@ check("J16 🔴 删掉『自建日序列缓存』措辞 ⇒ 必须 **WARN**（�
       "a2_prev_day_cache" in _w3, repr(_w3))
 
 # ══════════════════════════════════════════════════════════════════
+# §K · 缓存缺口自检（v4.5.2）
+#   病灶：缓存只由**当日实跑**写入，而东财只给当日板块 ⇒ **漏跑一天＝永久空洞**。
+#   于是「结构性无源」被换成「**结构性依赖运维执行**」，且**新的失败模式是静默的**。
+#   本节测的不是「有没有缺口」，而是**六种态互相可区分** —— 尤其
+#   「✅ 无缺口」不得与「本次根本没核到任何交易日」混为一谈。
+# ══════════════════════════════════════════════════════════════════
+_K_TMP = tempfile.mkdtemp(prefix="anchor_gap_")
+_K_PATH = Path(_K_TMP) / "bh.json"
+_KL = [{"date": d} for d in [
+    "2026-09-01", "2026-09-02",                                    # epoch **之前**（噪声面）
+    "2026-09-10", "2026-09-11", "2026-09-15", "2026-09-16",
+    "2026-09-17", "2026-09-18"]]
+os.environ["ANCHOR_BOARD_HISTORY"] = str(_K_PATH)
+
+
+def _k_write(days):
+    _K_PATH.write_text(json.dumps({"schema": 1, "days": days}, ensure_ascii=False),
+                       encoding="utf-8")
+
+
+try:
+    # ---- K1 有缺口：精确列出，且 **epoch 之前的交易日不得被报** ----
+    _k_write({"2026-09-10": {"BK1": {}}, "2026-09-15": {"BK1": {}}})
+    _g = fp.board_history_gaps(_KL, "2026-09-18")
+    check("K1 缺口精确列出（缺 09-11 / 09-16 / 09-17）且 **epoch 之前的 09-01、09-02 不得被报**"
+          "（缓存起点早于机制存在 ⇒ 报出来是噪声，而**天天响的假告警会被学会忽略**）",
+          _g["checked"] is True and _g["missing"] == ["2026-09-11", "2026-09-16", "2026-09-17"],
+          f"missing={_g['missing']}")
+
+    # ---- K2 🔴 反向断言：核到 0 个交易日时**不得**打印 ✅（假绿灯）----
+    #    ⚠️ 这是我自己第一版真犯的错：缓存只有当日 ⇒ expected 为空 ⇒
+    #       旧文案输出「✅ 缓存缺口核查：无缺口（核 0 个交易日）」——
+    #       **它一个交易日都没核，却盖了一个 ✅**。
+    _k_write({"2026-09-18": {"BK1": {}}})
+    _m0 = fp.board_history_gap_msg(fp.board_history_gaps(_KL, "2026-09-18"))
+    check("K2 🔴 **核到 0 个交易日 ⇒ 不得输出 ✅**（旧文案输出「✅ 无缺口（核 0 个交易日）」＝"
+          "一个交易日都没核却盖了绿灯；现须明写「无可核区间」并声明不得读作无缺口）",
+          "无缺口" not in _m0.replace("不得读作「无缺口」", "") and "无可核区间" in _m0,
+          _m0)
+
+    # ---- K3 缓存为空 ⇒ 未执行，且**不得**因「还没开始累积」就报一堆缺口 ----
+    _k_write({})
+    _g3 = fp.board_history_gaps(_KL, "2026-09-18")
+    check("K3 缓存为空 ⇒ checked=False ＋ missing 为空（不得把「机制还没上线」报成「缺口」）",
+          _g3["checked"] is False and _g3["missing"] == [], str(_g3))
+
+    # ---- K4 🔴 日历不可用 ⇒ 必须「无法核查」，⛔ 绝不降级成「无缺口」----
+    _k_write({"2026-09-10": {"BK1": {}}})
+    _g4 = fp.board_history_gaps([], "2026-09-18")
+    _m4 = fp.board_history_gap_msg(_g4)
+    check("K4 🔴 交易日历不可用 ⇒ checked=False 且文案明说**无法核查**"
+          "（⛔ 不得降级成 missing=[] ＋ checked=True —— 「查不了」与「没问题」必须可区分）",
+          _g4["checked"] is False and "无法核查" in _m4 and "✅" not in _m4, _m4)
+
+    # ---- K5 真无缺口 ⇒ ✅（正常路径不得被上面几道防线误伤）----
+    _k_write({d: {"BK1": {}} for d in
+              ["2026-09-10", "2026-09-11", "2026-09-15", "2026-09-16", "2026-09-17"]})
+    _g5 = fp.board_history_gaps(_KL, "2026-09-18")
+    check("K5 真无缺口 ⇒ ✅ 且核到了 5 个交易日（防线不得把正常路径也一并拦掉）",
+          _g5["checked"] is True and _g5["missing"] == [] and _g5["n_expected"] == 5,
+          str(_g5))
+    check("K5b ✅ 文案须写明**核了几个交易日**（否则读者无法判断这次核查的分量）",
+          "核 5 个交易日" in fp.board_history_gap_msg(_g5))
+
+    # ---- K6 日历被截断 ⇒ 如实报出核查边界（「核不到」≠「无缺口」）----
+    _kl2 = [{"date": d} for d in
+            ["2026-09-15", "2026-09-16", "2026-09-17", "2026-09-18"]]
+    _k_write({d: {"BK1": {}} for d in
+              ["2026-09-10", "2026-09-15", "2026-09-16", "2026-09-17"]})
+    _g6 = fp.board_history_gaps(_kl2, "2026-09-18")
+    check("K6 日历窗口起点**晚于**缓存起点 ⇒ 报 calendar_truncated ＋ 文案点明「更早那段核不到，"
+          "非『无缺口』」（否则一段**没核过的区间**会被读成**已核实无误**）",
+          _g6["calendar_truncated"] is True
+          and "核不到" in fp.board_history_gap_msg(_g6),
+          f"truncated={_g6['calendar_truncated']}")
+
+    # ---- K7 🔴 反向断言：缺口必须真的**阻断** A2 分支②（不只是嘴上说说）----
+    #    缓存缺 09-17 ⇒ 09-18 跑 A2 时前一交易日取不到 ⇒ 必须「仅部分可判」。
+    _k_write({"2026-09-10": {"BK1": {}}})
+    check("K7 🔴 缓存缺前一交易日 ⇒ A2 分支② 确实**判不了**（缺口 → fail-closed 的链路是通的，"
+          "不是「报了缺口但照常判定」）",
+          fp.board_history_day("2026-09-17") is None
+          and gws._eval_a2("固态电池", _BOARDS, 2.0, None, "2026-09-17")[1] is False)
+finally:
+    os.environ.pop("ANCHOR_BOARD_HISTORY", None)
+    shutil.rmtree(_K_TMP, ignore_errors=True)
+
+check("K8 🔴 缺口自检全程**未触碰生产缓存文件**（同 J11 之理：换路径隔离，不靠 finally）",
+      _prod_before == (_prod.read_bytes() if _prod.exists() else None))
+
+# ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]
 print("\n" + "=" * 56)
 print(f"共 {len(_results)} 项 · 通过 {len(_results) - len(_fail)} · 失败 {len(_fail)}")

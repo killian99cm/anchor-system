@@ -498,6 +498,80 @@ def board_history_day(date_str) -> dict | None:
     return days.get(str(date_str))
 
 
+def board_history_gaps(kline: list | None = None, upto: str | None = None) -> dict:
+    """缓存缺口自检（v4.5.2）。
+
+    **为什么需要它**：缓存只由**当日实跑**写入，而东财**只给当日板块**
+    （历史板块涨幅拿不到）⇒ **漏跑一天 ＝ 永久空洞，无法回填**。
+    于是「结构性无源」被换成了「结构性依赖运维执行」—— 而且**新的失败模式是静默的**：
+    没人会注意昨晚 sync 没跑，直到某天 A2 又冒出一句「判不了」，而那时原因已经看不见了。
+    本函数把那个原因**在当时就说出来**。
+
+    🔴 **判据面故意只覆盖「缓存开始累积之后」**（`epoch = min(缓存日期)`）：
+    epoch 之前的日子**不算缺口** —— 那会儿这个机制还不存在，报出来只是**噪声**，
+    而**天天响的假告警会被学会忽略，比不报更危险**（同 v2.1 判例）。
+
+    ⚠️ **日历不可用时返回 `checked=False` ＋ 明说「无法核查」**，
+    ⛔ **绝不降级成「无缺口」** —— 「查不了」与「没问题」必须可区分。
+
+    返回 `{checked, reason?, epoch, upto, missing[], n_expected, outside_calendar?}`。
+    """
+    cache = board_history_load()
+    days = cache.get("days") or {}
+    if not days:
+        return {"checked": False, "reason": "缓存为空（尚未开始累积）",
+                "epoch": None, "upto": None, "missing": [], "n_expected": 0}
+
+    epoch = min(days)
+    kl = kline if kline is not None else ref_last_trading_day()[1]
+    kdates = sorted({str(b.get("date")) for b in (kl or []) if b.get("date")})
+    if not kdates:
+        return {"checked": False,
+                "reason": "参考指数日K不可用 ⇒ 交易日历不明，**无法核查**（非「无缺口」）",
+                "epoch": epoch, "upto": None, "missing": [], "n_expected": 0}
+
+    upper = str(upto) if upto else kdates[-1]
+    # 只核对 [epoch, upper)：upper 当日（ref_date）在收盘前落盘是**正常未写**，不算缺口。
+    expected = [d for d in kdates if epoch <= d < upper]
+    missing = [d for d in expected if d not in days]
+    return {
+        "checked": True, "epoch": epoch, "upto": upper,
+        "calendar_from": expected[0] if expected else None,
+        "calendar_to": expected[-1] if expected else None,
+        "n_expected": len(expected), "missing": missing,
+        # 🔴 日历窗口起点**晚于**缓存起点 ⇒ 中间那段日子**核不到**（日历不够长），
+        #    须如实报出核查边界 —— 「核不到」不等于「没问题」。
+        "calendar_truncated": (kdates[0] > epoch),
+    }
+
+
+def board_history_gap_msg(gaps: dict) -> str:
+    """把 `board_history_gaps()` 的结果变成一句可直接印给人看的话。
+
+    🔴 **四种态必须互相可区分**，尤其「✅ 无缺口」**不得**与
+    「本次根本没核到任何交易日」混为一谈 —— 后者是**假绿灯**（我自己第一版就写成了这样）。"""
+    if not gaps.get("checked"):
+        return f"⏭ 缓存缺口核查：未执行 —— {gaps.get('reason')}"
+
+    miss = gaps.get("missing") or []
+    if miss:
+        shown = "、".join(miss[:5]) + ("…" if len(miss) > 5 else "")
+        return (f"🔴 缓存缺口：{shown}（共 {len(miss)} 个交易日未落盘）"
+                f"⇒ **这些日子之后的每个交易日，A2 分支② 的前日判据都判不了**"
+                f"（fail-closed，且**空洞无法回填** —— 东财只给当日板块）")
+
+    if not gaps.get("n_expected"):
+        return (f"⏭ 缓存缺口核查：**无可核区间**（缓存自 {gaps.get('epoch')} 起、"
+                f"本次核到 {gaps.get('upto')}，区间为空）"
+                f"—— 本次未真正核查任何交易日，⛔ **不得读作「无缺口」**")
+
+    tail = "（日历窗口起点晚于缓存起点 ⇒ 更早那段**核不到**，非「无缺口」）" \
+        if gaps.get("calendar_truncated") else ""
+    return (f"✅ 缓存缺口核查：无缺口"
+            f"（核 {gaps['n_expected']} 个交易日：{gaps.get('calendar_from')}"
+            f"~{gaps.get('calendar_to')}）{tail}")
+
+
 # ---------------------------------------------------------------- 南向资金
 
 _MUTUAL_TYPE = {"002": "港股通(沪)", "004": "港股通(深)"}

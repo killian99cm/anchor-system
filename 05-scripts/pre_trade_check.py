@@ -13,9 +13,11 @@ v1.1 变更（系统优化审计剩余项 C5）：
 
 用法:
   python pre_trade_check.py <品种关键词> <拟买金额> [--loan]
-  例: python pre_trade_check.py 创新药 359
-      python pre_trade_check.py 证券 2500        # 应拦截：加仓后超 E1
-      python pre_trade_check.py 半导体 300 --loan # 贷款资金 + 大额提示
+       [--sector-chg <板块当日涨幅%>] [--sector-prev-chg <板块前一日涨幅%>]
+       [--watchlist --close <收盘价> --ma5 <MA5>]
+  例: python pre_trade_check.py 创新药 359 --sector-chg 1.00 --sector-prev-chg -0.50
+      python pre_trade_check.py 有色金属 300 --watchlist --close 1234.5 --ma5 1220.0 \
+                                     --sector-chg 0.80 --sector-prev-chg -1.20
 
 校验项（全部规则化）:
   1. 月操作额度（4/4 满 → 拦截）
@@ -24,6 +26,13 @@ v1.1 变更（系统优化审计剩余项 C5）：
   4. 大额资金分批（拟买 ≥¥3,000 或 --loan → 提示 334 分批）
   5. 目标可达性（品种目标 vs 当前，🔒限购/✅可补/⚠️超限/🟡积累）
   6. 买点评分卡提醒（必须 ≥3/5 或事件驱动 ≤¥300 豁免）
+  7. 🆕 A2 追红日禁买（v4.5.0）—— 板块当日 ≥2% 或连续 2 日飘红 → 拦截。
+     ⚠️ **fail-closed**：--sector-chg / --sector-prev-chg 缺任一 → 判「无法判定」并拦截，
+     **不静默放行**。A2 是 `X` 执行级条款（附录E · F2），缺数据时的正确姿态是
+     「无法判定 ⇒ 不成交」，不是「无法判定 ⇒ 照买」。
+  8. 🆕 watchlist 右侧确认（v4.5.0，须配 --watchlist）—— ① A2 不成立 ② 收盘 ≥ MA5。
+     判据订正见手册 §4.4（原「连续 2 天飘红」判据已作废，归属 A2）。级别 `E`，
+     条件成立后 T+1 日 14:30 前须出显式裁定。
 """
 import io
 import json
@@ -45,6 +54,13 @@ BUILTIN_THRESHOLDS = {
     "big_amount_batch": 3000.0,       # 大额分批阈值
     "max_monthly_ops": 4,             # 月操作上限
     "scorecard_event_exempt": 300.0,  # 事件驱动评分卡豁免金额
+    # v4.5.0 新增（09-18 用户裁决消歧）：A2 追红日禁买 + watchlist 右侧确认
+    "a2_red_day_pct": 2.0,            # A2：板块当日涨幅 ≥ 此值 = 红日，禁买
+    "a2_consecutive_red_days": 2,     # A2：连续 N 日飘红 = 禁买
+    "watchlist_probe_min": 300.0,     # watchlist 试探下限
+    "watchlist_probe_max": 500.0,     # watchlist 试探上限
+    "a2_pullback_from_high_days": 5.0,   # A2 回调条件单：自 N 日高
+    "a2_pullback_from_high_pct": 2.0,    # A2 回调条件单：回撤 ≥ 此值再买
     # 09-01 修复（手册 4.3 集中度上限）：原实现只查卫星层 E1，压舱石/核心单只上限未实现
     "single_position_caps": {"压舱石": 8000.0, "核心": 4000.0, "卫星": 3000.0},
     # 规则手册品种目标（含可达性标注，提案 #C 落地）
@@ -65,6 +81,10 @@ BUILTIN_THRESHOLDS = {
 _NUMERIC_KEYS = (
     "e1_sat_single_limit", "e4_sat_monthly_net", "big_amount_batch",
     "max_monthly_ops", "scorecard_event_exempt",
+    # v4.5.0：A2 / watchlist 四条，契约键名与内置键名同名（无需 _KEY_MAP 映射）
+    "a2_red_day_pct", "a2_consecutive_red_days",
+    "watchlist_probe_min", "watchlist_probe_max",
+    "a2_pullback_from_high_days", "a2_pullback_from_high_pct",
 )
 
 
@@ -130,6 +150,22 @@ def find_target(targets, holdings, keyword):
     return None, None
 
 
+def _arg_float(flag):
+    """读 `--flag <number>` 形式的参数值；flag 不存在或值非法返回 None。
+    v4.5.0：A2 / watchlist 判据需要外部传入板块涨幅与均线值 —— 本校验器**不自行取数**
+    （取数归 fetch_public / mx-data），只做规则判定，与既有架构一致。
+    """
+    if flag not in sys.argv:
+        return None
+    i = sys.argv.index(flag)
+    if i + 1 >= len(sys.argv):
+        return None
+    try:
+        return float(sys.argv[i + 1])
+    except ValueError:
+        return None
+
+
 def main():
     if len(sys.argv) < 3:
         print("用法: python pre_trade_check.py <品种关键词> <拟买金额> [--loan]")
@@ -142,6 +178,12 @@ def main():
         print(f"⛔ 金额非法: {sys.argv[2]}")
         return 2
     is_loan = "--loan" in sys.argv
+    # v4.5.0：A2 / watchlist 判据的外部输入
+    sector_chg = _arg_float("--sector-chg")
+    sector_prev_chg = _arg_float("--sector-prev-chg")
+    is_watchlist = "--watchlist" in sys.argv
+    close_px = _arg_float("--close")
+    ma5_px = _arg_float("--ma5")
 
     th = load_thresholds()
     targets = th["targets"]
@@ -222,6 +264,57 @@ def main():
         checks.append(("⚠️ 买点评分卡", f"金额 >¥{exempt_amt:,.0f} 非事件驱动——必须 5 维打分 ≥3/5 才可成交"))
     else:
         checks.append(("✅ 评分卡口径", f"≤¥{exempt_amt:,.0f} 可豁免（A4 事件驱动），但必须标注「事件驱动」"))
+
+    # 7) A2 追红日禁买（手册 §2.1，v3.10 加优先级；v4.5.0 首次进契约与门禁）
+    #    此前 grep 追红日|红日|A2 → 空：本条**从未被任何代码实现过**，是纯纸面纪律。
+    a2_pct = th["a2_red_day_pct"]
+    a2_days = int(th["a2_consecutive_red_days"])
+    if sector_chg is None or sector_prev_chg is None:
+        _missing = [f for f, v in (("--sector-chg", sector_chg),
+                                   ("--sector-prev-chg", sector_prev_chg)) if v is None]
+        checks.append(("⛔ A2 未校验",
+                       f"缺 {'、'.join(_missing)} —— A2 两条件（① 板块当日 ≥{a2_pct:g}% "
+                       f"② 连续 {a2_days} 日飘红）**无法完整判定**。按 fail-closed 拦截，"
+                       f"补传后重跑。⛔ 不得在此状态下下单。"))
+    else:
+        _hit = []
+        if sector_chg >= a2_pct:
+            _hit.append(f"板块当日 {sector_chg:+.2f}% ≥ {a2_pct:g}%（红日）")
+        if sector_prev_chg > 0 and sector_chg > 0:
+            _hit.append(f"连续 {a2_days} 日飘红（前日 {sector_prev_chg:+.2f}%、当日 {sector_chg:+.2f}%）")
+        if _hit:
+            checks.append(("⛔ A2 追红日禁买",
+                           "；".join(_hit) + " —— **不成交**（`X` 执行级，零裁量）。"
+                           f"改挂回调条件单（自 {th.get('a2_pullback_from_high_days', 5):g} 日高"
+                           f"回撤 ≥{th.get('a2_pullback_from_high_pct', 2):g}% 再买）"))
+        else:
+            checks.append(("✅ A2 追红日禁买",
+                           f"当日 {sector_chg:+.2f}% < {a2_pct:g}%；且非连续 {a2_days} 日飘红"
+                           f"（前日 {sector_prev_chg:+.2f}%）"))
+
+    # 8) watchlist 右侧确认（手册 §4.4，v3.10 判据订正）
+    #    原判据「连续 2 天飘红」与 A2 冲突、已作废 → 新判据 ① A2 不成立 ② 收盘 ≥ MA5。
+    #    仅当显式传 --watchlist 时运行（面向机会候选，非现有持仓）。
+    if is_watchlist:
+        wl_lo, wl_hi = th["watchlist_probe_min"], th["watchlist_probe_max"]
+        if amount < wl_lo or amount > wl_hi:
+            checks.append(("⛔ watchlist 额度",
+                           f"¥{amount:,.0f} 超出 ¥{wl_lo:,.0f}-{wl_hi:,.0f} 试探区间"))
+        else:
+            checks.append(("✅ watchlist 额度", f"¥{amount:,.0f} 在 ¥{wl_lo:,.0f}-{wl_hi:,.0f} 内"))
+        if close_px is None or ma5_px is None:
+            _m = [f for f, v in (("--close", close_px), ("--ma5", ma5_px)) if v is None]
+            checks.append(("⛔ watchlist 右侧确认",
+                           f"缺 {'、'.join(_m)} —— 条件②（收盘价 ≥ 当日 MA5）无法判定，fail-closed 拦截"))
+        elif close_px >= ma5_px:
+            checks.append(("✅ watchlist 右侧确认",
+                           f"② 收盘 {close_px:g} ≥ MA5 {ma5_px:g} 成立（① A2 须不成立，见上条）"))
+        else:
+            checks.append(("⛔ watchlist 右侧确认",
+                           f"② 收盘 {close_px:g} < MA5 {ma5_px:g} —— 未站上短均线，条件不成立"))
+        checks.append(("⏳ E 级闭环义务",
+                       "本线为 `E` 评估级（附录E · F1）——条件成立后须于 **T+1 日 14:30 前**出"
+                       "**显式裁定**（执行／顺延／撤销），顺延 ≤1 次，**沉默即违规**（F3/F4）"))
 
     for tag, msg in checks:
         print(f"  {tag}: {msg}")

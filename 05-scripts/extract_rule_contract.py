@@ -45,6 +45,22 @@ DEFAULTS = {
     "otc_settle_days": 2,
     "hk_connect_cutoff": "16:00",
     "exec_time_declaration_required": True,
+    # v4.5.0 新增（09-18 用户裁决消歧）：A2 追红日禁买（§2.1）＋ watchlist 右侧确认（§4.4）。
+    # 背景：同一谓词「连续 2 日飘红」原本在 A2 判**禁买**、在 watchlist 判**准买**，
+    # **两条不能同时为真**；且两条此前**都不在契约、不在任何门禁代码里**（grep 追红日|A2 = 空），
+    # 属纯纸面纪律。本次①明确归属 A2 ②watchlist 改判据 ③把结论本身写进契约使其可被程序读取。
+    # ⚠️ watchlist 右侧确认的**级别**（`E` 评估级）**刻意不提取进契约** —— 它在手册正文里以
+    #    散文形式声明，无法用稳定正则锚定；强行加一个「取不到就静默用默认」的键，就是在造
+    #    新的死定义（v4.4.10 已判定该类键为「该资产不会被取数」）。级别以手册 §4.4 为权威源。
+    "a2_red_day_pct": 2.0,
+    "a2_consecutive_red_days": 2,
+    "a2_pullback_from_high_days": 5,
+    "a2_pullback_from_high_pct": 2.0,
+    "a2_priority_over_watchlist": True,
+    "watchlist_probe_min": 300,
+    "watchlist_probe_max": 500,
+    "watchlist_confirm_requires_a2_pass": True,
+    "watchlist_confirm_ma_period": 5,
 }
 
 # 规则手册路径（默认取 01-rules 下最新 v*）
@@ -149,6 +165,45 @@ def extract(text: str) -> dict:
     else:
         rules["exec_time_declaration_required"] = DEFAULTS["exec_time_declaration_required"]
         warns.append("exec_time_declaration_required")
+
+    # ── A2 追红日禁买 ＋ watchlist 右侧确认（v4.5.0 · 2026-09-18 消歧）──
+    # 正则一律**加锚**（锚定 A2 条独有的「追红日禁买」措辞）：正文里「≥2%」出现多次，
+    # 不锚定就会抓到别的 2%。这不是洁癖 —— v4.4.0 的 E1 就因为非贪婪正则从 "-E4" 抓走
+    # 一个 4，把 3000 静默变成 4，且 extract 全程只打 WARN 不报错。
+    grab("a2_red_day_pct", [r"追红日禁买[^\n]{0,40}?板块当日\s*≥\s*(\d+)\s*%"],
+         lambda m: float(m.group(1)), DEFAULTS["a2_red_day_pct"])
+    grab("a2_consecutive_red_days", [r"追红日禁买[^\n]{0,90}?连续\s*(\d+)\s*日飘红"],
+         lambda m: int(m.group(1)), DEFAULTS["a2_consecutive_red_days"])
+    m = re.search(r"自\s*(\d+)\s*日高回撤\s*≥\s*(\d+)\s*%", text)
+    if m:
+        rules["a2_pullback_from_high_days"] = int(m.group(1))
+        rules["a2_pullback_from_high_pct"] = float(m.group(2))
+    else:
+        rules["a2_pullback_from_high_days"] = DEFAULTS["a2_pullback_from_high_days"]
+        rules["a2_pullback_from_high_pct"] = DEFAULTS["a2_pullback_from_high_pct"]
+        warns.append("a2_pullback_from_high")
+    # 消歧结论本身（存在性规则，与 exec_time_declaration_required 同型）：
+    # 「A2 优先于」这句若被删/被改回，此处 WARN —— 防止正文悄悄回退而契约继续声称已消歧。
+    if "A2 优先于" in text:
+        rules["a2_priority_over_watchlist"] = True
+    else:
+        rules["a2_priority_over_watchlist"] = DEFAULTS["a2_priority_over_watchlist"]
+        warns.append("a2_priority_over_watchlist")
+    m = re.search(r"¥\s*(\d+)\s*[-－~～]\s*(\d+)\s*试探", text)
+    if m:
+        rules["watchlist_probe_min"] = int(m.group(1))
+        rules["watchlist_probe_max"] = int(m.group(2))
+    else:
+        rules["watchlist_probe_min"] = DEFAULTS["watchlist_probe_min"]
+        rules["watchlist_probe_max"] = DEFAULTS["watchlist_probe_max"]
+        warns.append("watchlist_probe_range")
+    if "A2 不成立" in text and "收盘价 ≥ 当日 MA5" in text:
+        rules["watchlist_confirm_requires_a2_pass"] = True
+        rules["watchlist_confirm_ma_period"] = 5
+    else:
+        rules["watchlist_confirm_requires_a2_pass"] = DEFAULTS["watchlist_confirm_requires_a2_pass"]
+        rules["watchlist_confirm_ma_period"] = DEFAULTS["watchlist_confirm_ma_period"]
+        warns.append("watchlist_confirm")
 
     return rules, warns
 

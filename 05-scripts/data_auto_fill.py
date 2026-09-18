@@ -33,7 +33,15 @@ from daily_advice import mx_query  # 复用妙想 API 查询
 
 JSON_PATH = paths.DATA_PATH
 OUT_DIR = paths.REVIEWS_DIR / "daily"
-REGISTRY_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "fetch_registry.json")
+# 🔴 注册表路径支持环境变量覆盖（v4.5.1）—— 供**测试**指向临时副本，
+#    使其**永不写入生产 fetch_registry.json**。
+#    病灶实证：`test_sync_resilience.py` 直接改生产注册表，靠 try/finally 还原；
+#    而**硬杀（超时/SIGKILL）下 finally 不执行** ⇒ 2026-09-17 23:08 那次运行把测试夹具
+#    `__TEST_FAIL__` 永久留在了生产文件里，并连带使 `test_fetch_registry` 长期失败、
+#    进而卡住 smoke_test。**「靠 finally 保证不污染」在进程被硬杀时不成立。**
+REGISTRY_PATH = os.environ.get(
+    "ANCHOR_FETCH_REGISTRY",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "fetch_registry.json"))
 
 # 两次妙想查询之间的最小间隔（秒）——规避 code=112「请求频率过高」。
 QUERY_GAP_SEC = float(os.environ.get("ANCHOR_QUERY_GAP", "1.2"))

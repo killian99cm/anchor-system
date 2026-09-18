@@ -423,6 +423,18 @@ def main():
     )
     check("取数层回归测试通过", "全部通过" in r_fr.stdout, f"(rc={r_fr.returncode}) {r_fr.stderr[-200:]}")
 
+    # 7-c2d. 规则门禁回归测试（A2 追红日禁买 / watchlist 右侧确认 / 月额度二维口径）
+    #   v4.5.0 建 test_rule_gates.py；v4.5.1 接入本处（§124 登记项 ③）。
+    #   此前该测试**只能靠人记得手跑** —— 而「靠人记得」正是这一连串缺陷的成因本身。
+    print("\n[7-c2d] 规则门禁回归测试 test_rule_gates.py")
+    r_rg = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_rule_gates.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=180
+    )
+    check("规则门禁回归测试通过", "全绿" in r_rg.stdout and r_rg.returncode == 0,
+          f"(rc={r_rg.returncode}) {r_rg.stdout.strip().splitlines()[-1] if r_rg.stdout.strip() else r_rg.stderr[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

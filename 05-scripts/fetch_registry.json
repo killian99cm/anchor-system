@@ -15,22 +15,32 @@
       "fetch": "always=每次都取 | when_held=仅当有活跃持仓时取（清仓标的只保留定义，不空跑）"
     }
   },
-
-  "default_suffixes": [" 最新净值 日涨跌幅", " 复权单位净值增长率", " 最新日涨跌幅"],
-
+  "default_suffixes": [
+    " 最新净值 日涨跌幅",
+    " 复权单位净值增长率",
+    " 最新日涨跌幅"
+  ],
   "entries": [
     {
       "key": "创新药C",
       "label": "易方达恒生港股通创新药ETF联接C",
       "pipeline_key": "创新药",
-      "holdings_match": ["恒生港股通创新药", "创新药"],
+      "holdings_match": [
+        "恒生港股通创新药",
+        "创新药"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "hk",
       "index_code": "HSSCID.HI",
       "index_secid": "124.HSSCID",
       "queries": [
-        {"q": "易方达恒生港股通创新药ETF联接C", "match": ["恒生港股通创新药"]}
+        {
+          "q": "易方达恒生港股通创新药ETF联接C",
+          "match": [
+            "恒生港股通创新药"
+          ]
+        }
       ],
       "fetch": "always",
       "note": "🔵 2026-09-16 双源复核结论：标的指数为【恒生】港股通创新药指数（HSSCID，恒生指数公司编制，MktNum=124）。9/16 复盘所写 987018 官方名为「港股通创新药」（MktNum=0），是另一个指数。复核证据见 CHANGELOG v4.4.11。"
@@ -39,14 +49,21 @@
       "key": "纳指C",
       "label": "天弘纳斯达克100指数(QDII)C",
       "pipeline_key": "纳指",
-      "holdings_match": ["纳斯达克100指数"],
+      "holdings_match": [
+        "纳斯达克100指数"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "us",
       "index_code": "NDX",
       "index_secid": null,
       "queries": [
-        {"q": "天弘纳斯达克100指数(QDII)C", "match": ["纳斯达克100指数"]}
+        {
+          "q": "天弘纳斯达克100指数(QDII)C",
+          "match": [
+            "纳斯达克100指数"
+          ]
+        }
       ],
       "fetch": "always",
       "note": "QDII：底层为美股，净值 T+1 披露。⛔ 禁用东财 100.NDX（其值为纳斯达克综合，非纳指100，差约3000点）。"
@@ -55,15 +72,27 @@
       "key": "纳指A",
       "label": "华泰柏瑞纳斯达克100ETF联接A",
       "pipeline_key": "纳指",
-      "holdings_match": ["纳斯达克100ETF"],
+      "holdings_match": [
+        "纳斯达克100ETF"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "us",
       "index_code": "NDX",
       "index_secid": null,
       "queries": [
-        {"q": "华泰柏瑞纳斯达克100ETF联接A", "match": ["纳斯达克100ETF"]},
-        {"q": "008887", "match": ["纳斯达克100ETF"]}
+        {
+          "q": "华泰柏瑞纳斯达克100ETF联接A",
+          "match": [
+            "纳斯达克100ETF"
+          ]
+        },
+        {
+          "q": "008887",
+          "match": [
+            "纳斯达克100ETF"
+          ]
+        }
       ],
       "fetch": "always",
       "note": "同上；A 类份额在场外申购。"
@@ -72,15 +101,28 @@
       "key": "半导体C",
       "label": "华夏国证半导体芯片ETF联接C",
       "pipeline_key": "半导体",
-      "holdings_match": ["半导体芯片", "半导体"],
+      "holdings_match": [
+        "半导体芯片",
+        "半导体"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "cn",
       "index_code": "980017",
       "index_secid": "2.980017",
       "queries": [
-        {"q": "华夏国证半导体芯片ETF联接C", "match": ["半导体芯片"]},
-        {"q": "008888", "match": ["半导体芯片"]}
+        {
+          "q": "华夏国证半导体芯片ETF联接C",
+          "match": [
+            "半导体芯片"
+          ]
+        },
+        {
+          "q": "008888",
+          "match": [
+            "半导体芯片"
+          ]
+        }
       ],
       "fetch": "when_held",
       "note": "⚠️ 2026-09-16 时点：该持仓 mv=0 / group=已清仓 → 保留定义不空跑（fetch=when_held）。真国证芯片 = sz980017（勿与 sz399811「CSSW电子」混淆，v4.4.8 勘误）。"
@@ -89,15 +131,27 @@
       "key": "证券C",
       "label": "易方达证券ETF联接C",
       "pipeline_key": "证券",
-      "holdings_match": ["证券ETF"],
+      "holdings_match": [
+        "证券ETF"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "cn",
       "index_code": "399975",
       "index_secid": "2.399975",
       "queries": [
-        {"q": "易方达证券ETF联接C", "match": ["证券ETF"]},
-        {"q": "012590", "match": ["证券ETF"]}
+        {
+          "q": "易方达证券ETF联接C",
+          "match": [
+            "证券ETF"
+          ]
+        },
+        {
+          "q": "012590",
+          "match": [
+            "证券ETF"
+          ]
+        }
       ],
       "fetch": "always",
       "note": ""
@@ -106,14 +160,21 @@
       "key": "黄金A",
       "label": "国泰黄金ETF联接A",
       "pipeline_key": "黄金",
-      "holdings_match": ["国泰黄金"],
+      "holdings_match": [
+        "国泰黄金"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "global",
       "index_code": "AU9999",
       "index_secid": "118.AU9999",
       "queries": [
-        {"q": "国泰黄金ETF联接A", "match": ["国泰黄金"]}
+        {
+          "q": "国泰黄金ETF联接A",
+          "match": [
+            "国泰黄金"
+          ]
+        }
       ],
       "fetch": "always",
       "note": "底层为国际金价（连续交易），场外净值仍按中国基金披露时点。"
@@ -122,15 +183,28 @@
       "key": "债券",
       "label": "鹏华畅享债券C / 中银稳健增利债券A",
       "pipeline_key": "债券",
-      "holdings_match": ["鹏华畅享", "中银稳健增利"],
+      "holdings_match": [
+        "鹏华畅享",
+        "中银稳健增利"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "cn",
       "index_code": "CBA",
       "index_secid": null,
       "queries": [
-        {"q": "鹏华畅享债券C", "match": ["鹏华畅享"]},
-        {"q": "中银稳健增利债券A", "match": ["中银稳健增利"]}
+        {
+          "q": "鹏华畅享债券C",
+          "match": [
+            "鹏华畅享"
+          ]
+        },
+        {
+          "q": "中银稳健增利债券A",
+          "match": [
+            "中银稳健增利"
+          ]
+        }
       ],
       "rate_query": "中国10年期国债收益率 最新",
       "fetch": "always",
@@ -140,16 +214,27 @@
       "key": "红利",
       "label": "100红利（中证红利ETF 515180，股票账户）",
       "pipeline_key": "红利",
-      "holdings_match": ["中证红利ETF", "100红利"],
+      "holdings_match": [
+        "中证红利ETF",
+        "100红利"
+      ],
       "target_kind": "quote",
       "close_class": "a_share",
       "underlying_market": "cn",
       "index_code": "000922",
       "index_secid": "1.515180",
       "queries": [
-        {"q": "中证红利ETF 515180", "match": ["中证红利ETF"]}
+        {
+          "q": "中证红利ETF 515180",
+          "match": [
+            "中证红利ETF"
+          ]
+        }
       ],
-      "suffixes": [" 行情", " 今日涨跌幅"],
+      "suffixes": [
+        " 行情",
+        " 今日涨跌幅"
+      ],
       "fetch": "always",
       "note": "⚠️ 该持仓在 portfolio_data.json 的【stock_holdings】段，不在 holdings_summary——取数脚本原先只读后者，故此前恒为「持仓未匹配」。⚠️ 2026-09-17 探针：后缀由「 最新价 涨跌幅」改为「 行情」——前者返回 47 行（含招商 515080 的同名行 + 仅「收盘价 1.416元」无百分比的行），后者返回的 23 行里同时含 9/16 已结算日线（date 带「(日)」）与查询时刻快照两行，配合 _pick_row 的⑤结算日绑定可取到【已结算】的 -0.4219%（App day_pct -0.42%）。"
     },
@@ -157,14 +242,21 @@
       "key": "通利A",
       "label": "天弘通利混合A",
       "pipeline_key": "通利",
-      "holdings_match": ["通利"],
+      "holdings_match": [
+        "通利"
+      ],
       "target_kind": "nav",
       "close_class": "cn_fund_nav",
       "underlying_market": "cn",
       "index_code": "000300",
       "index_secid": "1.000300",
       "queries": [
-        {"q": "天弘通利混合A", "match": ["通利"]}
+        {
+          "q": "天弘通利混合A",
+          "match": [
+            "通利"
+          ]
+        }
       ],
       "fetch": "always",
       "note": "「沪深300 (混合参考)」是参考基准，非契约标的——标签口径见 v4.4.3 治理记录。"
@@ -173,7 +265,9 @@
       "key": "现金",
       "label": "余额宝",
       "pipeline_key": "现金",
-      "holdings_match": ["余额宝"],
+      "holdings_match": [
+        "余额宝"
+      ],
       "target_kind": "cash",
       "close_class": "cash",
       "underlying_market": null,

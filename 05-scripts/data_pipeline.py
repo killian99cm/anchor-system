@@ -384,7 +384,10 @@ def artifact_readiness_check():
 # ============================================================
 # 取数覆盖度校验（任务单 #137 需求B，2026-09-16）
 # ============================================================
-REGISTRY_PATH = Path(__file__).resolve().parent / "fetch_registry.json"
+# 🔴 支持环境变量覆盖（v4.5.1）—— 供测试指向临时副本，永不触碰生产注册表。
+#    理由同 data_auto_fill.py 处说明：try/finally 挡不住硬杀，会留下测试夹具污染生产文件。
+REGISTRY_PATH = Path(os.environ.get("ANCHOR_FETCH_REGISTRY")
+                     or Path(__file__).resolve().parent / "fetch_registry.json")
 
 
 def _active_holdings(data: dict) -> list:

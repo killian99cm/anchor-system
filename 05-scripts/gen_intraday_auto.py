@@ -372,7 +372,45 @@ def render_report(market: dict, data: dict, ts: str) -> str:
     lines.append("\n---\n\n## 四、操作建议（模板待人工填充规则引用）\n")
     lines.append("- 依据评分卡 + pre_trade_check 输出（手动核对触发条件）")
     lines.append("\n---\n\n## 五、新机会扫描（watchlist 自动）\n")
-    lines.append("- 板块数据见上表；**人工补充**：候选板块连红天数/触发条件（数据驱动）")
+    # 🔴 v4.5.1：原为**人工占位符**（「人工补充：连红天数/触发条件」），
+    #    与 `watchlist[].today` 字段同属「写了没人接」。现改为**计算并渲染**。
+    lines.append(f"> 判据：**手册 §4.4 v3.10** —— ① A2 不成立（§2.1 原文口径）＋ ② 标的当日收盘价 ≥ 当日 MA5。"
+                 f"**额度限 ¥300-500 试探**，级别 `E`（条件成立后 T+1 日 14:30 前须出显式裁定）。\n")
+    try:
+        import gen_watchlist_status as _gws
+        _st = _gws.build_status(data, _gws._load_json(_gws.CONTRACT_PATH, {}) or {}, datetime.now())
+        _u = _st["board_source"]["universes"] or {}
+        _us = "；".join(f"{k} {v['fetched']}/{v['total']}" for k, v in _u.items()) or "不可用"
+        lines.append(f"**板块源**：{_us}（全量={_st['board_source']['complete']}）"
+                     f"—— 🔴 板块有**两套互不覆盖的宇宙**（行业 / 概念），只查一套时另一套主题"
+                     f"**永远匹配不到**且失败长相是「该板块不存在」。\n")
+        lines.append("| 板块 | 标的 | 收盘/M | A2 | 条件② | 状态 |")
+        lines.append("|------|------|--------|----|-------|------|")
+        for e in _st["entries"]:
+            _tech = (f"{e['close']} / MA{e['ma_period']} {e['ma']}" if e["ma"] is not None
+                     else "—")
+            _a2 = ("⛔命中" if e["a2_hit"] else ("✅不成立" if e["a2_ok"] else "⚪部分可判"))
+            _d5 = ("✅成立" if e["d5_ok"] else ("❌未成立" if e["d5_ok"] is not None else "—"))
+            lines.append(f"| {e['sector']} | {e['code']} | {_tech} | {_a2} | {_d5} | {e['verdict']} |")
+        lines.append("")
+        for e in _st["entries"]:
+            lines.append(f"- **{e['sector']}**：{e['reason']}")
+            lines.append(f"  - 数据时点 {e['data_time']} · 收盘已定格={e['close_confirmed']}"
+                         f" · 源：{'、'.join(e['sources']) or '无'}")
+            _gaps = list(e["missing"]) + ([e["a2_gap"]] if e.get("a2_gap") else [])
+            if _gaps:
+                lines.append(f"  - ⚪ **缺口声明**：{'；'.join(_gaps)}")
+            if e["caveats"]:
+                lines.append(f"  - ⚠️ **须裁决**：{'；'.join(e['caveats'])}")
+        if _st["any_partial_a2"]:
+            lines.append(f"\n> 🔴 **A2 判据部分无源声明**：手册 §2.1 要求读「**前一交易日板块指数收盘涨幅**」，"
+                         f"该源**结构性无源**（东财板块日K：`push2his` 非 JSON、`push2delay` 回 0 条，"
+                         f"已试 2 主机）。**只有落在 (0%, 2%) 区间的条目**受影响 —— "
+                         f"当日 ≤0 时「连续 2 日飘红」逻辑上不可能，结论完全确定。"
+                         f"受影响条目的状态**一律不授予买入许可**（A2 是 `X` 执行级，判不了 ⇒ 不放行）。")
+    except Exception as _exc:  # noqa: BLE001
+        lines.append(f"- ⚪ **watchlist 状态生成失败**：{type(_exc).__name__} {_exc}")
+        lines.append("- （**不以旧值或占位符冒充** —— 数据必达铁律 / fail-loud）")
     lines.append("\n---\n\n## 六、风险快照\n")
     lines.append("- 自动提示：板块涨跌极端值/黄金方向/美股联动（人工确认 B5/止损线）")
     lines.append(f"\n---\n\n*全自动生成：{ts} ｜ gen_intraday_auto.py v2.1（#18 提案 ＋ 2026-09-17 修复）"

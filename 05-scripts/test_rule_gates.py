@@ -157,6 +157,277 @@ check("G2 落盘契约 warns 为空", contract.get("warns") == [],
       f"warns={contract.get('warns')}")
 
 # ══════════════════════════════════════════════════════════════════
+print("\n########## H. 月操作额度：二维口径（v4.5.1） ##########")
+# 背景：手册正文写「正常月≤4笔（买入≤2+卖出≤2）」，速查表压缩成「正常≤4」，
+# 而门禁绑的是一维 `max_monthly_ops=4`；契约 DEFAULTS 里早有 buy_max/sell_max
+# 但**无提取正则、无消费者**（写对了的死键）。三个缺陷：维度丢失 / 记录≠事件 / 靠子串巧合。
+
+import data_processor as dp  # noqa: E402
+
+
+def _txn(date, op, amount, fund="测试基金", **kw):
+    t = {"date": date, "op": op, "amount": amount, "fund": fund, "name": fund, "note": ""}
+    t.update(kw)
+    return t
+
+
+# ---- H-a 契约提取 ----
+check("H1 monthly_buys_max == 2（买入维上限）", rules.get("monthly_buys_max") == 2,
+      f"实得 {rules.get('monthly_buys_max')!r}")
+check("H2 monthly_sells_max == 2（卖出维上限）", rules.get("monthly_sells_max") == 2,
+      f"实得 {rules.get('monthly_sells_max')!r}")
+check("H3 monthly_ops_cleanup_max == 6（清理月上限）",
+      rules.get("monthly_ops_cleanup_max") == 6, f"实得 {rules.get('monthly_ops_cleanup_max')!r}")
+check("H4 旧死键 buy_max / sell_max 已从契约消失（改名接上消费者，不再悬空）",
+      "buy_max" not in rules and "sell_max" not in rules)
+
+# ---- H-b 反向断言：删掉正文括号 ⇒ 提取必须**声张**而非静默取默认 ----
+_txt_noparen = TEXT.replace("（买入≤2+卖出≤2）", "")
+_r2, _w2 = extract(_txt_noparen)
+check("H5 删掉正文「（买入≤2+卖出≤2）」后提取必须落入 warns（fail-loud）",
+      "monthly_buys_max" in _w2 and "monthly_sells_max" in _w2,
+      f"warns={_w2} ⇒ 证明该键**真绑定正文**，不是「取不到就静默用默认」的死定义")
+
+# ---- H-c 🔴 核心反向断言：证明旧的一维判据确实会**放行**超限买入 ----
+_d_buy3 = {"transactions": [
+    _txn("2026-09-01", "买入", 1000), _txn("2026-09-02", "买入", 1000),
+    _txn("2026-09-03", "买入", 1000)]}
+_s3 = dp.monthly_ops_summary(_d_buy3, year=2026, month=9)
+_old_blocked = _s3.total >= 4      # 旧判据原文：`used >= max_ops` 才拦
+_old_pass = not _old_blocked
+check("H6 🎯 买入3笔+卖出0笔：**旧一维判据会放行**（total=3 < 4 ⇒ 不拦）",
+      _old_pass, f"旧判据 blocked={_old_blocked} ⇒ 这正是修复前的真实行为")
+check("H7 🎯 同一数据下**新二维判据必须拦截**（买入维 3 > 2）",
+      _s3.is_buy_over and _s3.is_over_limit,
+      f"买入={_s3.buys}/{_s3.max_buys} 卖出={_s3.sells}/{_s3.max_sells}")
+check("H8 🎯 旧=放行 而 新=拦截 ⇒ 证明本修复**真的改变了判定**（非装饰性改动）",
+      _old_pass and _s3.is_over_limit and (_old_blocked != _s3.is_over_limit),
+      f"旧 blocked={_old_blocked} / 新 blocked={_s3.is_over_limit}")
+
+# ---- H-d 计「事件」不计「记录」----
+_d_legs = {"transactions": [
+    _txn("2026-09-10", "赎回", 3000), _txn("2026-09-11", "赎回确认", 3759.25),
+    _txn("2026-09-12", "赎回到账", 3759.25)]}
+_s4 = dp.monthly_ops_summary(_d_legs, year=2026, month=9)
+check("H9 `赎回`+`赎回确认`+`赎回到账`（同一事件三条腿）只计 **1** 笔",
+      _s4.sells == 1 and _s4.total == 1, f"实得 卖出={_s4.sells} 合计={_s4.total}")
+
+_d_legs_old = [_txn("2026-09-10", "赎回", 3000), _txn("2026-09-11", "赎回确认", 3759.25)]
+# 旧实现已移除，此处**按原样复现其逻辑**用于反向断言
+# （v4.5.0 之前的 data_processor.is_manual_operation 原文：排除词黑名单，未命中即计入）
+def _old_impl(t):
+    op = str(t.get("op", ""))
+    if any(k in op for k in ("定投", "转入", "转出", "入金", "出金", "赎回到账")):
+        return False
+    if "自动扣款" in str(t.get("note", "")) or "非手动" in str(t.get("note", "")):
+        return False
+    return True
+
+_old_n = sum(1 for t in _d_legs_old if _old_impl(t))
+check("H10 🎯 旧实现（排除词黑名单）在同一数据上会算成 **2** 笔 ⇒ 反向证明虚增",
+      _old_n == 2, f"旧={_old_n} 新={_s4.sells} ⇒ 差 {_old_n - _s4.sells} 笔纯属口径误差")
+
+# ---- H-e 「碰巧对」vs「定义对」----
+check("H11 `余额宝转出` 归 leg（闭集成员）",
+      dp.classify_txn_op("余额宝转出") == "leg")
+check("H12 `转换转入` 归 leg（闭集成员）", dp.classify_txn_op("转换转入") == "leg")
+# 反向：证明「靠子串巧合」的写法在**新词**上会破功 —— 旧黑名单只列了 '转出'/'转入'
+# 这类子串，`余额宝赎回转出` 之类一旦出现即漏；闭集写法则必须显式覆盖。
+check("H13 🎯 旧黑名单风格（仅列 '转出'）对 `转换转出` 会**漏判**，而闭集不会",
+      (("转出" in "转换转出") is True) and dp.classify_txn_op("转换转出") == "leg",
+      "闭集显式收录 ⇒ 不依赖子串巧合")
+
+# ---- H-f 未知 op fail-loud ----
+_d_unknown = {"transactions": [_txn("2026-09-05", "回购", 500)]}
+_s5 = dp.monthly_ops_summary(_d_unknown, year=2026, month=9)
+check("H14 闭集外 op `回购` → has_unknown 且**不计入买卖任一维**",
+      _s5.has_unknown and _s5.total == 0 and "回购" in _s5.unknown_ops,
+      f"unknown_ops={_s5.unknown_ops} total={_s5.total}")
+check("H15 而同一条旧实现会把它**静默计入**（口径③的病灶）",
+      _old_impl(_txn("2026-09-05", "回购", 500)) is True,
+      "旧=True（静默计入） vs 新=声张 ⇒ 行为方向相反")
+
+# ---- H-g superseded 取代机制 ----
+_d_sup = {"transactions": [
+    _txn("2026-09-01", "买入", 2000, "证券", superseded=True),
+    _txn("2026-09-01", "买入", 2000, "鹏华", superseded_by="同事件收盘确认")]}
+_s6 = dp.monthly_ops_summary(_d_sup, year=2026, month=9)
+check("H16 superseded / superseded_by 记录**不计入**额度",
+      _s6.buys == 0 and _s6.superseded_records == 2, f"实得 {_s6}")
+
+# ---- H-h 疑似双记**只声张不折叠** ----
+_d_dup = {"transactions": [
+    _txn("2026-09-01", "买入", 2000, "证券"), _txn("2026-09-01", "买入", 2000, "鹏华")]}
+_s7 = dp.monthly_ops_summary(_d_dup, year=2026, month=9)
+check("H17 同(日期/op/金额)多记录 → 报出 suspect_dupes 但**不自动折叠**（计数仍为 2）",
+      _s7.has_suspect_dupes and _s7.buys == 2,
+      f"声张={_s7.has_suspect_dupes} 仍计 {_s7.buys} 笔 ⇒ 谁对谁错**留给人工**，机器不猜")
+
+# ---- H-i 向后兼容 ----
+check("H18 仍可 2 元组解包（既有调用点无需改动）", tuple(_s3) == (_s3.total, _s3.violations))
+check("H19 仍可 [0] 下标", _s3[0] == _s3.total)
+
+# ---- H-i2 显式声明优先于推断（防回归 —— 本条曾被修复过程本身弄丢过一次）----
+_d_note = {"transactions": [
+    _txn("2026-09-05", "买入", 500, note="智能定投自动扣款（非手动操作，不计入月限额）"),
+    _txn("2026-09-06", "买入", 500)]}
+_s8 = dp.monthly_ops_summary(_d_note, year=2026, month=9)
+check("H21 note 显式声明「非手动／自动扣款」→ 不计入（显式声明优先于 op 分类）",
+      _s8.buys == 1, f"实得 买入={_s8.buys}（应为 1，声明那条被排除）")
+check("H22 `txn_exclusion_reason` 能指明**是哪一条口径**在起作用（非布尔黑箱）",
+      dp.txn_exclusion_reason(
+          _txn("2026-09-05", "买入", 500, note="智能定投自动扣款（非手动操作）")
+      ) == 'note_declared_non_manual'
+      and dp.txn_exclusion_reason(_txn("2026-09-11", "赎回确认", 1)) == 'ledger_leg'
+      and dp.txn_exclusion_reason(_txn("2026-09-01", "买入", 1, superseded=True)) == 'superseded'
+      and dp.txn_exclusion_reason(_txn("2026-09-01", "买入", 1)) is None)
+
+# ---- H-j 真实数据读数（回归锚：数字变了必须有人解释）----
+_real = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
+_s9 = dp.monthly_ops_summary(_real, year=2026, month=9)
+check("H20 真实 9 月读数 = 买入 6 / 卖出 3 / 合计 9（口径修正后）",
+      (_s9.buys, _s9.sells) == (6, 3),
+      f"实得 {_s9} —— 旧口径为 10（差 1 = `赎回确认` 记账腿）")
+
+# ══════════════════════════════════════════════════════════════════
+# 段 I —— watchlist 状态计算（v4.5.1）：A2 三分 · MA5 口径 · fail-closed
+# ══════════════════════════════════════════════════════════════════
+import gen_watchlist_status as gws  # noqa: E402
+import fetch_public as fp  # noqa: E402
+from datetime import datetime  # noqa: E402
+
+_BOARDS = {                       # 造一个两宇宙的小样本
+    "by_name": {
+        "固态电池": {"name": "固态电池", "code": "BK1090", "chg_pct": 1.69, "board_type": "概念板块"},
+        "有色金属": {"name": "有色金属", "code": "BK0478", "chg_pct": 1.54, "board_type": "行业板块"},
+        "某板块A": {"name": "某板块A", "code": "BK9998", "chg_pct": 2.50, "board_type": "行业板块"},
+        "某板块B": {"name": "某板块B", "code": "BK9997", "chg_pct": -0.80, "board_type": "行业板块"},
+    },
+    "universes": {"行业板块": {"total": 496, "fetched": 496, "complete": True},
+                  "概念板块": {"total": 504, "fetched": 504, "complete": True}},
+    "complete": True,
+}
+
+# ---- I-a A2 三分：命中 / 完全判定不成立 / 仅部分可判 ----
+_hit, _det, _ = gws._eval_a2("某板块A", _BOARDS, 2.0)
+check("I1 板块 +2.50% ≥ 2% ⇒ A2 命中且完全判定", (_hit, _det) == (True, True), f"得 {_hit},{_det}")
+
+_hit, _det, _txt = gws._eval_a2("某板块B", _BOARDS, 2.0)
+check("I2 板块 -0.80% ≤ 0 ⇒ A2 不成立且**完全判定**（分支②逻辑上不可能）",
+      (_hit, _det) == (False, True), f"得 {_hit},{_det} —— 「连续2日飘红」蕴含「当日>0」，故当日≤0 时该分支必假")
+
+_hit, _det, _txt = gws._eval_a2("固态电池", _BOARDS, 2.0)
+check("I3 板块 +1.69% ∈ (0,2%) ⇒ A2 **仅部分可判**（唯一真正无源的区间）",
+      (_hit, _det) == (None, False), f"得 {_hit},{_det}")
+check("I3b 部分可判的说明里必须写明『结构性无源』而非含糊其辞",
+      "无源" in _txt, f"实得：{_txt[:80]}")
+
+_hit, _det, _txt = gws._eval_a2("查无此板", _BOARDS, 2.0)
+check("I4 板块查不到 ⇒ 判定为不可判（不得当作『未命中』放行）",
+      (_hit, _det) == (None, False), f"得 {_hit},{_det}")
+
+# ---- I-b 🔴 反向断言：证明「双宇宙 + 分页」是**必需**而非装饰 ----
+try:
+    _old_only_t2 = fp.sector_movers(top=500, pz=500)      # 旧实现：单宇宙 + 单页
+    _old_names = {r["name"] for r in (_old_only_t2.get("gainers") or []) + (_old_only_t2.get("losers") or [])}
+    _old_found = [s for s in ("固态电池", "人形机器人", "智能驾驶") if
+                  any(s in n or n in s for n in _old_names)]
+    check("I5 反向断言：旧实现（仅 t:2 行业宇宙）**找不到** 3 个概念主题中的任何一个",
+          len(_old_found) == 0,
+          f"旧实现却找到了 {_old_found} —— 若不为空则本修复无必要，须复核")
+
+    _t2rows, _t2total = fp._sector_rows(1, 500, "probe t:2")
+    check("I6 反向断言：`pz=500` **实际只回 100 行**（total=496）"
+          "⇒ v4.4.12 记的『改 pz=500 覆盖全集』**这句话不成立**",
+          len(_t2rows) == 100 and _t2total >= 400,
+          f"实回 {len(_t2rows)} 行 / total={_t2total} —— 若真回 500 行，本反向断言失效，须复核")
+
+    _all = fp.board_movers_all()
+    _u = _all.get("universes") or {}
+    check("I7 新实现取到**两套宇宙的全量**（行业≥400 且 概念≥400）",
+          _u.get("行业板块", {}).get("fetched", 0) >= 400 and
+          _u.get("概念板块", {}).get("fetched", 0) >= 400,
+          f"实得 {_u}")
+    _names = set((_all.get("by_name") or {}).keys())
+    _now_found = [s for s in ("固态电池", "人形机器人", "智能驾驶", "有色金属") if s in _names]
+    check("I8 新实现能同时命中**两套宇宙**的主题（概念 3 个 ＋ 行业 1 个）",
+          len(_now_found) == 4, f"命中 {_now_found}")
+except Exception as _e:                                    # noqa: BLE001
+    print(f"  [SKIP] I5–I8 需联网取板块榜，本次跳过：{type(_e).__name__} {_e}")
+
+# ---- I-c 🔴 MA5 口径歧义：两解必须是**可分辨的不同值** ----
+_klt = [{"date": f"2026-09-{10+i:02d}", "close": c}
+        for i, c in enumerate([1.00, 1.00, 1.00, 1.00, 1.00, 1.20])]
+_closes = [float(b["close"]) for b in _klt]
+check("I9 MA5『含当日』与『不含当日』在趋势中是不同值（口径歧义真实存在）",
+      fp.ma(_closes, 5) != fp.ma(_closes[:-1], 5),
+      f"含当日={fp.ma(_closes, 5)} 不含={fp.ma(_closes[:-1], 5)}")
+
+# ---- I-d 🔴 fail-closed：A2 判不了 ⇒ **不得**授予 🟢 ----
+_kl_fake = [{"date": f"2026-09-{10+i:02d}", "close": c}
+            for i, c in enumerate([1.00, 1.00, 1.00, 1.00, 1.00, 1.50])]
+_orig_dk, _orig_ma = fp.daily_kline, fp.ma
+fp.daily_kline = lambda code, n=30: _kl_fake            # type: ignore[assignment]
+try:
+    _e = gws.evaluate_entry(
+        {"sector": "固态电池", "etf_code": "159755"}, {"rules": {}},
+        _BOARDS, datetime(2026, 9, 18, 18, 0))
+    check("I10 A2 仅部分可判 ＋ 技术面成立 ⇒ 状态**不得**为 🟢（fail-closed）",
+          "🟢" not in _e["verdict"], f"实得 {_e['verdict']}")
+    check("I10b 该情形下 `a2_ok` 必须为 None（不得拿 False 冒充『已排除』）",
+          _e["a2_ok"] is None and _e["a2_determined"] is False,
+          f"a2_ok={_e['a2_ok']} determined={_e['a2_determined']}")
+
+    _e2 = gws.evaluate_entry(
+        {"sector": "某板块B", "etf_code": "159755"}, {"rules": {}},
+        _BOARDS, datetime(2026, 9, 18, 18, 0))
+    check("I11 A2 完全判定不成立 ＋ 技术面成立 ⇒ 才给 🟢",
+          "🟢" in _e2["verdict"], f"实得 {_e2['verdict']}")
+
+    _e3 = gws.evaluate_entry(
+        {"sector": "某板块A", "etf_code": "159755"}, {"rules": {}},
+        _BOARDS, datetime(2026, 9, 18, 18, 0))
+    check("I12 A2 命中 ⇒ ⛔ 禁买（A2 优先于右侧确认）",
+          "⛔" in _e3["verdict"] and _e3["a2_hit"] is True, f"实得 {_e3['verdict']}")
+
+    # I13/I13b 需末根 = **当日**，故换一份末日为 2026-09-18 的夹具
+    _kl_today = [{"date": f"2026-09-{13+i:02d}", "close": c}
+                 for i, c in enumerate([1.00, 1.00, 1.00, 1.00, 1.00, 1.50])]
+    fp.daily_kline = lambda code, n=30: _kl_today       # type: ignore[assignment]
+
+    _e4 = gws.evaluate_entry(
+        {"sector": "固态电池", "etf_code": "159755"}, {"rules": {}},
+        _BOARDS, datetime(2026, 9, 18, 14, 0))          # 盘中（未收盘）
+    check("I13 盘中取值 ⇒ `close_confirmed=False` 且状态为『盘中·未定格』，"
+          "**不得**当作收盘价判据（F5）",
+          _e4["close_confirmed"] is False, f"close_confirmed={_e4['close_confirmed']}")
+
+    # 反向对照：同一根【当日】K 线，收盘后取 ⇒ 它**就是**收盘价，必须为 True。
+    # （证明判定依据是「末根是否当日 ＋ 是否已过 15:00」，不是无条件 False）
+    _e5 = gws.evaluate_entry(
+        {"sector": "固态电池", "etf_code": "159755"}, {"rules": {}},
+        _BOARDS, datetime(2026, 9, 18, 15, 30))
+    check("I13b 反向对照：同一当日 K 线，15:30 取 ⇒ `close_confirmed=True`"
+          "（证明该标志不是无条件 False）",
+          _e5["close_confirmed"] is True, f"close_confirmed={_e5['close_confirmed']}")
+
+    # 反向对照二：末根是【历史】K 线（非当日）⇒ 本来就是已定格收盘，必须为 True
+    check("I13c 反向对照：末根为历史 K 线（非当日）⇒ 亦为 True"
+          "（此前我的夹具正是踩了这条，被测试自己抓出）",
+          _e["close_confirmed"] is True, f"close_confirmed={_e['close_confirmed']}")
+finally:
+    fp.daily_kline, fp.ma = _orig_dk, _orig_ma          # type: ignore[assignment]
+
+check("I14 测试后已还原被 monkeypatch 的 fetch_public 函数",
+      fp.daily_kline is _orig_dk and fp.ma is _orig_ma)
+
+# ---- I-e 真实数据读数（回归锚）----
+_real_wl = _real.get("watchlist") or []
+check("I15 真实 watchlist 4 条、码型可解析为腾讯代码",
+      len(_real_wl) == 4 and all(gws._norm_tencent(w.get("etf_code"))[0] for w in _real_wl),
+      f"得 {[(w.get('sector'), gws._norm_tencent(w.get('etf_code'))[0]) for w in _real_wl]}")
+
+# ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]
 print("\n" + "=" * 56)
 print(f"共 {len(_results)} 项 · 通过 {len(_results) - len(_fail)} · 失败 {len(_fail)}")

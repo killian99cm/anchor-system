@@ -11,8 +11,19 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
 --------------------------------------------------------------------------------
   ✅ 指数 / ETF / 板块点位   push2delay.eastmoney.com/api/qt/ulist.np/get
   ✅ 板块资金（两端）        push2delay.eastmoney.com/api/qt/clist/get  fs=m:90+t:2
-                            ⚠️ 该 fs 实有 **496 个板块**（非 ~86）；只取单端 + pz=100
-                               会得「全部净流入」的**取样假象** —— 必须 pz≥500 且两端都取
+                            ⚠️ 该 fs 实有 **496 个板块**（非 ~86）；只取单端会得
+                               「全部净流入」的**取样假象** —— 必须**两端都取**。
+                            🔴 **勘误（2026-09-18 实测）**：本文件旧注写「必须 pz≥500
+                               覆盖全集」，**这句话是错的** —— **`pz` 被服务端硬顶在
+                               100**（实测 pz=100/500/1000 一律只回 100 行，total=496）。
+                               代码传了 500，**端不认**。⇒ **要全量必须翻页**，
+                               见 `board_movers_all()`。`sector_flow`/`sector_movers`
+                               至今仍只取单页 100，**同为已知缺口**。
+  🔴 板块有**两套互不覆盖的宇宙**（2026-09-18 实测，勿合并）
+        m:90+t:2 行业板块 496 个 —— 有色金属 / 半导体 / 电池
+        m:90+t:3 概念板块 504 个 —— 固态电池 / 人形机器人 / 智能驾驶
+      只查一套时，另一套**永远匹配不到**，且失败**长得像「该板块不存在」**
+      而不是「查错了宇宙」—— 静默失效的典型长相。见 `board_movers_all()`。
   ✅ 南向资金                datacenter-web.eastmoney.com  RPT_MUTUAL_DEAL_HISTORY
   ✅ 日K / MA（前复权）      web.ifzq.gtimg.cn/appstock/app/fqkline/get
   ✅ 主力资金【日序列】       push2his.eastmoney.com/api/qt/stock/fflow/daykline/get
@@ -240,6 +251,119 @@ def sector_movers(top: int = 10, pz: int = 500) -> dict:
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "close_confirmed": False,
     }
+
+
+# 🔴 两套**互不覆盖**的板块宇宙（2026-09-18 实测，勿合并）：
+#    m:90+t:2 行业板块 496 个 —— 有色金属 / 半导体 / 电池 / 光伏电池组件
+#    m:90+t:3 概念板块 504 个 —— 固态电池 / 人形机器人 / 智能驾驶
+#    只查一套 → 另一套**结构性无源**（watchlist 4 条主题里 3 条命中此坑）
+_BOARD_UNIVERSES = (("m:90+t:2", "行业板块"), ("m:90+t:3", "概念板块"))
+
+
+def _board_page(fs: str, pn: int, source: str) -> tuple[list, int]:
+    """板块榜单页。返回 (行, total)。**pz 固定 100** —— 见 board_movers_all 说明。"""
+    js = _em_json("/api/qt/clist/get", {
+        "pn": pn, "pz": 100, "po": 1, "np": 1, "fltt": 2, "invt": 2,
+        "fid": "f3", "fs": fs, "fields": "f12,f14,f3,f62",
+    }, source)
+    if js is None:
+        return [], 0
+    return (js.get("diff") or []), int(js.get("total") or 0)
+
+
+def board_movers_all(max_pages: int = 10) -> dict:
+    """**全量**板块涨幅榜（分页 ＋ 双宇宙）。供 A2 判据 / watchlist 状态消费。
+
+    🔴 修的是两处**「代码传了参数但没生效」**（2026-09-18 实测）：
+      ① **`pz` 被服务端硬顶在 100**。实测 pz=100/500/1000 **一律只回 100 行**，
+         `total` 字段 = 496 —— 故 v4.4.12 记的「改 `pz=500` 覆盖全集」**这句话不成立**：
+         代码确实传了 500，**端不认**，实际可见 100/496。⇒ **必须翻页**。
+         （`sector_movers` / `sector_flow` 至今仍只取单页 100，**本条同时是给它们的勘误**。）
+      ② `fs` 有**两套互不覆盖的宇宙**（见 `_BOARD_UNIVERSES`）—— 只查 `t:2` 时，
+         「固态电池／人形机器人／智能驾驶」**永远匹配不到**，且**失败长得像「板块不存在」
+         而不是「查错了宇宙」**（静默失效的典型长相）。
+
+    返回 `complete=False` ⇒ **不得**据此断言「全部板块如何如何」（取样偏差，
+    与 v4.4.12「指数普跌却全板块净流入」同一类错）。
+    """
+    key = f"board_movers_all:{max_pages}"
+    if key in _CACHE:
+        return _CACHE[key]                                        # type: ignore[return-value]
+
+    rows: list[dict] = []
+    universes: dict[str, dict] = {}
+    complete = True
+    for fs, label in _BOARD_UNIVERSES:
+        got, total = [], 0
+        for pn in range(1, max_pages + 1):
+            page, t = _board_page(fs, pn, f"板块榜·{label} p{pn}")
+            total = total or t
+            if not page:
+                if pn == 1:
+                    complete = False          # 首页就空 ⇒ 该宇宙整体取数失败
+                break
+            got += page
+            if len(got) >= total:
+                break
+        universes[label] = {"fs": fs, "total": total, "fetched": len(got),
+                            "complete": total > 0 and len(got) >= total}
+        if not universes[label]["complete"]:
+            complete = False
+        for d in got:
+            rows.append({"code": d.get("f12"), "name": d.get("f14"),
+                         "chg_pct": d.get("f3"), "board_type": label, "fs": fs})
+
+    by_name = {r["name"]: r for r in rows if r.get("name")}
+    res = {
+        "rows": rows, "by_name": by_name, "universes": universes,
+        "complete": complete, "total_all": sum(u["total"] for u in universes.values()),
+        "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "close_confirmed": False,   # 盘中值；收盘判据须另证（F5）
+    }
+    _CACHE[key] = res
+    return res
+
+
+def board_prev_day_chg(board_code: str) -> dict:
+    """板块**前日**涨幅（供 A2 「连续 2 日飘红」分支）。
+
+    🔴 **实测结构性无源**（2026-09-18，已试 2 主机）：
+        `push2his…/kline/get?secid=90.BKxxxx`  → **非 JSON**（限流/封禁长相）
+        `push2delay…/同路径`                    → `klines` 长度 **0**
+       ⇒ 本函数**返回 available=False ＋ 原因**，**不编造、不用代理值**。
+       依据：附录E · F5 ＋「数据必达铁律」。
+       调用方遇 `available=False` **不得**把该分支当作「未命中」静默放行 ——
+       须在结论里显式写「A2 仅部分可判」（A2 是 `X` 执行级，判不了 ⇒ 不授予买入许可）。
+    """
+    tried = []
+    for host in ("push2his.eastmoney.com", "push2delay.eastmoney.com"):
+        url = (f"https://{host}/api/qt/stock/kline/get?secid=90.{board_code}"
+               "&ut=fa5fd1943c7b386f172d6893dbfba10b"
+               "&fields1=f1,f2,f3,f4,f5,f6"
+               "&fields2=f51,f52,f53,f54,f55,f56,f57,f58"
+               "&klt=101&fqt=1&end=20500101&lmt=6")
+        try:
+            rc, body = _http(url, "https://quote.eastmoney.com/", 15, "utf-8")
+            if rc != 200:
+                tried.append(f"{host}: HTTP {rc}"); continue
+            js = json.loads(body)
+            kl = ((js or {}).get("data") or {}).get("klines") or []
+            if len(kl) >= 2:
+                _record("板块前日涨幅", url, True, f"n={len(kl)}")
+                return {"available": True, "board_code": board_code,
+                        "prev_chg_pct": None, "closes": kl,
+                        "note": "kline 已取到，百分比由调用方自算"}
+            tried.append(f"{host}: klines={len(kl)}")
+            _record("板块前日涨幅", url, False, f"klines={len(kl)}")
+        except json.JSONDecodeError:
+            tried.append(f"{host}: 非 JSON（限流/封禁长相）")
+            _record("板块前日涨幅", url, False, "非 JSON")
+        except Exception as exc:                                  # noqa: BLE001
+            tried.append(f"{host}: {type(exc).__name__}")
+            _record("板块前日涨幅", url, False, type(exc).__name__)
+    return {"available": False, "board_code": board_code, "prev_chg_pct": None,
+            "tried": tried,
+            "note": "板块前日涨幅无免费公共源（已试 2 主机）—— 不得用代理值冒充"}
 
 
 # ---------------------------------------------------------------- 南向资金

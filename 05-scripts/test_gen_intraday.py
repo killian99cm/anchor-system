@@ -35,6 +35,11 @@ def empty_market() -> dict:
     return {"indices": {}, "sectors": {}, "us": {}, "gold": None, "queries": 5}
 
 
+def load_prod() -> dict:
+    """读真实 portfolio_data.json（**只读**，测试绝不写回）。"""
+    return json.loads((Path("C:/Users/lenovo/Desktop/portfolio_data.json")).read_text(encoding="utf-8"))
+
+
 class TestDecode(unittest.TestCase):
     """D1 — 容错解码链。"""
 
@@ -295,6 +300,71 @@ class TestSectorFlowRegression(unittest.TestCase):
             r = fpmod.sector_flow(top=1)
         self.assertEqual(r["inflow"][0]["net_yi"], 1.0)
         self.assertEqual(r["outflow"][0]["net_yi"], -1.0)
+
+
+class TestWatchlistSection(unittest.TestCase):
+    """H — §五「新机会扫描」由**人工占位符**改为**计算渲染**（v4.5.1）。
+
+    病灶：`watchlist[].today` 是只写字段（全仓零读者），§五 是一句人工占位符
+    —— 两者同属「写了没人接」。本组守住「§五 必须来自计算、且缺口必须显形」。
+    """
+
+    def _render(self, data):
+        import gen_intraday_auto as gia
+        return gia.render_report(empty_market(), data, "2026-09-18 18:30")
+
+    def test_section_five_no_longer_manual_placeholder(self):
+        """🔴 反向断言：原占位符文案**不得**再出现。"""
+        out = self._render(load_prod())
+        self.assertNotIn("人工补充", out, "§五 又退回人工占位符了")
+
+    def test_section_five_renders_each_watchlist_entry(self):
+        d = load_prod()
+        out = self._render(d)
+        for item in d.get("watchlist", []):
+            self.assertIn(item["sector"], out, f"{item['sector']} 未出现在 §五")
+
+    def test_section_five_declares_criteria_and_level(self):
+        """判据与级别必须写在报告里（F1：未标级别＝触发线不成立）。"""
+        out = self._render(load_prod())
+        self.assertIn("§4.4", out)
+        self.assertIn("MA5", out)
+        self.assertIn("`E`", out)
+
+    def test_missing_criteria_surfaces_as_gap_not_guessed(self):
+        """🔴 造一条**必查无板块**的假 watchlist ⇒ 必须显形「缺口」，
+        且**不得**给出 🟢（fail-closed）。"""
+        d = load_prod()
+        d["watchlist"] = [{"sector": "__不存在的板块ZZZ__", "etf_code": "159755",
+                           "status": "", "trigger": ""}]
+        out = self._render(d)
+        self.assertIn("缺口声明", out)
+        self.assertNotIn("🟢", out)
+
+    def test_board_movers_all_paginates_beyond_100(self):
+        """🔴 反向断言：`pz` 被服务端硬顶 100，故**必须翻页** —— 单页实现拿不到全量。"""
+        import fetch_public as fpmod
+        pages = {1: [{"f12": "BK1", "f14": "甲", "f3": 1.0}],
+                 2: [{"f12": "BK2", "f14": "乙", "f3": 2.0}],
+                 3: []}
+        with mock.patch.object(fpmod, "_board_page") as bp:
+            bp.side_effect = lambda fs, pn, src: (pages.get(pn, []),
+                                                  2 if fs == "m:90+t:2" else 0)
+            fpmod._CACHE.clear()
+            r = fpmod.board_movers_all()
+        names = set((r.get("by_name") or {}).keys())
+        self.assertIn("甲", names)
+        self.assertIn("乙", names, "未翻页 ⇒ 第 2 页丢失")
+
+    def test_board_prev_day_chg_is_honest_when_unsourced(self):
+        """🔴 板块前日涨幅**结构性无源** ⇒ 必须返回 available=False ＋ tried，
+        **不得**编造或用代理值。"""
+        import fetch_public as fpmod
+        with mock.patch.object(fpmod, "_http", side_effect=Exception("blocked")):
+            r = fpmod.board_prev_day_chg("BK1090")
+        self.assertFalse(r["available"])
+        self.assertIsNone(r["prev_chg_pct"])
+        self.assertTrue(r.get("tried"), "必须留下『试过哪些源』的痕迹")
 
 
 if __name__ == "__main__":

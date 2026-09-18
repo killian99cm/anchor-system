@@ -20,7 +20,9 @@ v1.1 变更（系统优化审计剩余项 C5）：
                                      --sector-chg 0.80 --sector-prev-chg -1.20
 
 校验项（全部规则化）:
-  1. 月操作额度（4/4 满 → 拦截）
+  1. 月操作额度（**买卖两维**，v4.5.1）—— ① **买入维**满（买入≥2）→ 拦截（**总数未满不豁免**）
+     ② 总数满（≥4）→ 拦截 ③ 未识别 op / 疑似双记 → ⚠️ 声张（额度结论不可信）
+     口径见手册 §1.3 v3.11「月操作额度·口径定义」。**计事件不计记录**。
   2. E1 单只卫星上限 ¥3,000（加仓后市值超限 → 拦截）
   3. E4 卫星月净投入 ≤¥1,500（超 → 拦截）
   4. 大额资金分批（拟买 ≥¥3,000 或 --loan → 提示 334 分批）
@@ -52,7 +54,13 @@ BUILTIN_THRESHOLDS = {
     "e1_sat_single_limit": 3000.0,    # E1 单只卫星上限
     "e4_sat_monthly_net": 1500.0,     # E4 卫星月净投入上限
     "big_amount_batch": 3000.0,       # 大额分批阈值
-    "max_monthly_ops": 4,             # 月操作上限
+    "max_monthly_ops": 4,             # 月操作**总数**上限
+    # v4.5.1（09-18）：月额度**买卖两维**（手册 §1.3 正文「买入≤2+卖出≤2」）。
+    # 🔴 修复前契约 DEFAULTS 里早有 `buy_max`/`sell_max` 但**无提取正则、无消费者**
+    #    （写对了的死键），唯一生效的是上面那条一维上限 ⇒ 绑到了速查表的压缩转述。
+    "monthly_buys_max": 2,            # 月操作**买入**上限
+    "monthly_sells_max": 2,           # 月操作**卖出**上限
+    "monthly_ops_cleanup_max": 6,     # 清理月上限
     "scorecard_event_exempt": 300.0,  # 事件驱动评分卡豁免金额
     # v4.5.0 新增（09-18 用户裁决消歧）：A2 追红日禁买 + watchlist 右侧确认
     "a2_red_day_pct": 2.0,            # A2：板块当日涨幅 ≥ 此值 = 红日，禁买
@@ -81,6 +89,8 @@ BUILTIN_THRESHOLDS = {
 _NUMERIC_KEYS = (
     "e1_sat_single_limit", "e4_sat_monthly_net", "big_amount_batch",
     "max_monthly_ops", "scorecard_event_exempt",
+    # v4.5.1：月额度买卖两维（契约键名与内置键名同名，无需 _KEY_MAP 映射）
+    "monthly_buys_max", "monthly_sells_max", "monthly_ops_cleanup_max",
     # v4.5.0：A2 / watchlist 四条，契约键名与内置键名同名（无需 _KEY_MAP 映射）
     "a2_red_day_pct", "a2_consecutive_red_days",
     "watchlist_probe_min", "watchlist_probe_max",
@@ -200,14 +210,34 @@ def main():
     print(f"（阈值来源: {'规则契约 rule_contract.json' if th['_source']=='contract' else '内置默认[WARN]'}）")
     checks = []
 
-    # 1) 月操作额度 —— 复用 data_processor 单一真源（定投/出入金不计，严格日期匹配）
+    # 1) 月操作额度 —— 复用 data_processor 单一真源（记账腿不计，严格日期匹配）
+    #    v4.5.1（09-18）：改为**二维**判定（手册 §1.3 正文「买入≤2+卖出≤2」）。
+    #    🔴 修复前只判 `总数 >= 4`，存在**假阴性路径**：买入 3 笔 + 卖出 0 笔时报「3/4 可执行 1 笔」✅
+    #       放行，而买入维早已超限。故本项对**买入**操作同时判「买入维」与「总数」。
     ops_year, ops_month, ops_label = current_ops_period(d)
-    used, used_viol = monthly_ops_summary(d, year=ops_year, month=ops_month)
-    if used >= max_ops:
-        checks.append(("⛔ 月操作额度", f"{used}/{max_ops} 已满（{ops_year}-{ops_month:02d}）——今日不可买入"))
+    s = monthly_ops_summary(d, year=ops_year, month=ops_month)
+    max_buys = int(th.get("monthly_buys_max", 2) or 2)
+    ops_bits = f"买入 {s.buys}/{max_buys} · 卖出 {s.sells}/{s.max_sells} · 合计 {s.total}/{max_ops}"
+    ops_head = f"（{ops_year}-{ops_month:02d}）"
+    if s.buys >= max_buys:
+        checks.append(("⛔ 月操作额度·买入维",
+                       f"{ops_bits} —— 买入维已满{ops_head}，今日不可买入（**总数未满不构成豁免**）"))
+    elif s.total >= max_ops:
+        checks.append(("⛔ 月操作额度·总数", f"{ops_bits} —— 总数已满{ops_head}，今日不可买入"))
     else:
-        checks.append(("✅ 月操作额度", f"{used}/{max_ops}，可执行 {max_ops - used} 笔"
-                                       + (f"（含 {used_viol} 笔违规标记）" if used_viol else "")))
+        checks.append(("✅ 月操作额度", f"{ops_bits}，买入维尚可执行 {max(max_buys - s.buys, 0)} 笔"
+                                       + (f"（含 {s.violations} 笔违规标记）" if s.violations else "")))
+    # 🔴 fail-loud 两条：额度结论**不可信**时必须声张，不得静默按「未超限」放行
+    if s.has_unknown:
+        checks.append(("⚠️ 月操作额度·未识别 op",
+                       f"闭集外 op {list(s.unknown_ops)} —— **该 op 未被计入任何维度，额度结论不可信**，"
+                       f"请先在手册 §1.3 口径定义中归类"))
+    if s.has_suspect_dupes:
+        _d = s.suspect_dupes[0]
+        checks.append(("⚠️ 月操作额度·疑似双记",
+                       f"{len(s.suspect_dupes)} 组同(日期/op/金额)多记录（如 {_d['date']} {_d['op']} "
+                       f"¥{_d['amount']} × {_d['count']} 条，涉 {_d['funds']}）—— "
+                       f"**额度可能虚高**，须人工确认是否同一事件"))
 
     # 2) 目标可达性 + 层
     if tgt:

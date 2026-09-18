@@ -20,8 +20,13 @@ DEFAULTS = {
     "watch_break_line_pct": -15,
     "watch_break_ma20": True,
     "monthly_ops_max": 4,
-    "buy_max": 2,
-    "sell_max": 2,
+    # v4.5.1（09-18）：原为 `buy_max`/`sell_max` —— 有默认值、**无提取正则、无消费者**，
+    # 是「写对了的死键」（手册 §1.3 正文早有「买入≤2+卖出≤2」，契约却没接上，
+    # 而唯一生效的门禁是 monthly_ops_max=4 一维 ⇒ **绑到了速查表的压缩转述**）。
+    # 本次接上提取正则并改名与 monthly_ops_max 同族；语义见手册 §1.3 口径定义。
+    "monthly_buys_max": 2,
+    "monthly_sells_max": 2,
+    "monthly_ops_cleanup_max": 6,
     "e1_sat_position_cap": 3000,
     "e4_monthly_net_cap": 1500,
     "scorecard_min": 3,
@@ -93,6 +98,14 @@ def extract(text: str) -> dict:
     grab("stop_loss_pct", [r"[-－]\s*8\s*%", r"止损[^\n]{0,12}[-－]\s*8\s*%"], lambda m: -8.0, DEFAULTS["stop_loss_pct"])
     grab("watch_break_line_pct", [r"浮亏\s*[≤≤<=]?\s*[-－]\s*15\s*%", r"[-－]\s*15\s*%\s*(或|或收盘|或跌破)"], lambda m: -15.0, DEFAULTS["watch_break_line_pct"])
     grab("monthly_ops_max", [r"月[^\n]{0,8}操作[^\n]{0,6}≤\s*([0-9]+)\s*笔", r"操作[^\n]{0,8}≤\s*([0-9]+)\s*笔"], lambda m: int(m.group(1)), DEFAULTS["monthly_ops_max"])
+    # v4.5.1（09-18）：月额度**买卖两维**（手册 §1.3「正常月≤4笔（买入≤2+卖出≤2），清理月≤6笔」）。
+    # 🔴 正则一律以「操作频率」为锚 —— 手册 §1.3 新增的口径定义块里也含「买入 ≤2」「卖出 ≤2」
+    #    字样（散文引用），锚定后可保证取的是**定义所在行**而非正文中的引用；
+    #    与 v4.4.0「E1 被非贪婪正则抓成 4」、v4.5.0「A2 ≥% 未加锚首匹配抓成 5」**同族坑**。
+    _int1 = lambda m: int(m.group(1))
+    grab("monthly_buys_max", [r"操作频率[^\n]{0,40}?买入\s*≤\s*([0-9]+)"], _int1, DEFAULTS["monthly_buys_max"])
+    grab("monthly_sells_max", [r"操作频率[^\n]{0,40}?卖出\s*≤\s*([0-9]+)"], _int1, DEFAULTS["monthly_sells_max"])
+    grab("monthly_ops_cleanup_max", [r"清理月\s*≤\s*([0-9]+)\s*笔"], _int1, DEFAULTS["monthly_ops_cleanup_max"])
     # 09-01 修复：手册用 `¥3,000**` 加粗标记，原正则要求数字后紧跟"元"导致提取失败 → 改为兼容 ¥ + 可选加粗
     _num = lambda m: int(m.group(1).replace(",", "").replace("，", ""))
     # v4.4.0 修复：原正则 `E1[^\n]{0,24}?¥?\s*([\d,，]+)` 在手册 "月限额/E1-E4/评分卡"（规则枚举行）

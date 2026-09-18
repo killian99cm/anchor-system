@@ -72,6 +72,11 @@ def data_reference_date(data, fallback=None):
 
 DEFAULT_CASH_FLOOR = 0.10
 DEFAULT_MONTHLY_OPS = 4
+# v4.5.1（09-18）：月额度**买卖两维**默认值 —— 手册 §1.3 正文「正常月≤4笔（买入≤2+卖出≤2）」。
+# `max_monthly_ops` 是**总数上限**，**不等于**任一维上限；三者独立判定。
+DEFAULT_MONTHLY_BUYS = 2
+DEFAULT_MONTHLY_SELLS = 2
+DEFAULT_MONTHLY_CLEANUP = 6
 
 # 创新药时间止损截止日 —— 单一事实源（规则手册 v3.3：8/20，实际日期优先从数据解析）
 TIME_STOP_DEADLINE = date(2026, 8, 20)
@@ -608,37 +613,136 @@ def current_ops_period(data, today=None):
 
 
 def compute_ops_state(data, today=None):
-    """Return normalized monthly operation state."""
+    """Return normalized monthly operation state.
+
+    v4.5.1（09-18）：改为**二维**（手册 §1.3 v3.11 口径）——
+    `count`/`max`/`remaining` **保留旧语义（总数）**以兼容既有渲染，
+    新增 `buys`/`sells` 与两维判定。⚠️ 判定一律读 `is_over_limit`（任一维超限即超限），
+    **不得再用 `count >= max` 作唯一判据** —— 一维判据存在**假阴性路径**
+    （买入 3 笔 + 卖出 0 笔时 3 < 4 会放行，而买入维已超 2）。"""
     year, month, label = current_ops_period(data, today=today)
-    count, violation_count = monthly_ops_summary(data, year=year, month=month)
-    max_ops = int(safe_float(data.get('_meta', {}).get('max_monthly_ops', DEFAULT_MONTHLY_OPS), DEFAULT_MONTHLY_OPS))
-    if max_ops <= 0:
-        max_ops = DEFAULT_MONTHLY_OPS
-    remaining = max(max_ops - count, 0)
+    s = monthly_ops_summary(data, year=year, month=month)
+    max_total = s.max_total if s.max_total > 0 else DEFAULT_MONTHLY_OPS
+    remaining = max(max_total - s.total, 0)
     return {
         'year': year,
         'month': month,
         'label': label,
-        'count': count,
-        'max': max_ops,
+        # ---- 旧字段（总数口径，兼容既有渲染）----
+        'count': s.total,
+        'max': max_total,
         'remaining': remaining,
-        'violations': violation_count,
-        'is_at_limit': count >= max_ops,
-        'is_over_limit': count > max_ops,
+        'is_at_limit': s.total >= max_total,
+        'is_over_limit': s.is_over_limit,
+        # ---- v4.5.1 新增：买卖两维 ----
+        'buys': s.buys,
+        'sells': s.sells,
+        'max_buys': s.max_buys,
+        'max_sells': s.max_sells,
+        'is_buy_over': s.is_buy_over,
+        'is_sell_over': s.is_sell_over,
+        'buy_remaining': max(s.max_buys - s.buys, 0),
+        'sell_remaining': max(s.max_sells - s.sells, 0),
+        'violations': s.violations,
+        'unknown_ops': list(s.unknown_ops),
+        'has_unknown': s.has_unknown,
+        'suspect_dupes': list(s.suspect_dupes),
+        'has_suspect_dupes': s.has_suspect_dupes,
     }
 
 
-def is_manual_operation(t):
-    """判断是否为计入月操作限额的手动操作。
-    定投（自动扣款）与出入金（转入/转出/入金/赎回到账）不计入月限额，
-    与交易备注「智能定投自动扣款（非手动操作，不计入月限额）」及 gen_monthly_attribution 分类口径一致。"""
-    op = str(t.get('op', ''))
+# ══════════════════════════════════════════════════════════════════════════
+# 月操作额度 · 口径（手册 §1.3 v3.11「月操作额度·口径定义」· 2026-09-18 立）
+# ══════════════════════════════════════════════════════════════════════════
+# 🔴 v4.5.1 立此闭集，修三个缺陷（此前实现在同一 KPI 上同时犯三个）：
+#   ① **维度丢失** —— 手册正文写「正常月≤4笔（买入≤2+卖出≤2）」，速查表压缩成「正常≤4」，
+#      而门禁绑的是 `max_monthly_ops = 4` 一维 ⇒ **绑到了转述表，丢了决定性括号**。
+#      后果是**假阴性**：买入 3 笔 + 卖出 0 笔时，一维口径报「3/4 可执行 1 笔」✅ 放行，
+#      而正文口径应为「买入已超 2」⛔ 拦截。与 v4.4.13（转述表压缩丢限定词）**同型**。
+#   ② **记录 ≠ 事件** —— `赎回`(T日提交) 与 `赎回确认`(T+1确认) 是**同一事件的两条腿**，
+#      旧实现按 `op` 黑名单逐条计数 ⇒ 单事件计 2 次（9 月实测虚增为 10，真实事件 8）。
+#      与 v4.4.16（`pnl_pct` 混装 5 种语义）**同族**：聚合函数按「记录」算，
+#      而 KPI 的语义是「事件」。
+#   ③ **分类靠子串巧合** —— `余额宝转出`/`转换转入` 此前**被排除**，并非因其被列出，
+#      而是因 `'转出'`/`'转入'` 恰是它们的子串 ⇒ **碰巧对，不是定义对**。
+#      新增 op 类型（如 `转换转出`）随时会静默破功。
+# ⇒ 故：**黑名单翻转为闭集白名单 ＋ 未知 op fail-loud**（而不是「再往黑名单加一个词」——
+#    那只能修到下一个 op 类型出现为止）。
+MONTHLY_OPS_BUY_MARKERS = ('买入', '加仓', '建仓', '补仓')
+MONTHLY_OPS_SELL_MARKERS = ('卖出', '赎回', '清仓', '减仓')
+# 记账腿：**资金／份额的记账动作**，非**决策动作**，一律不计入月额度。
+# 🔴 `赎回` 计入、`赎回确认`／`赎回到账` 不计入 —— 三者是同一事件的三条腿，只计提交那一条。
+MONTHLY_OPS_LEDGER_LEGS = (
+    '定投', '赎回到账', '赎回确认',
+    '转入', '转出', '入金', '出金',
+    '转换转入', '转换转出', '余额宝转入', '余额宝转出',
+)
+
+
+def classify_txn_op(op):
+    """把一个交易记录归到 'buy' / 'sell' / 'leg' / 'unknown'。
+
+    🔴 未识别的 op 返回 **'unknown'** —— 调用方**必须显式处置**（声张），
+    不得静默计入、也不得静默排除。口径见手册 §1.3 第 ④ 条。"""
+    op = str(op or '').strip()
+    if not op:
+        return 'unknown'
+    # 🔴 记账腿**必须先判** —— `赎回确认` 含子串 `赎回`，若先判 sell 会被误归。
+    if any(k in op for k in MONTHLY_OPS_LEDGER_LEGS):
+        return 'leg'
+    if any(op.startswith(k) for k in MONTHLY_OPS_BUY_MARKERS):
+        return 'buy'
+    if any(op.startswith(k) for k in MONTHLY_OPS_SELL_MARKERS):
+        return 'sell'
+    return 'unknown'
+
+
+def is_superseded_txn(t):
+    """交易记录是否已被取代（v4.5.1 新增）。
+
+    与**决策日志的取代机制**（v4.4.2 `superseded`）对齐 —— 交易记录此前**没有**取代机制，
+    于是「盘中记错、收盘订正」只能靠**再记一条**，导致同一事件被计两次
+    （9/1「贷款第1笔」实录两条：盘中记证券、收盘确认记鹏华）。
+
+    支持两种写法：`superseded: true` 或 `superseded_by: "<取代者说明>"`。"""
+    if t.get('superseded') is True:
+        return True
+    return bool(t.get('superseded_by'))
+
+
+def txn_exclusion_reason(t):
+    """该记录**不计入月额度**的原因；`None` = 计入。
+
+    把「为什么不算」显式化，而不是靠布尔黑箱 —— 便于报文里逐条说明、
+    也便于测试直接断言**是哪一条口径**在起作用（而非只断言一个布尔）。
+
+    判定顺序（**先显式声明，再分类**）：
+      1. `superseded` / `superseded_by` 字段      → 'superseded'（已被取代）
+      2. op ∩ 记账腿闭集                           → 'ledger_leg'（记账腿）
+      3. note 含「自动扣款」/「非手动」            → 'note_declared_non_manual'
+         ⚠️ 这不是启发式 —— 是**人工写下的显式声明**（如「智能定投自动扣款（非手动操作，
+         不计入月限额）」），按「显式声明优先于推断」保留（v4.5.1 修复中曾一度漏掉，被
+         `test_pre_trade_check.TestMonthlyOpsReuse` 当场抓出回归）。
+      4. 其余                                      → None（计入）
+    """
+    if is_superseded_txn(t):
+        return 'superseded'
+    if classify_txn_op(t.get('op')) == 'leg':
+        return 'ledger_leg'
     note = str(t.get('note', ''))
-    if any(k in op for k in ('定投', '转入', '转出', '入金', '出金', '赎回到账')):
-        return False
     if '自动扣款' in note or '非手动' in note:
-        return False
-    return True
+        return 'note_declared_non_manual'
+    return None
+
+
+def is_manual_operation(t):
+    """【向后兼容保留】是否计入月操作限额。
+
+    🔴 v4.5.1 起**不再作为口径权威** —— 旧实现是「排除词黑名单」，会把 `赎回确认`
+    这类**同一事件的记账腿**计入，且对未知 op 静默按「计入」处理。
+    新代码请用 `classify_txn_op()` ＋ `monthly_ops_summary()`（二维口径）。
+    本函数保留仅为兼容既有调用点，语义等价于「`txn_exclusion_reason` 为 None」。"""
+    return txn_exclusion_reason(t) is None
 
 
 def _txn_date_in_month(d, year, month):
@@ -655,18 +759,151 @@ def _txn_date_in_month(d, year, month):
     return False
 
 
+class MonthlyOpsSummary:
+    """月操作额度汇总（手册 §1.3 v3.11 **二维口径**）。
+
+    向后兼容：仍可 2 元组解包 `(total, violations)`、可 `[0]` 下标 ——
+    既有调用点（gen_excel_skill / gen_monthly_attribution / gen_weekly_report）
+    无需改动即得正确总数；需要二维判定处请读 `.buys` / `.sells` /
+    `.is_buy_over` / `.is_sell_over`。"""
+
+    __slots__ = ('year', 'month', 'buys', 'sells', 'violations', 'unknown_ops',
+                 'superseded_records', 'suspect_dupes', 'max_buys', 'max_sells', 'max_total')
+
+    def __init__(self, year, month, buys, sells, violations=0,
+                 unknown_ops=(), superseded_records=0, suspect_dupes=(),
+                 max_buys=2, max_sells=2, max_total=4):
+        self.year = year
+        self.month = month
+        self.buys = buys
+        self.sells = sells
+        self.violations = violations
+        self.unknown_ops = tuple(unknown_ops)
+        self.superseded_records = superseded_records
+        self.suspect_dupes = tuple(suspect_dupes)
+        self.max_buys = max_buys
+        self.max_sells = max_sells
+        self.max_total = max_total
+
+    @property
+    def total(self):
+        return self.buys + self.sells
+
+    @property
+    def is_buy_over(self):
+        return self.buys > self.max_buys
+
+    @property
+    def is_sell_over(self):
+        return self.sells > self.max_sells
+
+    @property
+    def is_total_over(self):
+        return self.total > self.max_total
+
+    @property
+    def is_over_limit(self):
+        """任一维度超限即为超限（买卖两维独立，不可互相占用额度）。"""
+        return self.is_buy_over or self.is_sell_over or self.is_total_over
+
+    @property
+    def has_unknown(self):
+        """存在闭集之外的 op ⇒ 额度结论**不可信**，调用方必须声张。"""
+        return bool(self.unknown_ops)
+
+    @property
+    def has_suspect_dupes(self):
+        """存在疑似同一事件的双记记录 ⇒ 额度**可能虚高**，须人工确认。"""
+        return bool(self.suspect_dupes)
+
+    # ---- 向后兼容（旧签名 `(count, violation_count)`）----
+    def __iter__(self):
+        return iter((self.total, self.violations))
+
+    def __len__(self):
+        return 2
+
+    def __getitem__(self, i):
+        return (self.total, self.violations)[i]
+
+    def __repr__(self):
+        return (f"MonthlyOpsSummary({self.year}-{self.month:02d}: "
+                f"买入 {self.buys}/{self.max_buys} · 卖出 {self.sells}/{self.max_sells} · "
+                f"合计 {self.total}/{self.max_total}"
+                + (f" · ⚠️未知op={list(self.unknown_ops)}" if self.unknown_ops else "")
+                + (f" · 已取代 {self.superseded_records}" if self.superseded_records else "")
+                + (f" · ⚠️疑似双记 {len(self.suspect_dupes)} 组" if self.suspect_dupes else "")
+                + ")")
+
+
 def monthly_ops_summary(data, year=None, month=None):
-    """Count manual operations for a given month. Returns (count, violation_count).
-    Single source of truth — used by rules, risk matrix, and HTML KPI.
-    Handles '2026-08-07' / '2026/8/7' / '8/7' formats（严格日期开头匹配）。
-    定投/出入金（非手动操作）不计入月操作限额。"""
+    """月操作额度统计（**单一真源** · 手册 §1.3 v3.11 二维口径）。
+
+    Returns: `MonthlyOpsSummary` —— 向后兼容 2 元组解包，另暴露 `.buys` / `.sells`。
+
+    🔴 三条口径（详见文件内 MONTHLY_OPS_* 常量处的说明）：
+      ① 计「事件」不计「记录」（记账腿不计入；`superseded` 记录不计入）
+      ② 买卖**两维独立**判定（`买入≤2` 与 `卖出≤2` 各自成立，非「总数≤4」一维）
+      ③ 未知 op **fail-loud** —— 收进 `.unknown_ops` 并置 `has_unknown`，
+         **不静默计入、也不静默排除**
+
+    Handles '2026-08-07' / '2026/8/7' / '8/7' formats（严格日期开头匹配）。"""
     if year is None or month is None:
         year, month, _ = current_ops_period(data)
     txns = data.get('transactions', [])
     month_txns = [t for t in txns if _txn_date_in_month(t.get('date'), year, month)]
-    manual_txns = [t for t in month_txns if is_manual_operation(t)]
-    violation_count = sum(1 for t in manual_txns if '违规' in str(t.get('note', '')))
-    return len(manual_txns), violation_count
+
+    meta = data.get('_meta', {}) or {}
+    max_buys = int(safe_float(meta.get('monthly_buys_max'), DEFAULT_MONTHLY_BUYS) or DEFAULT_MONTHLY_BUYS)
+    max_sells = int(safe_float(meta.get('monthly_sells_max'), DEFAULT_MONTHLY_SELLS) or DEFAULT_MONTHLY_SELLS)
+    max_total = int(safe_float(meta.get('max_monthly_ops'), DEFAULT_MONTHLY_OPS) or DEFAULT_MONTHLY_OPS)
+
+    buys = sells = violations = superseded = 0
+    unknown = []
+    counted = []
+    for t in month_txns:
+        reason = txn_exclusion_reason(t)
+        if reason == 'superseded':
+            superseded += 1
+            continue
+        if reason is not None:
+            # 'ledger_leg' / 'note_declared_non_manual' —— 记账腿与显式声明，均不计入
+            continue
+        kind = classify_txn_op(t.get('op'))
+        if kind == 'unknown':
+            # 🔴 fail-loud：收进名单，**不并入买卖任一维** —— 见口径 ③
+            unknown.append(str(t.get('op', '')).strip() or '<空 op>')
+            continue
+        counted.append((t, kind))
+        if kind == 'buy':
+            buys += 1
+        else:
+            sells += 1
+        if '违规' in str(t.get('note', '')):
+            violations += 1
+
+    # 🔴 疑似双记检测（**只声张，不自动折叠**）—— 口径 ① 要求「计事件不计记录」，
+    #    但「两条记录 = 一个事件」只能由人判定。系统此前对该情形**零感知**：
+    #    9/1「贷款第1笔」实录两条（盘中记证券 / 收盘确认记鹏华），静静被计成 2 笔买入。
+    #    故此处**报出**同 (日期, op, 金额) 的多条记录供人工确认，**不替用户判定谁对**。
+    _groups = {}
+    for t, _kind in counted:
+        k = (str(t.get('date', '')), str(t.get('op', '')), str(t.get('amount', '')))
+        _groups.setdefault(k, []).append(t)
+    suspect = [
+        {'date': k[0], 'op': k[1], 'amount': k[2],
+         'funds': sorted({str(x.get('fund') or x.get('name') or '') for x in v}),
+         'count': len(v)}
+        for k, v in _groups.items() if len(v) > 1
+    ]
+    suspect.sort(key=lambda x: (x['date'], x['op']))
+
+    return MonthlyOpsSummary(
+        year=year, month=month, buys=buys, sells=sells, violations=violations,
+        unknown_ops=sorted(set(unknown)), superseded_records=superseded,
+        suspect_dupes=suspect,
+        max_buys=max_buys, max_sells=max_sells, max_total=max_total,
+    )
 
 
 # group 字段 → 层级（来自 portfolio_data.json，新基金自动归类）

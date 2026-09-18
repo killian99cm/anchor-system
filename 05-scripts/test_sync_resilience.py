@@ -4,17 +4,46 @@
 设计要点：注入的假条目必须让 0.6 步失败，但【不能】让 0.5 覆盖度失败——
 否则分不清是哪一层拦下的。故假条目 pipeline_key 用已有的「通利」（不产生孤儿键），
 holdings_match 用不存在的持仓名（不干扰活跃持仓的覆盖判定），query 故意查不到。
-安全：全程 try/finally 还原注册表 + 字节级一致性断言。
+安全（v4.5.1 重做）：
+  🔴 **不再碰生产文件** —— 本测试改为在**临时副本**上注入，生产 `fetch_registry.json`
+     通过 `ANCHOR_FETCH_REGISTRY` 环境变量被子进程绕开。
+     旧版直接改生产文件、靠 `try/finally` 还原；**硬杀（超时/SIGKILL）下 finally 不执行**
+     ⇒ 2026-09-17 23:08 那次运行把假条目 `__TEST_FAIL__` 永久留在了生产注册表里，
+     还连带让 `test_fetch_registry` 长期失败、卡住 smoke_test。
+     **教训：「靠 finally 保证不污染」在进程被硬杀时不成立 —— 不碰生产文件才是真隔离。**
+  另：启动时**自愈**——若发现历史遗留的哨兵条目或 `.bak_syncfail_test`，先清掉再跑。
 """
-import json, os, shutil, subprocess, sys
+import json, os, shutil, subprocess, sys, tempfile
 sys.stdout.reconfigure(encoding="utf-8")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REG = os.path.join(HERE, "fetch_registry.json")
 BAK = REG + ".bak_syncfail_test"
 PY = sys.executable
-orig = open(REG, "rb").read()
-shutil.copyfile(REG, BAK)
+
+# ── 自愈：清理历史遗留污染（旧版硬杀所致）────────────────────────────
+_healed = []
+try:
+    _r = json.load(open(REG, encoding="utf-8"))
+    _n = len(_r.get("entries", []))
+    _r["entries"] = [e for e in _r.get("entries", []) if e.get("key") != "__TEST_FAIL__"]
+    if len(_r["entries"]) != _n:
+        json.dump(_r, open(REG, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
+        _healed.append(f"清除遗留哨兵 {_n - len(_r['entries'])} 条")
+except Exception as _e:
+    print(f"[自愈][WARN] 注册表检查失败：{_e}")
+if os.path.exists(BAK):
+    os.remove(BAK)
+    _healed.append("删除遗留 .bak_syncfail_test")
+print("[自愈] " + ("；".join(_healed) if _healed else "无历史遗留污染") + "\n")
+
+# ── 隔离：在临时副本上注入，生产文件全程只读 ──────────────────────
+_TMP = tempfile.mkdtemp(prefix="anchor_sync_resilience_")
+WORK_REG = os.path.join(_TMP, "fetch_registry.json")
+shutil.copyfile(REG, WORK_REG)
+os.environ["ANCHOR_FETCH_REGISTRY"] = WORK_REG   # 子进程经环境变量继承 → 绕开生产文件
+orig = open(WORK_REG, "rb").read()
+_PROD_ORIG = open(REG, "rb").read()   # 生产文件起始字节，收尾时断言其未被改动
 same = False
 
 try:
@@ -31,9 +60,10 @@ try:
         "fetch": "always",
         "note": "测试注入，跑完即删",
     })
-    with open(REG, "w", encoding="utf-8") as f:
+    with open(WORK_REG, "w", encoding="utf-8") as f:
         json.dump(reg, f, ensure_ascii=False, indent=2)
-    print("[注入] 已加假条目 __TEST_FAIL__（pipeline_key=通利，持仓/查询均不存在）\n")
+    print(f"[注入] 已加假条目 __TEST_FAIL__（pipeline_key=通利，持仓/查询均不存在）")
+    print(f"[隔离] 注入目标 = 临时副本 {WORK_REG}\n       生产注册表 {REG} 全程只读\n")
 
     # 先单独跑 0.5，确认【不是】覆盖度拦下的
     p05 = subprocess.run([PY, os.path.join(HERE, "data_pipeline.py"), "--coverage"],
@@ -82,12 +112,17 @@ try:
         if not ok:
             bad += 1
 finally:
-    with open(REG, "wb") as f:
+    # 还原副本（副本即使没还原成功也无所谓 —— 它随临时目录一起删）
+    with open(WORK_REG, "wb") as f:
         f.write(orig)
-    same = open(REG, "rb").read() == orig
-    print(f"\n[还原] 字节级一致：{'✅' if same else '❌ 不一致！'}")
-    if same and os.path.exists(BAK):
-        os.remove(BAK)
+    same = open(WORK_REG, "rb").read() == orig
+    print(f"\n[还原] 副本字节级一致：{'✅' if same else '❌ 不一致！'}")
+    # 🔴 关键断言换成**生产文件从未被改动** —— 这才是本测试真正要保证的事
+    prod_untouched = open(REG, "rb").read() == _PROD_ORIG
+    print(f"[隔离] 生产注册表全程未被改动：{'✅' if prod_untouched else '❌ 被改动了！'}")
+    shutil.rmtree(_TMP, ignore_errors=True)
+    os.environ.pop("ANCHOR_FETCH_REGISTRY", None)
+    same = same and prod_untouched
 
 print("\n" + "=" * 50)
 print("✅ 验收第5条通过：取数失败不中断每日链路" if (bad == 0 and same) else "❌ 验收第5条未通过")

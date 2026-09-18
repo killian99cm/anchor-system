@@ -18,6 +18,9 @@ Thumbs.db
 # Data cache
 05-scripts/mx_cache/*.xlsx
 05-scripts/mx_cache/*.json
+# 板块涨幅日序列缓存（v4.5.2）—— A2「前一交易日涨幅」的唯一判据源。
+# 派生数据、每日重建、体积随交易日线性增长 ⇒ 不入库（与 mx_cache 同类）。
+06-dashboard/board_pct_history.json
 
 # Generated output (from source data)
 06-dashboard/portfolio_analysis.html

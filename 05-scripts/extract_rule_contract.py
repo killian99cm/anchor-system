@@ -66,6 +66,16 @@ DEFAULTS = {
     "watchlist_probe_max": 500,
     "watchlist_confirm_requires_a2_pass": True,
     "watchlist_confirm_ma_period": 5,
+    # v4.5.2（09-18 用户裁决）：MA5 口径 ＋ A2 前日涨幅判据源。
+    # 🔴 两键都**必须**有真消费者，否则就是又一个「有默认值、无提取、无读者」的死键
+    #    （v4.5.1 刚清理过 `buy_max`/`sell_max` 那对）：
+    #    · `watchlist_confirm_ma_includes_today` → `gen_watchlist_status` 据此选
+    #      含当日/不含当日**哪一解**作为判据（另一解仍算出并用于「两解相反时报警」）
+    #    · `a2_prev_day_cache` → `gen_watchlist_status` 用之**核对代码实际读的缓存文件**
+    #      （不符即报警）—— 把「手册声称的源」与「代码真读的源」**绑定**，
+    #      正是本系统反复出现的那族缺陷（转述层与定义层无绑定）的对症解法。
+    "watchlist_confirm_ma_includes_today": True,
+    "a2_prev_day_cache": "board_pct_history.json",
 }
 
 # 规则手册路径（默认取 01-rules 下最新 v*）
@@ -217,6 +227,23 @@ def extract(text: str) -> dict:
         rules["watchlist_confirm_requires_a2_pass"] = DEFAULTS["watchlist_confirm_requires_a2_pass"]
         rules["watchlist_confirm_ma_period"] = DEFAULTS["watchlist_confirm_ma_period"]
         warns.append("watchlist_confirm")
+
+    # ── MA5 口径 ＋ A2 前日涨幅判据源（v4.5.2 · 2026-09-18 用户裁决）──
+    # 取的是**被采用的那一解**（而非「是否出现某句」）—— 这样把手册改写成「不含当日」
+    # 会得到 `False`，而不是「正则不匹配 ⇒ 悄悄回到默认 True」。
+    m = re.search(r"当日\s*MA5」＝\*\*([^*]{0,12})\*\*", text)
+    if m:
+        rules["watchlist_confirm_ma_includes_today"] = ("不含当日" not in m.group(1))
+    else:
+        rules["watchlist_confirm_ma_includes_today"] = DEFAULTS["watchlist_confirm_ma_includes_today"]
+        warns.append("watchlist_confirm_ma_includes_today")
+    # 锚定「自建日序列缓存」措辞 —— 正文里 `.json` 出现多次，不锚定会抓错文件。
+    m = re.search(r"自建日序列缓存[^\n]{0,40}?`([\w.]+\.json)`", text)
+    if m:
+        rules["a2_prev_day_cache"] = m.group(1)
+    else:
+        rules["a2_prev_day_cache"] = DEFAULTS["a2_prev_day_cache"]
+        warns.append("a2_prev_day_cache")
 
     return rules, warns
 

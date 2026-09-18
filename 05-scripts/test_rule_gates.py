@@ -14,9 +14,12 @@
 """
 import io
 import json
+import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -256,12 +259,21 @@ check("H16 superseded / superseded_by 记录**不计入**额度",
       _s6.buys == 0 and _s6.superseded_records == 2, f"实得 {_s6}")
 
 # ---- H-h 疑似双记**只声张不折叠** ----
+# 🔴 v4.5.2 起分组键**含 fund**（原来不含 ⇒ 长期误报，见下 H17b）。故本夹具必须用
+#    **同基金**的同额同日两笔 —— 否则测的是「同日同额的不同基金」，不是双记。
 _d_dup = {"transactions": [
-    _txn("2026-09-01", "买入", 2000, "证券"), _txn("2026-09-01", "买入", 2000, "鹏华")]}
+    _txn("2026-09-01", "买入", 2000, "证券"), _txn("2026-09-01", "买入", 2000, "证券")]}
 _s7 = dp.monthly_ops_summary(_d_dup, year=2026, month=9)
-check("H17 同(日期/op/金额)多记录 → 报出 suspect_dupes 但**不自动折叠**（计数仍为 2）",
+check("H17 同(日期/op/基金/金额)多记录 → 报出 suspect_dupes 但**不自动折叠**（计数仍为 2）",
       _s7.has_suspect_dupes and _s7.buys == 2,
       f"声张={_s7.has_suspect_dupes} 仍计 {_s7.buys} 笔 ⇒ 谁对谁错**留给人工**，机器不猜")
+_d_dup2 = {"transactions": [
+    _txn("2026-09-01", "买入", 2000, "证券"), _txn("2026-09-01", "买入", 2000, "鹏华")]}
+_s7b = dp.monthly_ops_summary(_d_dup2, year=2026, month=9)
+check("H17b 🔴 同额同日但**不同基金** ⇒ **不得**报疑似双记"
+      "（旧键缺 `fund` 时此处长期误报 —— 天天响的告警会被学会忽略）",
+      not _s7b.has_suspect_dupes and _s7b.buys == 2,
+      f"声张={_s7b.has_suspect_dupes} 计 {_s7b.buys} 笔 ⇒ 应为两笔各算各的正常买入")
 
 # ---- H-i 向后兼容 ----
 check("H18 仍可 2 元组解包（既有调用点无需改动）", tuple(_s3) == (_s3.total, _s3.violations))
@@ -285,9 +297,32 @@ check("H22 `txn_exclusion_reason` 能指明**是哪一条口径**在起作用（
 # ---- H-j 真实数据读数（回归锚：数字变了必须有人解释）----
 _real = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
 _s9 = dp.monthly_ops_summary(_real, year=2026, month=9)
-check("H20 真实 9 月读数 = 买入 6 / 卖出 3 / 合计 9（口径修正后）",
-      (_s9.buys, _s9.sells) == (6, 3),
-      f"实得 {_s9} —— 旧口径为 10（差 1 = `赎回确认` 记账腿）")
+check("H20 真实 9 月读数 = 买入 5 / 卖出 3 / 合计 8（口径修正 ＋ 9/1 双记已折叠）",
+      (_s9.buys, _s9.sells) == (5, 3),
+      f"实得 {_s9} —— 演进：旧口径 10（把 `赎回确认` 记账腿算成独立操作）"
+      f" → v4.5.1 口径修正 6（记账腿先判）→ v4.5.2 9/1 双记折叠 5"
+      f"（用户 2026-09-18 确认「证券 ¥2000 记重了」）")
+
+# ---- H-j2 🔴 反向断言：疑似双记检测**仍须抓得到真阳性** ----
+# 起因：v4.5.1 的分组键是 (日期, op, 金额) —— **不含基金**，于是「9/1 证券 ¥2000 ＋
+# 鹏华 ¥2000」这种**同日同额但不同基金的正常两笔**被长期误报。v4.5.2 把 `fund`
+# 加进键之后，必须确认**没有顺手把真阳性也一起修没**：
+_sf = {"transactions": [
+    {"date": "2026-09-05", "op": "买入", "fund": "X基金", "amount": 1000},
+    {"date": "2026-09-05", "op": "买入", "fund": "X基金", "amount": 1000},
+    {"date": "2026-09-05", "op": "买入", "fund": "Y基金", "amount": 1000}], "_meta": {}}
+_sfs = dp.monthly_ops_summary(_sf, year=2026, month=9)
+check("H21 🔴 同基金同额同日 ×2 ⇒ **仍须报出**（修误报不得把真阳性一起修没）",
+      len(_sfs.suspect_dupes) == 1 and _sfs.suspect_dupes[0]["count"] == 2
+      and _sfs.suspect_dupes[0]["fund"] == "X基金",
+      repr(_sfs.suspect_dupes))
+check("H22 🔴 同日同额的**不同基金** ⇒ **不得**被卷入同一组（这才是误报的根因）",
+      all("Y基金" not in (d.get("funds") or []) for d in _sfs.suspect_dupes),
+      "若 Y基金 出现在组内，说明键里仍缺 fund")
+
+# ---- H-j3 折叠后真实数据上**不应再有**疑似双记（回归锚）----
+check("H23 真实数据（9/1 已折叠）读数上疑似双记组数 = 0",
+      len(_s9.suspect_dupes) == 0, repr(_s9.suspect_dupes))
 
 # ══════════════════════════════════════════════════════════════════
 # 段 I —— watchlist 状态计算（v4.5.1）：A2 三分 · MA5 口径 · fail-closed
@@ -319,8 +354,8 @@ check("I2 板块 -0.80% ≤ 0 ⇒ A2 不成立且**完全判定**（分支②逻
 _hit, _det, _txt = gws._eval_a2("固态电池", _BOARDS, 2.0)
 check("I3 板块 +1.69% ∈ (0,2%) ⇒ A2 **仅部分可判**（唯一真正无源的区间）",
       (_hit, _det) == (None, False), f"得 {_hit},{_det}")
-check("I3b 部分可判的说明里必须写明『结构性无源』而非含糊其辞",
-      "无源" in _txt, f"实得：{_txt[:80]}")
+check("I3b 部分可判的说明里必须**点名缺的是哪一个源**（日序列缓存），而非含糊其辞",
+      "日序列缓存" in _txt and "仅部分可判" in _txt, f"实得：{_txt[:100]}")
 
 _hit, _det, _txt = gws._eval_a2("查无此板", _BOARDS, 2.0)
 check("I4 板块查不到 ⇒ 判定为不可判（不得当作『未命中』放行）",
@@ -426,6 +461,111 @@ _real_wl = _real.get("watchlist") or []
 check("I15 真实 watchlist 4 条、码型可解析为腾讯代码",
       len(_real_wl) == 4 and all(gws._norm_tencent(w.get("etf_code"))[0] for w in _real_wl),
       f"得 {[(w.get('sector'), gws._norm_tencent(w.get('etf_code'))[0]) for w in _real_wl]}")
+
+# ══════════════════════════════════════════════════════════════════
+# J. v4.5.2 —— A2 前日涨幅（自建日序列缓存）＋ MA5 口径裁定
+# ══════════════════════════════════════════════════════════════════
+_PREV = {"BK1090": {"name": "固态电池", "chg_pct": 0.95, "board_type": "概念板块"},
+         "BK0478": {"name": "有色金属", "chg_pct": -0.30, "board_type": "行业板块"}}
+
+# ---- J-a 有前日 ⇒ (0,2%) 区间由「部分可判」收敛为「完全判定」（本版真正的功能增量）----
+_hit, _det, _txt = gws._eval_a2("固态电池", _BOARDS, 2.0, _PREV, "2026-09-17")
+check("J1 当日 +1.69%∈(0,2%) 且 前日 +0.95%>0 ⇒ **连续2日飘红** ⇒ A2 命中、完全判定",
+      (_hit, _det) == (True, True), f"得 {_hit},{_det}")
+check("J1b 命中理由须写明是**分支②**（不是分支①），否则无法追溯命中的是哪条腿",
+      "分支②" in _txt and "连续 2 日飘红" in _txt, f"实得：{_txt[:95]}")
+
+_hit, _det, _txt = gws._eval_a2("有色金属", _BOARDS, 2.0, _PREV, "2026-09-17")
+check("J2 当日 +1.54%∈(0,2%) 而 前日 -0.30%≤0 ⇒ 分支②不成立 ⇒ A2 不成立、**完全判定**",
+      (_hit, _det) == (False, True),
+      f"得 {_hit},{_det} —— 与 I3 的 (None,False) 是**不同结论**，这正是本版要买的东西")
+
+# ---- J-b 🔴 反向断言：同一输入，无缓存 vs 有缓存必须给出**不同**结论 ----
+_hit_no, _det_no, _ = gws._eval_a2("固态电池", _BOARDS, 2.0, None, "2026-09-17")
+_hit_yes, _det_yes, _ = gws._eval_a2("固态电池", _BOARDS, 2.0, _PREV, "2026-09-17")
+check("J3 🔴 同一条目：无前日缓存 ⇒ 不可判；有前日缓存 ⇒ 命中"
+      "（**证明缓存是必需项而非装饰** —— 否则本测试在假阳性下也会过）",
+      (_hit_no, _det_no, _hit_yes, _det_yes) == (None, False, True, True),
+      f"无缓存=({_hit_no},{_det_no})　有缓存=({_hit_yes},{_det_yes})")
+
+# ---- J-c 🔴 缓存写入的三条硬约束（缺一即静默失效）----
+_tmpdir = tempfile.mkdtemp(prefix="anchor_bh_")
+_prod = Path(paths.DASHBOARD_DIR) / "board_pct_history.json"
+_prod_before = _prod.read_bytes() if _prod.exists() else None
+os.environ["ANCHOR_BOARD_HISTORY"] = str(Path(_tmpdir) / "bh.json")
+try:
+    from datetime import datetime as _dt
+    _rows = [{"code": "BK1090", "name": "固态电池", "chg_pct": 1.69, "board_type": "概念板块"}]
+    _ok_boards = {"rows": _rows, "complete": True}
+
+    _r = fp.board_history_record(_ok_boards, "2026-09-18", _dt(2026, 9, 18, 15, 6))
+    check("J4 收盘定格后 ＋ complete ⇒ 落盘成功", _r.get("recorded") is True, str(_r))
+
+    _r = fp.board_history_record(_ok_boards, "2026-09-18", _dt(2026, 9, 18, 14, 59))
+    check("J5 🔴 未到 15:05 ⇒ **拒绝落盘**（盘中价不得当收盘价存下来 —— 缓存里没有字段能事后分辨）",
+          _r.get("recorded") is False and "15:05" in str(_r.get("reason")), str(_r))
+
+    _r = fp.board_history_record({"rows": _rows, "complete": False}, "2026-09-18",
+                                 _dt(2026, 9, 18, 15, 6))
+    check("J6 🔴 complete=False ⇒ **拒绝落盘**（否则日后查某主题会『匹配不到』并被误读成不存在）",
+          _r.get("recorded") is False and "complete" in str(_r.get("reason")), str(_r))
+
+    # 🔴 J7 反向断言：落盘键必须是**数据自身的交易日**，不是 now 的日期。
+    #    ⚠️ 夹具第一版用了 09-19 **10:00**，被「未到 15:05」那道闸门正确拦下 ⇒
+    #       断言在**没测到目标**的情况下就已经是假 —— 换成**周六收盘后 15:30**
+    #       （真实场景：周末跑一次，板块榜返回的是**周五**的收盘值）。
+    _r = fp.board_history_record(_ok_boards, "2026-09-18", _dt(2026, 9, 19, 15, 30))
+    _days = fp.board_history_load()["days"]
+    check("J7 🔴 落盘键＝**数据自身的交易日**（09-18），**不是** now 的日期（09-19）"
+          "—— 否则周末/节假日跑一次就把上一交易日收盘值**标成今天**",
+          _r.get("recorded") is True and "2026-09-18" in _days and "2026-09-19" not in _days,
+          f"recorded={_r.get('recorded')} 键={sorted(_days)}")
+
+    # ---- J-d 读取侧：缺即缺口，⛔ 不得回退到「最近一条」----
+    check("J8 取存在的交易日 ⇒ 有值", fp.board_history_day("2026-09-18") is not None)
+    check("J9 🔴 取**不存在**的交易日 ⇒ None（⛔ 不得用『最近一条』冒充前一交易日）",
+          fp.board_history_day("2026-09-17") is None,
+          "缓存里只有 09-18；若回退到最近一条，09-17 会拿到 09-18 的值＝把今天当昨天")
+
+    # ---- J-e 交易日历取自数据自身，不靠自然日推算 ----
+    _kl = [{"date": "2026-09-16"}, {"date": "2026-09-17"}, {"date": "2026-09-18"}]
+    check("J10 prev_trading_day 取**严格早于今天**的最近一日",
+          fp.prev_trading_day(_kl, "2026-09-18") == "2026-09-17",
+          str(fp.prev_trading_day(_kl, "2026-09-18")))
+    check("J10b K线末根仍是上一交易日（盘前）⇒ 前一交易日再往前推一日",
+          fp.prev_trading_day(_kl, "2026-09-21") == "2026-09-18",
+          str(fp.prev_trading_day(_kl, "2026-09-21")))
+finally:
+    os.environ.pop("ANCHOR_BOARD_HISTORY", None)
+    shutil.rmtree(_tmpdir, ignore_errors=True)
+
+_prod_after = _prod.read_bytes() if _prod.exists() else None
+check("J11 🔴 全程**未触碰生产缓存文件**（靠换路径隔离，**不靠 `try/finally`** —— "
+      "v4.5.1 教训：进程被硬杀时 finally 不执行，「靠 finally 不污染」不成立）",
+      _prod_before == _prod_after)
+
+# ---- J-f 契约绑定（新键必须有真消费者，否则就是又一个死键）----
+_c = json.loads(paths.RULE_CONTRACT_PATH.read_text(encoding="utf-8"))
+_cr = _c.get("rules", {})
+check("J12 契约含 watchlist_confirm_ma_includes_today 且＝True（含当日）",
+      _cr.get("watchlist_confirm_ma_includes_today") is True,
+      repr(_cr.get("watchlist_confirm_ma_includes_today")))
+check("J13 契约 a2_prev_day_cache 与**代码实际读的文件名**一致（名实绑定）",
+      _cr.get("a2_prev_day_cache") == os.path.basename(fp._board_history_path()),
+      f"契约={_cr.get('a2_prev_day_cache')!r} 代码={os.path.basename(fp._board_history_path())!r}")
+check("J14 契约 warns 为空（提取正则全部命中，无静默回退默认值）",
+      not _c.get("warns"), repr(_c.get("warns")))
+
+# ---- J-g 🔴 反向断言：改掉手册原文 ⇒ 提取值必须随之改变（证明是真绑定）----
+_r2, _w2 = extract(TEXT.replace("「当日 MA5」＝**含当日收盘**",
+                                "「当日 MA5」＝**不含当日收盘**"))
+check("J15 把手册改写成「不含当日」⇒ 提取值必须变 **False**"
+      "（不是「正则不匹配 ⇒ 悄悄回默认 True」）",
+      _r2.get("watchlist_confirm_ma_includes_today") is False,
+      repr(_r2.get("watchlist_confirm_ma_includes_today")))
+_r3, _w3 = extract(TEXT.replace("自建日序列缓存", "某外部源"))
+check("J16 🔴 删掉『自建日序列缓存』措辞 ⇒ 必须 **WARN**（真绑定，非『取不到就静默用默认』）",
+      "a2_prev_day_cache" in _w3, repr(_w3))
 
 # ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]

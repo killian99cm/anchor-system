@@ -20,6 +20,18 @@
       ② **被读**：写回 `watchlist[].today` ＋ `today_meta`，并由
          `rebuild.py` 关注面板 与 `gen_intraday_auto.py` §五 渲染 —— 消灭「零读者」。
 
+【v4.5.2 变更（2026-09-18 用户裁决）—— 只剩「判据源」这一段的最后一块拼图】
+  ① **A2 分支② 的前日涨幅源＝自建日序列缓存**（`fetch_public.board_history_record /
+     board_history_day`，落盘 `06-dashboard/board_pct_history.json`）。
+     外部换源已**穷举并否决**：东财 push2his 被 **IP 级限流**（对照实验证明——同一时刻
+     该主机上**已知可用**的 `fund_flow_series` 也一并失效）；`push2delay` **忽略 ndays**；
+     同花顺可用但属**替代口径**、偏差方向不确定，而 A2 的错向**不对称**（低估 ⇒ 放行本该禁买的）
+     ⇒ ⛔ 不用。缓存自第 2 个交易日起即为**同源真值**：零跨源偏差、零新增外部依赖。
+     缓存缺该日 ⇒ **报缺口、fail-closed**，⛔ 不用「最近一条」冒充前一交易日。
+  ② **MA5 口径已明文裁定为「含当日」**（手册 §4.4 v3.12 ＋ 契约键
+     `watchlist_confirm_ma_includes_today`）—— 消灭「实现方暗定口径」。
+     另一解仍一并算出：**两解结论相反时主动报警**（口径敏感条款不得据此下单）。
+
 【🔴 失败姿态：fail-loud，绝不静默给旧值】
   任一判据输入取不到 ⇒ 该条状态写「**无源·无法判定**」并注明缺什么，
   **绝不**沿用上一次的文本、**绝不**用近似值冒充。
@@ -91,7 +103,8 @@ def _sector_lookup(sector: str, allboards: dict):
                   f"中无「{sector}」")
 
 
-def _eval_a2(sector: str, allboards: dict, a2_pct: float):
+def _eval_a2(sector: str, allboards: dict, a2_pct: float,
+             prev_day: dict | None = None, prev_date: str | None = None):
     """A2 判定。返回 (命中?, 可完全判定?, 说明)。
 
     A2 命中条件：**板块当日 ≥2%**  或  **连续 2 日飘红**（当日>0 且 前日>0）。
@@ -100,9 +113,13 @@ def _eval_a2(sector: str, allboards: dict, a2_pct: float):
        「连续 2 日飘红」**蕴含「当日 > 0」**。故可由当日涨幅严格三分：
          chg ≥ 2%        → **命中**（分支①，无需前日）
          chg ≤ 0         → **分支②逻辑上不可能成立** ⇒ A2 不成立 **且完全可判定**
-         0 < chg < 2%    → 分支②真伪取决于前日 ⇒ **唯一真正无源的区间**
-       ⇒ 板块前日涨幅无免费公共源（实测 2 主机），但**只有落在第三区间的条目**
-         才是「部分可判」—— 前两区间结论**完全确定**。收缩无源面，不放弃严谨性。
+         0 < chg < 2%    → 分支②真伪取决于前日 ⇒ **唯一真正需要前日的区间**
+
+    🔴 前日涨幅来源（v4.5.2）：**自建日序列缓存**（`fetch_public.board_history_day`）。
+       外部换源已穷举并否决（东财 push2his IP 限流；同花顺可用但属**替代口径**、
+       偏差方向不确定，而 A2 的错向**不对称**——低估即放行本该禁买的）。
+       缓存里**没有**该前一交易日 ⇒ 落回「仅部分可判」（fail-closed），
+       ⛔ **不得**用「最近一条记录」冒充前一交易日。
     """
     row, why = _sector_lookup(sector, allboards)
     if row is None:
@@ -119,17 +136,39 @@ def _eval_a2(sector: str, allboards: dict, a2_pct: float):
     if chg <= 0:
         return False, True, (f"{src} ≤ 0 ⇒ 分支①不成立，且**分支②（连续2日飘红）"
                              f"逻辑上不可能** ⇒ A2 不成立（完全判定）")
-    return None, False, (f"{src} ∈ (0, {a2_pct:.0f}%) ⇒ 分支①不成立，但分支②"
-                         f"**真伪取决于板块前日涨幅，该源结构性无源**（实测 2 主机）⇒ A2 仅部分可判")
+    # ---- 落在 (0, a2_pct)：分支②唯一可能命中的区间，需要前一交易日涨幅 ----
+    code = str(row.get("code") or "")
+    prow = (prev_day or {}).get(code) if code else None
+    pchg = prow.get("chg_pct") if isinstance(prow, dict) else None
+    try:
+        pchg = float(pchg)
+    except (TypeError, ValueError):
+        return None, False, (
+            f"{src} ∈ (0, {a2_pct:.0f}%) ⇒ 分支①不成立；分支②需**前一交易日"
+            f"（{prev_date or '交易日不明'}）板块涨幅**，而日序列缓存"
+            f"（board_pct_history.json）中{'无该日记录' if prev_day is None else '无该板块记录'}"
+            f" ⇒ **A2 仅部分可判**（fail-closed：判不了 ⇒ 不授予买入许可）")
+    if pchg > 0:
+        return True, True, (
+            f"{src} ∈ (0, {a2_pct:.0f}%) 且 前一交易日（{prev_date}）同板块 "
+            f"{pchg:+.2f}% > 0 ⇒ **连续 2 日飘红** ⇒ **A2 命中**（分支②）")
+    return False, True, (
+        f"{src} ∈ (0, {a2_pct:.0f}%) 但 前一交易日（{prev_date}）同板块 "
+        f"{pchg:+.2f}% ≤ 0 ⇒ 分支②不成立 ⇒ A2 不成立（完全判定）")
 
 
-def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime) -> dict:
+def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
+                   prev_day: dict | None = None, prev_date: str | None = None) -> dict:
     """对单条 watchlist 按 §4.4 判据求值，返回状态字典（**含失败原因，不掩盖**）。"""
     sector = str(item.get("sector", ""))
     code_raw = str(item.get("etf_code", ""))
     tx_code, plain = _norm_tencent(code_raw)
-    ma_n = int((contract.get("rules") or {}).get("watchlist_confirm_ma_period") or 5)
-    a2_pct = float((contract.get("rules") or {}).get("a2_red_day_pct") or 2.0)
+    _rules = contract.get("rules") or {}
+    ma_n = int(_rules.get("watchlist_confirm_ma_period") or 5)
+    a2_pct = float(_rules.get("a2_red_day_pct") or 2.0)
+    # 🔴 MA5 口径（v4.5.2 已明文裁定，见手册 §4.4）：含当日。契约键缺失时按手册裁定取 True，
+    #    但**记录实际取值**并进 caveats，使「实现方暗定口径」不会再次发生。
+    ma_incl_today = bool(_rules.get("watchlist_confirm_ma_includes_today", True))
 
     out = {
         "sector": sector, "code": tx_code or code_raw, "ma_period": ma_n,
@@ -137,6 +176,7 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime) -
         "d5_ok": None, "close_confirmed": False, "verdict": None,
         "data_time": now.strftime("%Y-%m-%d %H:%M"), "missing": [],
         "sources": [], "caveats": [], "a2_gap": None,
+        "prev_date": prev_date, "ma_includes_today": ma_incl_today,
     }
 
     # ---- 条件②：标的当日收盘价 ≥ 当日 MA5（判据源 = 标的自身 K 线）----
@@ -150,29 +190,34 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime) -
             today_bar = kl[-1]
             closes = [float(b["close"]) for b in kl]
             out["close"] = float(today_bar["close"])
-            # 🔴 「当日 MA5」口径 = **含当日收盘**（行情软件图上的标准读法）。
-            #    另一解（当日之前的 5 根）一并记录：若两解结论相反 ⇒ 主动报警，
+            # 🔴 「当日 MA5」口径 = **含当日收盘** —— v4.5.2 已由用户明文裁定
+            #    （手册 §4.4，契约键 `watchlist_confirm_ma_includes_today`）。
+            #    另一解**一并算出并记录**：两解结论相反时**主动报警**，
             #    **不静默择一**（口径歧义必须显式暴露，不得由实现方暗定）。
-            ma_incl = fp.ma(closes, ma_n)                 # 含当日 ← 采用
-            ma_prev = fp.ma(closes[:-1], ma_n)            # 不含当日 ← 备查
-            out["ma"] = ma_incl
-            out["ma_alt"] = ma_prev
+            ma_incl = fp.ma(closes, ma_n)                      # 含当日
+            ma_prev = fp.ma(closes[:-1], ma_n)                 # 不含当日
+            ma_used = ma_incl if ma_incl_today else ma_prev
+            out["ma"] = ma_used
+            out["ma_alt"] = ma_prev if ma_incl_today else ma_incl
             # 🔴 末根 K 线若为【当日】且当前未收盘 → 它是盘中价，不是收盘价（F5）
             is_today_bar = str(today_bar.get("date")) == now.strftime("%Y-%m-%d")
             after_close = now.hour > 15 or (now.hour == 15 and now.minute >= 5)
             out["close_confirmed"] = bool(not is_today_bar or after_close)
             out["bar_date"] = str(today_bar.get("date"))
-            if ma_incl is not None:
-                out["d5_ok"] = out["close"] >= ma_incl
-                if ma_prev is not None and (out["d5_ok"] != (out["close"] >= ma_prev)):
+            if ma_used is not None:
+                out["d5_ok"] = out["close"] >= ma_used
+                if ma_incl is not None and ma_prev is not None and (
+                        (out["close"] >= ma_incl) != (out["close"] >= ma_prev)):
                     out["caveats"].append(
-                        f"🔴 MA{ma_n} 口径歧义**改变结论**：含当日 {ma_incl} → {out['d5_ok']}，"
-                        f"不含当日 {ma_prev} → {not out['d5_ok']}。当前按**含当日**（软件图标准读法）"
-                        f"取值，**需用户裁决**，本条不得据此下单")
+                        f"🔴 MA{ma_n} 口径**改变结论**：含当日 {ma_incl} → "
+                        f"{out['close'] >= ma_incl}，不含当日 {ma_prev} → "
+                        f"{out['close'] >= ma_prev}。已按**手册 §4.4 v3.12 裁定**取"
+                        f"「{'含当日' if ma_incl_today else '不含当日'}」，"
+                        f"但本条**对口径敏感**，须人工复核后方可下单")
             out["sources"].append(f"腾讯日K {tx_code}")
 
     # ---- 条件①：A2 不成立（板块当日 <2% 且 非连续 2 日飘红）----
-    hit, determined, a2_note = _eval_a2(sector, allboards, a2_pct)
+    hit, determined, a2_note = _eval_a2(sector, allboards, a2_pct, prev_day, prev_date)
     out["a2_hit"] = hit
     out["a2_ok"] = (not hit) if hit is not None else None
     out["a2_determined"] = determined
@@ -214,22 +259,60 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime) -
     return out
 
 
-def build_status(data: dict, contract: dict, now: datetime) -> dict:
+def build_status(data: dict, contract: dict, now: datetime,
+                 record_history: bool = True) -> dict:
     wl = data.get("watchlist", []) or []
     try:
         allboards = fp.board_movers_all()
     except Exception as exc:  # noqa: BLE001
         allboards = {"_error": str(exc)}
-    entries = [evaluate_entry(it, contract, allboards, now) for it in wl]
+
+    # ---- 交易日历 ＋ 板块涨幅日序列缓存（v4.5.2）----
+    # 🔴 交易日历取自**参考指数自身日K的末日**，而不是 `now` 的日期 ——
+    #    否则周末/节假日跑一次就会把上一交易日的收盘值标成今天（日期错标）。
+    ref_date, ref_kl = fp.ref_last_trading_day()
+    prev_date = fp.prev_trading_day(ref_kl, now.strftime("%Y-%m-%d"))
+    prev_day = fp.board_history_day(prev_date) if prev_date else None
+    record = (fp.board_history_record(allboards, ref_date, now) if record_history
+              else {"recorded": False, "reason": "本次未落盘（dry-run / --json）"})
+
+    # 🔴 绑定校验：手册 §2.1 声称的判据源文件名 vs 代码**实际**读的文件名。
+    #    不符即报警 —— 这正是本系统反复出现的那族缺陷（转述层与定义层无绑定）
+    #    的对症解法：让「声称」与「实际」在**同一次运行里**被比对，
+    #    而不是靠人事后记得去核对。
+    _declared = str(((contract.get("rules") or {}).get("a2_prev_day_cache") or "")).strip()
+    _actual = os.path.basename(fp._board_history_path())
+    source_binding = {
+        "declared": _declared, "actual": _actual,
+        "ok": bool(_declared) and _declared == _actual,
+    }
+    if _declared and _declared != _actual:
+        source_binding["warn"] = (
+            f"🔴 手册声称 A2 前日涨幅取自 `{_declared}`，而代码实际读 `{_actual}`"
+            f" —— 判据源**名实不符**，须改契约或改代码（不得两边并存）")
+
+    entries = [evaluate_entry(it, contract, allboards, now, prev_day, prev_date)
+               for it in wl]
     uni = allboards.get("universes") or {}
     return {
         "generated_at": now.strftime("%Y-%m-%d %H:%M"),
-        "criteria": "手册 §4.4 v3.10：① A2 不成立 ＋ ② 标的当日收盘价 ≥ 当日 MA5",
+        "criteria": ("手册 §4.4 v3.12：① A2 不成立 ＋ ② 标的当日收盘价 ≥ 当日 MA5"
+                     "（MA5＝**含当日**收盘的 5 日均）"),
         "board_source": {
             "universes": uni, "complete": bool(allboards.get("complete")),
             "total_all": allboards.get("total_all"),
             "ts": allboards.get("ts"),
         },
+        "prev_day": {
+            "date": prev_date,
+            "status": ("已取到（%d 个板块）" % len(prev_day)) if prev_day else
+                      ("缓存中无该日记录 ⇒ A2 分支②不可判（fail-closed）"
+                       if prev_date else "参考指数日K不可用 ⇒ 交易日历不明"),
+            "boards": len(prev_day) if prev_day else 0,
+            "source": "board_pct_history.json" if prev_day else None,
+        },
+        "history_record": record,
+        "source_binding": source_binding,
         "entries": entries,
         "any_missing_source": any(e["missing"] for e in entries),
         "any_partial_a2": any(not e["a2_determined"] for e in entries),
@@ -247,7 +330,8 @@ def main() -> int:
         return 1
     contract = _load_json(CONTRACT_PATH, {}) or {}
 
-    status = build_status(data, contract, now)
+    status = build_status(data, contract, now,
+                          record_history=not (dry or as_json))
 
     if as_json:
         print(json.dumps(status, ensure_ascii=False, indent=2))
@@ -258,6 +342,22 @@ def main() -> int:
     bs = status["board_source"]
     _u = "；".join(f"{k} {v['fetched']}/{v['total']}" for k, v in (bs["universes"] or {}).items())
     print(f"板块源：{_u or '不可用'}　全量={bs['complete']}　{bs['ts']}")
+    pd = status["prev_day"]
+    print(f"前一交易日：{pd['date'] or '不明'} —— {pd['status']}（源 {pd['source'] or '无'}）")
+    hr = status["history_record"]
+    if hr.get("recorded"):
+        _hr_txt = f"✅ 已写 {hr['date']}（{hr['n']} 个板块）"
+    else:
+        _hr_txt = f"⏭ 未写 —— {hr.get('reason')}"
+    print(f"日序列落盘：{_hr_txt}")
+    sb = status.get("source_binding") or {}
+    if sb.get("ok"):
+        print(f"判据源绑定：✅ 一致（{sb.get('actual')}）")
+    elif sb.get("warn"):
+        print(f"判据源绑定：{sb['warn']}")
+    else:
+        print("判据源绑定：⚠️ 契约未声明 `a2_prev_day_cache`"
+              "（run extract_rule_contract.py 重建契约）")
     print()
     for e in status["entries"]:
         print(f"  {e['verdict']}  {e['sector']}（{e['code']}）")

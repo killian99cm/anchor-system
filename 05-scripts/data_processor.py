@@ -885,13 +885,23 @@ def monthly_ops_summary(data, year=None, month=None):
     # 🔴 疑似双记检测（**只声张，不自动折叠**）—— 口径 ① 要求「计事件不计记录」，
     #    但「两条记录 = 一个事件」只能由人判定。系统此前对该情形**零感知**：
     #    9/1「贷款第1笔」实录两条（盘中记证券 / 收盘确认记鹏华），静静被计成 2 笔买入。
-    #    故此处**报出**同 (日期, op, 金额) 的多条记录供人工确认，**不替用户判定谁对**。
+    #    故此处**报出**同键多条记录供人工确认，**不替用户判定谁对**。
+    #
+    # 🔴 v4.5.2 修正分组键：**必须含 `fund`**。
+    #    原键为 (日期, op, 金额) —— **不含基金** ⇒ 会把「同日同额但**不同基金**的两笔
+    #    正常买入」（如 9/1 证券 ¥2000 ＋ 鹏华 ¥2000）**长期误报**为疑似双记。
+    #    误报的代价不是噪声而已：**天天响的告警会被学会忽略**，那时真正的双记
+    #    （同基金同额同日 ×2）也就一起被无视了 —— 与 v2.1「一条永远做不到的强制项
+    #    会训练出『照抄免责』的习惯」同族。
+    #    ⚠️ 真阳性**不受影响**：9/1 那组两条都是「易方达证券ETF联接C ¥2000」，
+    #      键相同 ⇒ 仍会被抓出（见 test_monthly_ops 的反向断言）。
     _groups = {}
     for t, _kind in counted:
-        k = (str(t.get('date', '')), str(t.get('op', '')), str(t.get('amount', '')))
+        k = (str(t.get('date', '')), str(t.get('op', '')),
+             str(t.get('fund') or t.get('name') or ''), str(t.get('amount', '')))
         _groups.setdefault(k, []).append(t)
     suspect = [
-        {'date': k[0], 'op': k[1], 'amount': k[2],
+        {'date': k[0], 'op': k[1], 'fund': k[2], 'amount': k[3],
          'funds': sorted({str(x.get('fund') or x.get('name') or '') for x in v}),
          'count': len(v)}
         for k, v in _groups.items() if len(v) > 1

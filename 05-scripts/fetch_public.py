@@ -64,7 +64,9 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
 """
 from __future__ import annotations
 
+import io
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -364,6 +366,136 @@ def board_prev_day_chg(board_code: str) -> dict:
     return {"available": False, "board_code": board_code, "prev_chg_pct": None,
             "tried": tried,
             "note": "板块前日涨幅无免费公共源（已试 2 主机）—— 不得用代理值冒充"}
+
+
+# ------------------------------------------------------- 板块涨幅·日序列自建缓存
+# 🔴 为什么必须**自建**而不是继续换源（2026-09-18 实测穷举）：
+#    A2「连续 2 日飘红」需要**板块前一交易日涨幅**，而该值**无可靠免费公共源**——
+#      · 东财 push2his 板块日K / 多日分时 → **IP 级限流**。判据不是「BK 不被支持」，
+#        而是**对照实验**：同一时刻、同一主机上**已知可用**的 `fund_flow_series`
+#        也一并失效 ⇒ 整台主机被限，与 B4' 同族。
+#      · 东财 push2delay 同路径 → **忽略 `ndays`**（ndays=3 只回当日 241 点）
+#        ⇒ 多日序列**只有 push2his 提供**，而它正是被限的那台。
+#      · 同花顺板块日K（概念 886xxx / 行业 881xxx）→ 实测可用，但**同样限流**，
+#        且需**手工维护「东财板块名 → 同花顺码」映射表**，属**替代口径**
+#        （成分股构成不同、**偏差方向不确定**）。
+#        🔴 而 A2 的错向**不对称**：替代源若**低估**涨幅 → 该拦却放行 →
+#           **放行了一笔本该禁止的买入**。偏差方向未知时无法保证不低估 ⇒ ⛔ 不用。
+#    ⇒ 而取数层**每个交易日已经在调 `board_movers_all()`**（sync_all 步骤 1.5）
+#      ⇒ 把当日全量板块涨幅按日期落盘，「前一交易日涨幅」自**第 2 个交易日**起
+#        即为**同源真值**：零跨源偏差、零新增外部依赖、零新死定义。
+#
+# 🔴 三条防静默失效的硬约束（缺一即退化成「拿到一个价 ≠ 拿到对的价」）：
+#    ① **只在收盘定格后落盘** —— 盘中落盘会把盘中价当收盘价存下来（违反 F5），
+#       而缓存**没有任何字段能事后分辨**它存的是哪一种。
+#    ② **只在 `complete=True` 时落盘** —— 那天板块集合不全，日后查某主题会
+#       「匹配不到」并被误读成「该板块不存在」（正是 `_BOARD_UNIVERSES` 那条的教训）。
+#    ③ **按「数据自身的交易日期」落盘**（取参考指数日K的末日），**不按 `now` 的日期**——
+#       否则周末/节假日跑一次就会把上一交易日的收盘值**标成今天**（日期错标，
+#       与 v4.4.4 时间错标治理同族）。
+#    ④ 读取侧：缓存里**没有**该前一交易日 ⇒ **报缺口**，⛔ **不得**用「最近一条记录」
+#       冒充前一交易日（那正是 B4'「兜底只回 1 条且不报错」的形态）。
+_BOARD_HISTORY_KEEP_DAYS = 60
+_REF_INDEX_TENCENT = "sh000001"       # 参考交易日历：上证指数（稳定、长期可用）
+
+
+def _board_history_path() -> str:
+    """缓存文件路径。`ANCHOR_BOARD_HISTORY` 环境变量可覆盖 —— **测试必须用它**，
+    否则测试会写进生产文件（v4.5.1 教训：`try/finally` 在进程被硬杀时不执行，
+    「靠 finally 不污染」不成立，**换路径才是真隔离**）。"""
+    env = os.environ.get("ANCHOR_BOARD_HISTORY")
+    if env:
+        return env
+    try:
+        import paths
+        return str(paths.DASHBOARD_DIR / "board_pct_history.json")
+    except Exception:                                             # noqa: BLE001
+        return os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            "board_pct_history.json")
+
+
+def board_history_load() -> dict:
+    """读缓存。文件不存在/损坏 ⇒ 回空骨架（**不抛错**，由调用方按缺口处置）。"""
+    try:
+        with io.open(_board_history_path(), encoding="utf-8") as f:
+            hist = json.load(f)
+        if isinstance(hist, dict) and isinstance(hist.get("days"), dict):
+            return hist
+    except Exception:                                             # noqa: BLE001
+        pass
+    return {"schema": 1, "days": {}}
+
+
+def ref_last_trading_day() -> tuple:
+    """参考指数（上证）日K的**末个交易日** —— 既是交易日历，也是**数据自身的日期**。
+    返回 `(date_str, kline)`；取不到返回 `(None, None)`。"""
+    kl = daily_kline(_REF_INDEX_TENCENT, n=10)
+    if not kl:
+        return None, None
+    return str(kl[-1].get("date")), kl
+
+
+def prev_trading_day(kl: list, today: str | None = None) -> str | None:
+    """从日K序列取**严格早于今天**的最近一个交易日。"""
+    t = today or datetime.now().strftime("%Y-%m-%d")
+    prior = [str(b.get("date")) for b in (kl or []) if str(b.get("date")) < t]
+    return prior[-1] if prior else None
+
+
+def board_history_record(allboards: dict, trade_date, now: datetime | None = None) -> dict:
+    """把当日全量板块涨幅落盘到 `trade_date` 名下。返回 `{recorded, reason, ...}`。
+
+    ⛔ 永远**不抛错**、**不部分写入**（临时文件 ＋ `os.replace` 原子替换）；
+       任一前置条件不满足 ⇒ `recorded=False` ＋ **写明原因**，绝不静默跳过。"""
+    now = now or datetime.now()
+    if not allboards or allboards.get("_error"):
+        return {"recorded": False, "reason": "板块榜源不可用"}
+    if not allboards.get("complete"):
+        return {"recorded": False,
+                "reason": "板块榜不完整（complete=False）—— 落盘会让日后误判「该板块不存在」"}
+    if not trade_date:
+        return {"recorded": False, "reason": "无参考交易日（参考指数日K不可用）"}
+    if (now.hour, now.minute) < (15, 5):
+        return {"recorded": False,
+                "reason": f"未到收盘定格时点（{now:%H:%M} < 15:05）"
+                          f"—— 盘中价不得当收盘价落盘（F5）"}
+    day = {}
+    for r in (allboards.get("rows") or []):
+        code = str(r.get("code") or "")
+        if not code:
+            continue
+        day[code] = {"name": r.get("name"), "chg_pct": r.get("chg_pct"),
+                     "board_type": r.get("board_type")}
+    if not day:
+        return {"recorded": False, "reason": "板块榜无有效行"}
+    hist = board_history_load()
+    days = hist.setdefault("days", {})
+    days[str(trade_date)] = day
+    for k in sorted(days)[:-_BOARD_HISTORY_KEEP_DAYS]:             # 只留最近 N 个交易日
+        days.pop(k, None)
+    hist["schema"] = 1
+    hist["updated_at"] = now.strftime("%Y-%m-%d %H:%M")
+    path = _board_history_path()
+    tmp = path + ".tmp"
+    try:
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with io.open(tmp, "w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False)
+        os.replace(tmp, path)
+    except Exception as exc:                                       # noqa: BLE001
+        return {"recorded": False, "reason": f"落盘失败：{type(exc).__name__}: {exc}"}
+    return {"recorded": True, "date": str(trade_date), "n": len(day), "path": path}
+
+
+def board_history_day(date_str) -> dict | None:
+    """取某交易日的全量板块快照（`{code: {name, chg_pct, board_type}}`）。
+    **不存在即返回 `None`** —— 调用方须报缺口，⛔ 不得回退到「最近一条」。"""
+    if not date_str:
+        return None
+    days = board_history_load().get("days") or {}
+    return days.get(str(date_str))
 
 
 # ---------------------------------------------------------------- 南向资金

@@ -454,6 +454,22 @@ def main():
     check("公开页隐私护栏测试通过", "OK" in _ap_out and r_ap.returncode == 0,
           f"(rc={r_ap.returncode}) {_ap_out[-200:]}")
 
+    # 7-c2f. DDX 取数回归测试（v4.5.6）
+    #   缘起：DDX 被登记为「结构性无源」并据此删掉 B2' 的 DDX 条件，实为
+    #   **端点选错**（`stock/get` 不供 f88 族）⇒ 与 v4.5.5 的 `100.NDX` 案同型。
+    #   🔴 接入理由：这条致错路径**从外部看不见** —— 取不到 DDX 与「该标的没有 DDX」
+    #   返回值完全一样（都长成「没有读数」），人眼无从分辨 ⇒ 只能靠测试钉住。
+    print("\n[7-c2f] DDX 取数测试 test_fetch_public_ddx.py")
+    r_ddx = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_fetch_public_ddx.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    # ⚠️ 同 7-c2e：unittest 把 `OK` 写 stderr ⇒ 两路并取，否则套件全绿而门禁报红
+    _ddx_out = (r_ddx.stdout or "") + (r_ddx.stderr or "")
+    check("DDX 取数测试通过", "OK" in _ddx_out and r_ddx.returncode == 0,
+          f"(rc={r_ddx.returncode}) {_ddx_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

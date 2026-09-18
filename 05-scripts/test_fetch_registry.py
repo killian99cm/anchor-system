@@ -195,6 +195,51 @@ if same:
                         capture_output=True, text=True, encoding="utf-8", errors="replace")
     ck("还原后重新全绿", p2.returncode == 0)
 
+print("\n=== M. index_secid 前缀护栏（v4.5.6 新增）===")
+# ⚠️ 编号已查重（`grep '=== [A-Z]\.'`）：A–L 已用 ⇒ 本条取 **M**。
+#    📌 顺带记录一处**既有编号失序**（非本次引入，未改）：`I.` 排在 `L.` **之后**
+#       —— 同「编号是先占先得，凭记忆写必然撞」之理（v4.4.15 #C1-4 教训）。
+#   缘起：注册表里 半导体/证券 的 index_secid 曾写作 **`2.980017` / `2.399975`**，
+#   实测 `rc:100 data:null`（东财「无此证券」）⇒ **正确前缀是 `0.`**（深市）。
+#   🔴 **为何必须由测试钉住**：错误 secid 的失败长相是
+#      · `ulist.np`  → **静默少一条**（不报错，diff 里直接没有）
+#      · `stock/get` → `rc:100 data:null`（同样不抛）
+#   ⇒ 「取不到」与「该标的无数据」返回值完全一样，**人眼无从分辨**。
+#   ⚠️ 本护栏**不联网**：只断言前缀落在**已实测可用**的白名单内。
+#      （联网解析校验更彻底，但会把测试变成网络依赖 —— 取舍见 #138「不烧配额」原则）
+_KNOWN_GOOD_PREFIX = {
+    "0",    # 深市：指数 / ETF / 个股（980017 / 399975 / 159992）
+    "1",    # 沪市：指数 / ETF / 个股 / 基金（000922 / 515180 / 513120）
+    "90",   # 东财板块（BK1036）
+    "100",  # 全球指数 / 美股（NDX100 / DJIA / SPX）
+    "101",  # 外盘商品（GC00Y）
+    "118",  # 上海黄金交易所（AU9999）
+    "124",  # 港股指数（HSSCID）
+}
+_bad_fmt, _bad_pfx = [], []
+for e in entries:
+    sid = e.get("index_secid")
+    if not sid:
+        continue
+    segs = str(sid).split(".")
+    if len(segs) != 2 or not segs[1]:
+        _bad_fmt.append(f"{e['key']}={sid}")
+    elif segs[0] not in _KNOWN_GOOD_PREFIX:
+        _bad_pfx.append(f"{e['key']}={sid}")
+ck("index_secid 格式均为 <市场>.<代码>", not _bad_fmt, str(_bad_fmt) if _bad_fmt else "")
+ck("index_secid 前缀均在已实测白名单内（拦住 `2.` 这类无效市场码）",
+   not _bad_pfx, str(_bad_pfx) if _bad_pfx else "")
+ck("纳指 index_secid 已填正确码（不再只记禁用项）",
+   all(e.get("index_secid") == "100.NDX100"
+       for e in entries if e.get("key", "").startswith("纳指")),
+   "100.NDX100")
+
+# 🔴 反向断言：证明本护栏**确实拦得住**旧值 —— 否则它可能在「压根没生效」下通过
+_old = {"key": "__REV__", "index_secid": "2.980017"}
+_pfx = str(_old["index_secid"]).split(".")[0]
+ck("🔴 反向断言：旧值 `2.980017` 必须被判为非法前缀（否则本护栏是空转）",
+   _pfx not in _KNOWN_GOOD_PREFIX)
+
 print("\n" + "=" * 56)
 if fails:
     print(f"❌ {len(fails)} 项未通过：")

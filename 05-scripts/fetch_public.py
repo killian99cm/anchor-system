@@ -24,6 +24,10 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
         m:90+t:3 概念板块 504 个 —— 固态电池 / 人形机器人 / 智能驾驶
       只查一套时，另一套**永远匹配不到**，且失败**长得像「该板块不存在」**
       而不是「查错了宇宙」—— 静默失效的典型长相。见 `board_movers_all()`。
+  ✅ **DDX / DDY / DDZ 四周期**  push2delay.eastmoney.com/api/qt/ulist.np/get
+                            fields=f88(当日DDX),f396(3日),f91(5日),f94(10日)
+                                   f89/f397/f92/f95 → DDY ｜ f90 → DDZ
+                            🆕 **2026-09-18 新增，零 mx 配额**（见下「DDX 勘误」）
   ✅ 南向资金                datacenter-web.eastmoney.com  RPT_MUTUAL_DEAL_HISTORY
   ✅ 日K / MA（前复权）      web.ifzq.gtimg.cn/appstock/app/fqkline/get
   ✅ 主力资金【日序列】       push2his.eastmoney.com/api/qt/stock/fflow/daykline/get
@@ -53,6 +57,41 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
   ✗ 100.SOX / SOXS / PHLX      —— 费城半导体指数东财**不收录**（同批 DJIA/SPX/N225/KS11/TWII 均可用）
                                   → 费半只能取自 mx-data，失败即标缺口
 
+🔴 DDX 勘误（2026-09-18）—— 「结构性无源」被证伪，且病因又一次是「端点 ≠ 无源」
+--------------------------------------------------------------------------------
+  ❌ 旧结论（写在 `01-rules/规则生效期登记表.md` 与多份报告中）：
+     「**DDX 为结构性无源，非临时缺失**」，依据是 2026-09-17 用 513120 成分股取
+     东财个股 DDE 字段（f66/f69/f72/f75/f78/f81/f87）**全为 null**。
+  ✅ 实测推翻（2026-09-18）：**A 股 DDX 一直可得，且不止一个源** ——
+     · mx-data  → 四周期齐全（ETF / 指数 / 板块均可）
+     · 本模块   → `ulist.np` + f88 字段族，**同一实体逐位一致**（比对见下）
+   📌 **两条独立路径逐位比对（2026-09-18，6 个标的全部命中）**：
+        980017 国证芯片  0.218 / 0.293 / 0.21 / -0.111   （mx 与公网完全相同）
+        000922 中证红利 -0.001 / -0.009 / -0.03 / -0.048  （完全相同）
+        399975 证券公司  0.044                            （相同）
+        513120 创新药ETF -0.342 / 0.06                    （完全相同）
+        159992 创新药ETF -0.139                           （相同）
+        BK1036 半导体    0.346 / 0.329 / 0.349 / 0.258    （完全相同）
+     ⇒ **值可信；且公网这条路零 mx 配额**，DDX **不需要**动用那 500 次的账户池。
+
+  🔴 **病因：`stock/get` 不供 f88 字段族，被读成了「DDX 无源」。**
+     `push2delay/api/qt/stock/get?secid=...&fields=f88,...` **只回 f57/f58**
+     （个股 600276、ETF 513120、指数 980017 实测**都一样**）——
+     但**换列表类端点就供**：`ulist.np/get`（按 secids）与 `clist/get`（按 fs）。
+     ⇒ **「某个端点不供这个字段」≠「这个数据没有源」。**
+        判「无源」前必须**至少换一类端点**（单标的 ↔ 列表），**并记录「正确端点是什么」**。
+     ⇒ 与 v4.5.5 的 `100.NDX` 案（**禁错码 ≠ 无源**）、v4.4.13 B4'（push2delay 只回
+        1 条被当成全部）**同型**。**这是同一个病在本文件里第三次显形。**
+
+  ✅ 真实边界（一句话）：**DDX 是 A 股体系指标** ——
+     A 股指数 / ETF / 个股 / 行业板块(m:90+t:2) / 概念板块(m:90+t:3) **全部可得**；
+     港股(124.HSSCID) / 美股(100.NDX100) / 外盘(101.GC00Y) **不供**（返回 `-`）。
+     ⚠️ 后者是**真·不可得**（非端点问题），报告中须按替代口径五项登记。
+
+  ⚠️ **未验证面（不得声称已验）**：本次验证的是「**mx 与东财公网两路一致**」，
+     即 mx 未篡改/错列东财的 DDX；**未**验证「东财 DDX 公式 == 通达信/同花顺 DDX」——
+     那是**厂商口径**问题，本机无第二厂商源可比。引用时按「东财口径 DDX」表述。
+
 ✅ 易错 secid 对照（已实测，勿凭记忆写）
 --------------------------------------------------------------------------------
   创新药（恒生港股通创新药指数）→ **124.HSSCID**（不是 100.，写错即 data:null）
@@ -66,6 +105,9 @@ fetch_public.py — Anchor 公共行情取数模块（免费公开 API，零 key
                                   ⛔ 新浪 `gb_$ndx` ＝纳指100（可作第三源，需 Referer）
                                   📌 日K 序列 → 腾讯 `usfqkline`／code `usNDX`
                                      （`daily_kline("usNDX")` 已支持，见其 us 分支）
+  **板块（DDX/资金/涨跌）**     → **90.BK<code>**，如 `90.BK1036` 半导体 / `90.BK0891` 存储芯片
+                                  ⛔ **不要用 `stock/get` 取板块**（该端点只回 f57/f58）
+                                  📌 板块码取自 `clist/get` 的 `f12`（形如 `BK1036`）
 
 口径纪律（与《报告深度标准 v2.3》§二.13 对齐）
 --------------------------------------------------------------------------------
@@ -88,7 +130,7 @@ from datetime import datetime
 __all__ = [
     "index_quotes", "sector_flow", "sector_movers", "southbound",
     "cn10y", "bond_refs", "daily_kline", "ma",
-    "fund_flow_series", "PROBE_LOG",
+    "fund_flow_series", "ddx", "PROBE_LOG",
 ]
 
 # ---------------------------------------------------------------- 基础设施
@@ -763,6 +805,89 @@ def ma(closes: list[float], n: int) -> float | None:
     return round(sum(closes[-n:]) / n, 4)
 
 
+# ---------------------------------------------------------------- DDX / DDY / DDZ
+
+# 字段码（东财口径）：f88/f396/f91/f94 = 当日/3日/5日/10日 DDX；f89/f397/f92/f95 = DDY；f90 = DDZ
+# 🔴 **只有 A 股体系供这族字段**。港股 124./ 美股 100./ 外盘 101. 段**返回 `-`（即 None）**，
+#    那是**真·不可得**（非端点问题）⇒ 调用方须按替代口径五项登记，**不得当成取数失败重试**。
+_DDX_COLS: dict[str, dict[str, str]] = {
+    "ddx": {"d1": "f88", "d3": "f396", "d5": "f91", "d10": "f94"},
+    "ddy": {"d1": "f89", "d3": "f397", "d5": "f92", "d10": "f95"},
+    "ddz": {"d1": "f90"},
+}
+_DDX_FIELDS = "f12,f13,f14," + ",".join(sorted({
+    f for grp in _DDX_COLS.values() for f in grp.values()
+}))
+
+
+def _num(v: object) -> float | None:
+    """东财「无此字段」的长相是字符串 `'-'`（不是 None）⇒ 必须显式转 None。
+
+    ⚠️ 不转的话 `float('-')` 会抛，而**静默 `continue` 会让「无源」长得像
+    「本标的没有 DDX 读数」——那正是本次要修的病的形态**。
+    """
+    if v is None or v == "-" or v == "":
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def ddx(secids: list[str] | str, source: str = "DDX") -> dict:
+    """东财 **DDX / DDY / DDZ 多周期** —— 免费公网，**不消耗 mx 配额**。
+
+    secids 例：`['0.980017','1.000922','1.513120','90.BK1036','124.HSSCID']`
+    （板块码形如 `90.BK1036`；A 股指数 `0./1.`；ETF 同段；港股 `124.`；美股 `100.`）
+
+    返回::
+
+        {secid: {"name": str|None, "ddx": {"d1","d3","d5","d10"}, "ddy": {...},
+                 "ddz": {"d1"}, "available": bool, "close_confirmed": False}}
+
+    🔴 **端点纪律（本次修正的核心）**：DDX 字段族**只在列表类端点**上供——
+    `ulist.np/get`（按 secids）与 `clist/get`（按 fs）**都供**；
+    **`stock/get`（单标的端点）不供**（只回 f57/f58，个股/ETF/指数实测一致）。
+    ⇒ **不许因为 `stock/get` 试不出来就写「DDX 无源」** —— 那正是 2026-09-18 修掉的错。
+
+    ✅ 值已双路交叉验证（2026-09-18，6 个标的与 mx-data **逐位一致**），见模块头注。
+    ⚠️ `available=False` 有两义，**调用方须分辨**：
+         ① **真·不可得**（港股/美股/外盘，DDX 是 A 股体系指标）→ 走替代口径五项登记
+         ② 取数失败（网络/限流）→ 可按需重试
+       区分办法：若同批 A 股标的都拿到了，那 `False` 的那些是 ①，**不是** ②。
+
+    ⚠️ `close_confirmed` 恒为 False：15:00 前是盘中值，**不得作触发线判据**（附录E · F5）。
+    """
+    if isinstance(secids, str):
+        secids = [secids]
+    key = "ddx:" + ",".join(secids)
+    if key in _CACHE:
+        return _CACHE[key]                                    # type: ignore[return-value]
+
+    data = _em_json("/api/qt/ulist.np/get", {
+        "fltt": 2, "invt": 2, "fields": _DDX_FIELDS,
+        "secids": ",".join(secids),
+    }, source)
+
+    out: dict = {}
+    for d in (data or {}).get("diff", []) or []:
+        code = f"{d.get('f13')}.{d.get('f12')}"
+        item: dict = {"name": d.get("f14"), "close_confirmed": False}
+        for grp, cols in _DDX_COLS.items():
+            item[grp] = {per: _num(d.get(fld)) for per, fld in cols.items()}
+        # 以「当日 DDX 是否拿到」作为该标的可得性判据（四周期缺项时仍是部分可用）
+        item["available"] = item["ddx"]["d1"] is not None
+        out[code] = item
+
+    # 请求成功但某 secid 一个字段都没回 → 记留痕（区分「没这张表」与「表里没值」）
+    missing = [s for s in secids if s not in out]
+    if missing:
+        _record(source, f"ddx 缺 {','.join(missing)}", False, "端点未返回该 secid")
+
+    _CACHE[key] = out
+    return out
+
+
 # ---------------------------------------------------------------- 资金流日序列
 
 # ⚠️ 本端点**不复用 `_EM_HOSTS`**：只有 push2his 提供**序列**，push2delay/push2 同路径
@@ -881,7 +1006,16 @@ if __name__ == "__main__":
         print(f"  末根 {k[-1]['date']} close={k[-1]['close']}  ⚠️若为今日=盘中价")
         print(f"  MA5={ma(cl,5)} MA10={ma(cl,10)} MA20={ma(cl,20)}")
 
-    print("\n[6] 取数留痕（报告「附录取数留痕」可直接引用）")
+    print("\n[6] DDX 四周期（★ 本次新增；含 A股 / 板块 / 及【应不可得】的港股美股对照）")
+    dd = ddx(["0.980017", "1.000922", "0.399975", "1.513120",
+              "90.BK1036", "124.HSSCID", "100.NDX100"])
+    for code, v in dd.items():
+        flag = "✅" if v["available"] else "⛔ 不供（A股体系外，真·不可得）"
+        d1, d3, d5, d10 = (v["ddx"][k] for k in ("d1", "d3", "d5", "d10"))
+        print(f"  {code:<14}{str(v['name'])[:14]:<16}"
+              f"当日={d1} 3日={d3} 5日={d5} 10日={d10}  {flag}")
+
+    print("\n[7] 取数留痕（报告「附录取数留痕」可直接引用）")
     for r in PROBE_LOG:
         print(f"  {'✅' if r['ok'] else '🔴'} {r['source']:<22} {r['note']}")
     print(f"\n共 {len(PROBE_LOG)} 次请求，成功 {sum(1 for r in PROBE_LOG if r['ok'])}")

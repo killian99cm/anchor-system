@@ -504,6 +504,24 @@ def main():
     check("板块双宇宙测试通过", "OK" in _bu_out and r_bu.returncode == 0,
           f"(rc={r_bu.returncode}) {_bu_out[-200:]}")
 
+    # 7-c2i. 南向资金合计可信性回归测试（v4.5.11）
+    #   缘起：`southbound()` **自己把 002+004 相加**，而护栏只拦「两腿全挂」⇒
+    #   单腿挂时 `set.intersection(*dates)` **对单个集合恒成功**，函数照旧返回 `ok=True`，
+    #   `total` 只剩一条腿（实测 9/18 深腿若挂：报 0.17 亿，真值 11.93 亿，**偏低 98.6%**）。
+    #   🔴 接入理由：该数字**直接喂报告**，且失败长相与正常完全一样（量级仍合理、无报错）。
+    #   现已改为**直取官方合计行 `006`**（四项指标与 002+004 逐位相等，6 日 30/30 实测）。
+    #   ⚠️ 同时钉住「无合计行时降级必须显式标注依据」与「合计行与分腿不符须报错」，防静默降级。
+    print("\n[7-c2i] 南向资金合计测试 test_southbound.py")
+    r_sb = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_southbound.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    # ⚠️ 同 7-c2e/7-c2f/7-c2g/7-c2h：unittest 把 `OK` 写 stderr ⇒ 两路并取
+    _sb_out = (r_sb.stdout or "") + (r_sb.stderr or "")
+    check("南向资金合计测试通过", "OK" in _sb_out and r_sb.returncode == 0,
+          f"(rc={r_sb.returncode}) {_sb_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

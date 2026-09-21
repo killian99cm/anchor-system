@@ -639,65 +639,149 @@ def board_history_gap_msg(gaps: dict) -> str:
 
 _MUTUAL_TYPE = {"002": "港股通(沪)", "004": "港股通(深)"}
 
+# 🔴 官方**合计行**（2026-09-21 实测确认，v4.5.11）。
+#   该报表每日共 **6 行**，不是 2 行。**编号方案已钉死**：
+#       **奇＝北向、偶＝南向；1/2＝沪、3/4＝深、5/6＝合计**
+#   ⇒ `002/004/006` 南向族（沪腿/深腿/合计），`001/003/005` 北向族。
+#   实测证据（2026-09-11/14/15/16/17/18 共 6 日）：
+#     · `006 = 002+004` 与 `005 = 001+003`，NET/BUY/SELL/DEAL_AMT/DEAL_NUM 五字段
+#       **42/42 全部精确相等，0 例不符**（非单日巧合）
+#     · `DEAL_AMT = BUY_AMT + SELL_AMT`：6 日 × 6 类型 **18/18 精确相等**
+#     · `006.INDEX_CLOSE_PRICE=24750.78`（恒生）、`LEAD_STOCKS_CODE=01879.HK`（港股）；
+#       `001/003/005` 则是 3911.87（上证）/13640.87（深证）、`LEAD=603686.SH`
+#   ⚠️ 该报表**无 `MUTUAL_TYPE_NAME` 列** ⇒ 「006=合计」是**算术恒等式 + 编号方案 +
+#     指数佐证**共同认定，**不是读标签得来**。若数据方改动编号，`cross_check` 会当场
+#     报 🔴 而不是静默算错 —— 这正是保留交叉校验的理由。
+_MUTUAL_TOTAL = "006"
+
+# 🔴 单位（本函数只读 NET/BUY/SELL 三个字段，它们同单位）：
+#   `NET_DEAL_AMT` / `BUY_AMT` / `SELL_AMT` / `DEAL_AMT` / `ACCUM_DEAL_AMT` = **百万元**
+#   非循环量级锚点：006 当日 DEAL_AMT 103197.01 ⇒ 按百万＝**1032 亿/日**（港股通实际量级）；
+#   按万＝10.3 亿/日（不可能）。ACCUM 5514263.34 ⇒ 按百万＝**5.51 万亿**（累计净买入量级）。
+#
+#   🔴🔴 **同一张报表内混装两种单位** —— 成交额族＝**百万元**，`HOLD_MARKET_CAP`＝**元**
+#       （006 = 11,974,517,599,915.6 ⇒ **11.97 万亿**，与成交额族相差 **10^6**）。
+#       这两个字段**业务上天然会一起读**（「今天净买入多少、累计持仓多少」）⇒ 是最危险的口径混装。
+#   ⚠️ 勿与本仓另一条南向链路 `push2delay/api/qt/kamt/get` 混用 —— **那个是「万元」，
+#      与本报表相差 100 倍**，互相校验会得到「差 100 倍」的假异常（2026-09-21 登记）。
+#   ⚠️ 空值约定在本报表内也不一致：`001/003` 的 HOLD_MARKET_CAP=`None` 而 `005`=`0`
+#      ⇒ 判空必须显式 `is None`，`if r.get(x)` 会把 None 与 0 区别对待。
+
 
 def southbound(days: int = 3) -> dict:
     """南向资金（datacenter `RPT_MUTUAL_DEAL_HISTORY`）。
 
     ⚠️ 为 **T-1 日终值** —— 当日数据须港股收盘后才有。`date` 字段即真实交易日，
     报告中**必须按该日期标注**，不得写成报告当日。
-    单位：`NET_DEAL_AMT` 为**百万港元**（由 BUY+SELL=DEAL_AMT 反推验证）。
+
+    🔴 **取数方式（2026-09-21 修，v4.5.11）**：`total` **直取官方合计行 `006`**，
+    ⛔ **不再自己把 `002+004` 相加**。原写法只在**两腿全挂**时才失败 ——
+    单腿挂时 `per_type` 只剩一条，而 `set.intersection(*dates)` **对单个集合恒成功**
+    ⇒ `date` 取该腿自身日期、`total` 只剩该腿，**却照旧返回 `ok: True`**。
+    实测影响（2026-09-18 真值 1193.27 = 11.93 亿）：**深腿若挂即报 17.01（0.17 亿）
+    —— 偏低 98.6%，无报错、探针日志干净、量级看起来仍正常**。
+    📌 与 v4.5.6 记的 `ulist.np`「静默少返回一条」**同形，只是这次在本仓自己的循环里**。
+    📌 **只加护栏不改取数＝把静默错误变成响的；改取合计行＝取消这个错误类别**（后者才是修）。
     """
     key = f"southbound:{days}"
     if key in _CACHE:
         return _CACHE[key]                                        # type: ignore[return-value]
 
-    per_type: dict[str, dict] = {}
-    for mt, label in _MUTUAL_TYPE.items():
-        flt = urllib.parse.quote(f'(MUTUAL_TYPE="{mt}")')
-        url = ("https://datacenter-web.eastmoney.com/api/data/v1/get"
-               f"?reportName=RPT_MUTUAL_DEAL_HISTORY&columns=ALL&filter={flt}"
-               f"&pageSize={days}&sortColumns=TRADE_DATE&sortTypes=-1")
-        rc, body = _http(url, "https://data.eastmoney.com/", 15, "utf-8")
-        if rc != 200:
-            _record("南向资金", url, False, body)
-            continue
-        try:
-            rows = ((json.loads(body).get("result") or {}).get("data")) or []
-        except json.JSONDecodeError:
-            _record("南向资金", url, False, f"非 JSON: {body[:80]}")
-            continue
-        _record("南向资金", url, True, f"{label} {len(rows)} 行")
-        per_type[mt] = {"label": label, "rows": rows}
-
-    if not per_type:
+    # **一次请求取回全部类型**（原写法分两次、每次一类 ⇒ 每类各自可能静默缺失）。
+    # 不带 MUTUAL_TYPE 过滤：该报表每日 6 行，`days*10` 足以覆盖并留冗余；
+    # 多取的行按类型分桶后自然丢弃，不依赖「每日恰好 6 行」这一假设。
+    url = ("https://datacenter-web.eastmoney.com/api/data/v1/get"
+           "?reportName=RPT_MUTUAL_DEAL_HISTORY&columns=ALL"
+           f"&pageSize={max(days, 3) * 10}&sortColumns=TRADE_DATE&sortTypes=-1")
+    rc, body = _http(url, "https://data.eastmoney.com/", 15, "utf-8")
+    if rc != 200:
+        _record("南向资金", url, False, body)
         res = {"ok": False, "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-               "note": "两类型均取数失败"}
+               "note": f"取数失败 rc={rc}"}
+        _CACHE[key] = res
+        return res
+    try:
+        rows_all = ((json.loads(body).get("result") or {}).get("data")) or []
+    except json.JSONDecodeError:
+        _record("南向资金", url, False, f"非 JSON: {body[:80]}")
+        res = {"ok": False, "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+               "note": "返回非 JSON"}
+        _CACHE[key] = res
+        return res
+    _record("南向资金", url, True, f"{len(rows_all)} 行")
+
+    if not rows_all:
+        res = {"ok": False, "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+               "note": "返回 0 行"}
         _CACHE[key] = res
         return res
 
-    # 以两类型共有的最新交易日为准
-    dates = [{r["TRADE_DATE"][:10] for r in v["rows"]} for v in per_type.values()]
+    per_type: dict[str, list] = {}
+    for r in rows_all:
+        mt = r.get("MUTUAL_TYPE")
+        if mt:
+            per_type.setdefault(mt, []).append(r)
+
+    _legs = tuple(_MUTUAL_TYPE)
+    _missing_legs = [mt for mt in _legs if mt not in per_type]
+    _has_total_row = _MUTUAL_TOTAL in per_type
+
+    # 以「已取到的类型」共有的最新交易日为准（取不到的类型不参与 ⇒ 不会把它自己的日期当公共日）
+    dates = [{r.get("TRADE_DATE", "")[:10] for r in v} for v in per_type.values()]
     common = sorted(set.intersection(*dates), reverse=True) if dates else []
     date = common[0] if common else None
 
-    detail, total = [], 0.0
-    for mt, v in per_type.items():
-        row = next((r for r in v["rows"] if r["TRADE_DATE"][:10] == date), None)
-        net = row.get("NET_DEAL_AMT") if row else None
-        if isinstance(net, (int, float)):
-            total += net
-        detail.append({
-            "type": mt, "label": v["label"],
-            "net_mhkd": round(net, 2) if isinstance(net, (int, float)) else None,
-            "buy_mhkd": row.get("BUY_AMT") if row else None,
-            "sell_mhkd": row.get("SELL_AMT") if row else None,
-            "index_close": row.get("INDEX_CLOSE_PRICE") if row else None,
-        })
+    def _net(mt: str):
+        """某类型在 `date` 当日的 NET_DEAL_AMT；取不到 → None（⛔ 不得当 0）。"""
+        row = next((r for r in per_type.get(mt, []) if r.get("TRADE_DATE", "")[:10] == date), None)
+        v = row.get("NET_DEAL_AMT") if row else None
+        return v if isinstance(v, (int, float)) else None
+
+    def _row(mt: str):
+        return next((r for r in per_type.get(mt, []) if r.get("TRADE_DATE", "")[:10] == date), None)
+
+    t_total = _net(_MUTUAL_TOTAL)
+    leg_vals = {mt: _net(mt) for mt in _legs}
+
+    # 🔴 合计的可信来源优先级，**并显式记下用的是哪一个**（⛔ 不静默降级）
+    if t_total is not None:
+        total, total_basis = t_total, f"官方合计行({_MUTUAL_TOTAL})"
+    elif all(v is not None for v in leg_vals.values()) and leg_vals:
+        total, total_basis = sum(leg_vals.values()), "分腿求和(002+004)"
+    else:
+        total, total_basis = None, None
+
+    # 🔴 交叉校验：合计行在场且两腿齐全时，两者**必须**相等。不等即报 ——
+    #    这既是「编号被东财改过」的探测器，也是「某腿少了几行」的探测器。
+    cross = None
+    if t_total is not None and all(v is not None for v in leg_vals.values()) and leg_vals:
+        _s = round(sum(leg_vals.values()), 2)
+        cross = {"total_row": round(t_total, 2), "legs_sum": _s,
+                 "match": abs(round(t_total, 2) - _s) < 0.01}
+
+    detail = [{
+        "type": mt, "label": _MUTUAL_TYPE[mt],
+        "net_mhkd": round(leg_vals[mt], 2) if leg_vals[mt] is not None else None,
+        "buy_mhkd": (_row(mt) or {}).get("BUY_AMT"),
+        "sell_mhkd": (_row(mt) or {}).get("SELL_AMT"),
+        "index_close": (_row(mt) or {}).get("INDEX_CLOSE_PRICE"),
+    } for mt in _legs]
 
     res = {
         "ok": True, "date": date, "unit": "百万港元",
-        "total_mhkd": round(total, 2), "total_yi": round(total / 100, 2),
+        "total_mhkd": round(total, 2) if total is not None else None,
+        "total_yi": round(total / 100, 2) if total is not None else None,
+        "total_basis": total_basis,
         "detail": detail, "days": days,
+        # 🔴 `complete` = **合计可信**（有官方合计行，或两腿齐可求和）；缺一即 False
+        #    ⇒ ⛔ `complete=False` 时**不得**把 `total_*` 渲染成「合计」（那是假话）
+        "complete": total_basis is not None,
+        # `legs_complete` = **分腿明细齐全**（与 complete 分开：有合计行时即使缺腿，合计仍可信）
+        "legs_complete": not _missing_legs,
+        "legs_expected": len(_legs), "legs_found": len(_legs) - len(_missing_legs),
+        "missing_legs": [f"{mt} {_MUTUAL_TYPE[mt]}" for mt in _missing_legs],
+        "has_total_row": _has_total_row,
+        "cross_check": cross,
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "is_t_minus_1": date != datetime.now().strftime("%Y-%m-%d"),
     }

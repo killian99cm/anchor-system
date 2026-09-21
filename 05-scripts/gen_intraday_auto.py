@@ -310,8 +310,36 @@ def _append_flow(lines: list, market: dict) -> None:
         lines.append("| 通道 | 净流入(百万港元) | 买入 | 卖出 |")
         lines.append("|---|---|---|---|")
         for d in sb["detail"]:
-            lines.append(f"| {d['label']} | {d['net_mhkd']:+} | {d['buy_mhkd']} | {d['sell_mhkd']} |")
-        lines.append(f"| **合计** | **{sb['total_mhkd']:+}（{sb['total_yi']:+} 亿）** | | |")
+            n = d.get("net_mhkd")
+            lines.append(f"| {d['label']} | {n:+} | {d['buy_mhkd']} | {d['sell_mhkd']} |"
+                         if n is not None else
+                         f"| {d['label']} | 🔴 缺 | {d['buy_mhkd']} | {d['sell_mhkd']} |")
+        # 🔴 「合计」行只在 **合计可信**（`complete`）时输出（2026-09-21 改，v4.5.11）——
+        #    原写法**自己把两腿相加**，单腿挂时贴出一个**偏低 98.6%** 的数
+        #    （实测 9/18：报 0.17 亿，真值 11.93 亿），且 `ok=True`、无报错。
+        #    现改为**直取官方合计行 `006`**，并把「依据」显式写出来。
+        if sb.get("complete") and sb.get("total_mhkd") is not None:
+            lines.append(f"| **合计** | **{sb['total_mhkd']:+}（{sb['total_yi']:+} 亿）** | | |")
+            basis = sb.get("total_basis") or ""
+            if "006" not in basis:
+                lines.append("")
+                lines.append(f"- ⚠️ 合计口径＝**{basis}**（官方合计行 `006` 当日缺失，**已降级为分腿求和**）")
+            cc = sb.get("cross_check") or {}
+            if cc and not cc.get("match"):
+                lines.append("")
+                lines.append(f"- 🔴 **合计行与分腿不符**：合计行 **{cc.get('total_row')}** vs 分腿之和 "
+                             f"**{cc.get('legs_sum')}** —— 已按合计行取值，但**须人工复核**"
+                             f"（`006` 的编号含义可能被数据方改动）")
+            if not sb.get("legs_complete", True):
+                miss = "、".join(sb.get("missing_legs") or [])
+                lines.append("")
+                lines.append(f"- ⚠️ 分腿不齐（缺 {miss}）；**合计行在场 ⇒ 上方合计仍可信**，"
+                             f"但该腿明细缺失、不可从合计倒推")
+        else:
+            miss = "、".join(sb.get("missing_legs") or []) or "官方合计行"
+            lines.append("")
+            lines.append(f"- 🔴 **无法给出可信的南向合计**（缺 {miss}）—— **上方不列「合计」行**。"
+                         f"⛔ 各腿之和不等于南向净流入，**不得相加后当合计引用**。")
     else:
         lines.append(f"\n### 南向资金\n- 🔴 **取数失败**：{(sb or {}).get('note', '未知')}\n")
 

@@ -7,8 +7,14 @@ Anchor 决策日志 + 胜率统计 v3.4（8/21 升级：T+3 到期提醒 + HTML 
       → 统计准确率/胜率 → 校准规则。与 noise_audit（审计规则信号质量）互补，
       decision_log 记录的是「我的决策」本身。
 
-T+3 复盘规则（8/21 确立）：记录日 + 3 个自然日后到期回填，如 8/20 记录 → 8/23 到期。
-到期日算法 = 记录日 + 3 天，禁止估算。
+T+3 复盘规则（8/21 确立 · **2026-09-21 口径订正：自然日 → 交易日**）：
+    记录日**之后的第 3 个交易日**到期回填。如 2026-09-18（周五）记录 → **2026-09-23（周三）** 到期。
+    判据源 = `trading_calendar.py`（离线交易日历，含 2026 年法定休市表）。
+    ⚠️ 旧口径（v3.4–v4.5.9）＝ 记录日 + 3 个**自然日**，**已废止**。废止原因：
+       跨周末时自然日+3 **只覆盖 1 个交易日**（周五记录 → 周一到期），
+       导致「准确率」把 **1 日与 3 日两种评价期**的样本混在一起算
+       （64 条中 14 条为周五创建 ＝ 21.9%）。用户 2026-09-21 裁决改用**交易日**。
+到期日算法 = `trading_calendar.add_trading_days(记录日, 3)`，禁止估算、**禁止按星期几近似**。
 
 用法:
   python decision_log.py --add <类型> <标的> <判定> [金额] [依据] [预期方向] [标签]
@@ -38,11 +44,19 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths  # C1：统一路径真源
+import trading_calendar  # 2026-09-21：T+3 交易日口径的判据源（离线，无网络）
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 LOG_FILE = Path(__file__).parent.parent / "06-dashboard" / "decision_log.json"
+
+# T+3 的 N（**交易日**，2026-09-21 用户裁决）
+T_PLUS_N_TRADING_DAYS = 3
+
+# `due_list()` 的副产品：*无法计算到期日*的记录（交易日历未覆盖）。
+# 🔴 不用异常中断调用方，但也**绝不静默** —— 调用方必须显式呈现（见 `--due` CLI）。
+LAST_CALENDAR_MISS: list = []
 
 
 def load_log() -> dict:
@@ -152,8 +166,12 @@ def review_decision(did: str, outcome: str, pnl_pct: str = "", note: str = "",
     print(f"❌ 未找到决策 #{did}")
 
 
-def pending_list(days: int = 3, today=None) -> list:
-    """待复盘项：已过 T+days 但仍未回填的决策（8/31 审计：排除 backfilled 历史补录噪声）
+def pending_list(days: int = T_PLUS_N_TRADING_DAYS, today=None) -> list:
+    """待复盘项：已过 T+`days` **交易日** 但仍未回填的决策（8/31 审计：排除 backfilled 历史补录噪声）
+
+    🆕 2026-09-21：`days` 原按**自然日**计（`(now - d_date).days >= days`）——
+       与 `due_list` 的旧口径**同源同错**。两处已统一为**交易日**，
+       否则「同一个概念两种算法」会在 `--pending` 与 `--due` 之间长期给出不同答案。
 
     ⚠️ `today` 注入口（2026-09-17 加）：本函数原先【没有注入口】，`datetime.now()`
        写死在函数体里 —— 于是它**不可测**：`test_decision_log.py:98` 的断言
@@ -163,12 +181,16 @@ def pending_list(days: int = 3, today=None) -> list:
     """
     log = load_log()
     now = today or datetime.now()
+    now_d = now.date() if hasattr(now, "date") else now
     pend = []
     for d in log["decisions"]:
         if d["outcome"] is None and _is_active(d) and not d.get("backfilled"):
-            d_date = datetime.strptime(d["date"], "%Y-%m-%d")
-            if (now - d_date).days >= days:
-                pend.append(d)
+            try:
+                d_date = datetime.strptime(d["date"], "%Y-%m-%d").date()
+                if trading_calendar.add_trading_days(d_date, days) <= now_d:
+                    pend.append(d)
+            except (trading_calendar.CalendarUnavailable, ValueError, KeyError):
+                continue     # 日历未覆盖 ⇒ 该条不进 pending（`due_list` 会经 LAST_CALENDAR_MISS 上报）
     return pend
 
 
@@ -265,9 +287,50 @@ def accuracy_report(decisions=None) -> dict:
     }
 
 
-def due_date(d: dict) -> str:
-    """T+3 到期日 = 记录日 + 3 个自然日（精确计算，禁止估算）"""
-    return (datetime.strptime(d["date"], "%Y-%m-%d") + timedelta(days=3)).strftime("%Y-%m-%d")
+def due_date(d: dict):
+    """T+3 到期日 = 记录日**之后的第 3 个交易日**（2026-09-21 口径订正 · 精确计算，禁止估算）
+
+    ⚠️ 返回 `None` ⇒ **交易日历不覆盖该记录日**（超出 `trading_calendar` 核定区间）。
+       ⛔ 调用方**不得**把 `None` 当作「未到期」静默吞掉，必须显式呈现。
+       设计理由：日历不可用时**不猜** —— 与「禁止按星期几近似」同一条纪律。
+       （旧口径下的静默近似会把 2026-09-25 周五·中秋当成交易日。）
+    """
+    try:
+        base = datetime.strptime(d["date"], "%Y-%m-%d").date()
+        return trading_calendar.add_trading_days(base, T_PLUS_N_TRADING_DAYS).strftime("%Y-%m-%d")
+    except (trading_calendar.CalendarUnavailable, ValueError, KeyError, TypeError):
+        return None
+
+
+def data_date():
+    """`portfolio_data.json` 的 `update_date` —— **判据数据实际入库到哪一天**。"""
+    for p in (paths.DATA_PATH, LOG_FILE.parent / "portfolio_data.json"):
+        if p.exists():
+            try:
+                return json.loads(p.read_text(encoding="utf-8")).get("update_date")
+            except Exception:
+                continue
+    return None
+
+
+def reviewable(d: dict):
+    """该到期项**是否可复盘**。返回 `(bool, 说明)`。
+
+    🔴 立项原因（v4.5.9 缺陷二 · 「到期」≠「可复盘」）：
+       `--due` 曾在**判据数据尚不存在**时亮红警报 —— 2026-09-21 实发：
+       报 `#64` 已到 T+3 复盘期，而 `portfolio_data.json.update_date` 仍是 `2026-09-18`。
+       ⇒ **一条长期亮着又做不掉的红色告警会被学会忽略**（报告标准 v2.1 判例）。
+       ⇒ 故「可以现在做」与「到期但做不了（缺哪天数据）」**必须分开说**。
+    """
+    dd = d.get("due") or due_date(d)
+    if dd is None:
+        return False, "交易日历未覆盖该记录日 ⇒ 不猜，须先扩展日历"
+    dv = data_date()
+    if dv is None:
+        return False, "portfolio_data.json 缺失或不可读 ⇒ 无法确认判据数据"
+    if dv >= dd:
+        return True, f"判据数据已入库至 {dv}（≥ 到期日 {dd}）"
+    return False, f"判据数据仅至 {dv}，**早于到期日 {dd}** ⇒ 该红警今晚无法消解，须待 {dd} 数据入库"
 
 
 def due_list(today=None) -> list:
@@ -276,14 +339,25 @@ def due_list(today=None) -> list:
     ⚠️ `today` 注入口（2026-09-17 加）：同 `pending_list` —— 原先 `datetime.now()`
        写死在函数体里，导致 `test_decision_log.py:93` 的 `due = dl.due_list()`
        断言真值随运行日期漂移，**函数侧无口可注，测试侧改不了**。
+
+    🆕 2026-09-21：到期日口径改为**交易日 +3**（`trading_calendar`）。
+       ⚠️ 日历**不覆盖**的记录（`due_date()` 返回 `None`）**不进 `due`** ——
+       它们汇入模块级 `LAST_CALENDAR_MISS`，由调用方**显式报出**（⛔ 不得静默丢弃）。
     """
+    global LAST_CALENDAR_MISS
     log = load_log()
     now = (today or datetime.now()).strftime("%Y-%m-%d")
-    due = []
+    due, miss = [], []
     for d in log["decisions"]:
-        if d["outcome"] is None and _is_active(d) and not d.get("backfilled") and due_date(d) <= now:
-            d["due"] = due_date(d)
-            due.append(d)
+        if d["outcome"] is None and _is_active(d) and not d.get("backfilled"):
+            dd = due_date(d)
+            if dd is None:
+                miss.append(d)          # 日历不可用 ⇒ 不猜、不当作未到期，单独上报
+                continue
+            if dd <= now:
+                d["due"] = dd
+                due.append(d)
+    LAST_CALENDAR_MISS = miss
     return due
 
 
@@ -297,6 +371,8 @@ def next_due() -> dict:
         # 否则过期的历史记录恒占"下次复盘日"位（此前 #42 2025-10-13 陈旧日期）
         if d["outcome"] is None and _is_active(d) and not d.get("backfilled"):
             dd = due_date(d)
+            if dd is None:
+                continue                # 日历未覆盖 ⇒ 不参与「最近到期日」的比较（⛔ 不自造日期）
             if nxt is None or dd < nxt:
                 nxt = dd
                 items = [d]
@@ -375,7 +451,7 @@ def dashboard_html() -> str:
         # v4.4.2：superseded（已被取代/前提推翻）决策整行置灰 + 结果列标「已取代」，
         #        不再显示「⏳待复盘」黄标（防止与真实待复盘混淆，如 27/52/53）
         is_sup = not _is_active(d)
-        due_txt = due_date(d)
+        due_txt = due_date(d) or "—（交易日历未覆盖）"
         if is_sup:
             status = f'<span style="color:#536a85;font-size:11px">已取代' + (f' → #{d["superseded_by"]}' if d.get("superseded_by") else '') + ' · 前提推翻</span>'
         else:
@@ -586,18 +662,46 @@ def main() -> int:
 
     if "--due" in sys.argv:
         due = due_list()
+        miss = LAST_CALENDAR_MISS
+        today_s = datetime.now().strftime("%Y-%m-%d")
         if not due:
             nd = next_due()
             if nd["date"]:
                 items = "、".join(f"#{d['id']} {d['fund']}" for d in nd["items"])
-                print(f"📅 今日无到期项。最近一次复盘日：{nd['date']}（{items}）")
+                print(f"📅 今日无到期项（口径：记录日 + {T_PLUS_N_TRADING_DAYS} 个**交易日**）。"
+                      f"最近一次复盘日：{nd['date']}（{items}）")
             else:
                 print("✅ 无待复盘项")
+            if miss:
+                print(f"⏭ {len(miss)} 项**无法计算到期日**（交易日历未覆盖该记录日，⛔ 不猜）：")
+                for d in miss:
+                    print(f"   #{d['id']} {d['date']} [{d['type']}] {d['fund']}")
             return 0
-        print(f"🔴 {len(due)} 项已到 T+3 复盘期（今日 {datetime.now().strftime('%Y-%m-%d')}）:")
+
+        # 🔴 2026-09-21：把「可以现在做」与「到期但做不了」**分开说**。
+        #    不分开 ⇒ 一条长期亮着又做不掉的红色告警 ⇒ 会被学会忽略（v2.1 判例）。
+        ok, blocked = [], []
         for d in due:
-            print(f"  #{d['id']} {d['date']} [{d['type']}] {d['fund']} → {d['verdict']}（到期 {d['due']}）")
-            print(f"     复盘: python decision_log.py --review {d['id']} <correct/wrong/neutral> <收益率%> <备注>")
+            (ok if reviewable(d)[0] else blocked).append(d)
+
+        print(f"🔴 {len(due)} 项已到 T+3 复盘期（今日 {today_s} · 口径＝记录日 + "
+              f"{T_PLUS_N_TRADING_DAYS} 个**交易日**，判据源 trading_calendar）:")
+        if ok:
+            print(f"  ✅ **可复盘** {len(ok)} 项：")
+            for d in ok:
+                print(f"    #{d['id']} {d['date']} [{d['type']}] {d['fund']} → {d['verdict']}（到期 {d['due']}）")
+                print(f"       复盘: python decision_log.py --review {d['id']} "
+                      f"<correct/wrong/neutral> <收益率%> <备注> --basis <口径>")
+        if blocked:
+            print(f"  ⏳ **已到期 · 判据未入库** {len(blocked)} 项"
+                  f"（⛔ 不得凭估算或不足 {T_PLUS_N_TRADING_DAYS} 个交易日的样本硬填）：")
+            for d in blocked:
+                _, why = reviewable(d)
+                print(f"    #{d['id']} {d['date']} [{d['type']}] {d['fund']}（到期 {d['due']}）—— {why}")
+        if miss:
+            print(f"  ⏭ **无法计算到期日** {len(miss)} 项（交易日历未覆盖，⛔ 不猜）：")
+            for d in miss:
+                print(f"    #{d['id']} {d['date']} [{d['type']}] {d['fund']}")
         return 0
 
     if "--dashboard" in sys.argv:

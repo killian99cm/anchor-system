@@ -366,8 +366,17 @@ def board_movers_all(max_pages: int = 10) -> dict:
         if not universes[label]["complete"]:
             complete = False
         for d in got:
+            y = d.get("f62")
             rows.append({"code": d.get("f12"), "name": d.get("f14"),
-                         "chg_pct": d.get("f3"), "board_type": label, "fs": fs})
+                         "chg_pct": d.get("f3"),
+                         # 🆕 v4.5.10（G-3 收口）：`f62` **一直在 fields 里、一直被下载、一直被丢掉**。
+                         #   本函数自 v4.5.1 起就双宇宙取数，`f62` 也随之到达，
+                         #   但旧写法只搬 f12/f14/f3 ⇒ **概念宇宙（固态电池／人形机器人／智能驾驶）
+                         #   的主力资金读数在最后一跳被丢弃**，于是被登记成「结构性无源」。
+                         #   ⇒ 与 v4.5.1「写了没人接」同族，只是这次是**取了没人接**。
+                         #   ⚠️ 单位＝元 ⇒ ÷1e8 得亿；`None` 表示该板无读数（不得当 0）。
+                         "net_yi": round(y / 1e8, 2) if isinstance(y, (int, float)) else None,
+                         "board_type": label, "fs": fs})
 
     by_name = {r["name"]: r for r in rows if r.get("name")}
     res = {

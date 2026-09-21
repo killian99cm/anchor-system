@@ -193,7 +193,9 @@ class TestDueFiltering(unittest.TestCase):
     #    夹具是 2026-01-0x 的固定日期，只有挂钟走到 1/5 之后才"刚好"通过。
     #    → 已给两个函数加 `today=` 注入口（对齐 freshness_watchdog.trading_lag 的样板），
     #      并在此显式注入固定基准日 —— **测试里的时间必须注入，不能读钟。**
-    FIXED = datetime.datetime(2026, 1, 5)   # b2(01-02) 的 T+3 到期日
+    # 🆕 2026-09-21：到期日口径改**交易日 +3** ⇒ b2(01-02 周五) 的 T+3 到期日移到 **01-07**。
+    #    （旧口径自然日+3 给 01-05；两者在这条上差 2 天，因为 01-03/04 是周末。）
+    FIXED = datetime.datetime(2026, 1, 7)
 
     def test_due_excludes_backfilled_and_superseded(self):
         due = dl.due_list(today=self.FIXED)
@@ -206,14 +208,97 @@ class TestDueFiltering(unittest.TestCase):
         self.assertEqual(ids, ["b2"])
 
     def test_due_list_not_yet_due_when_today_earlier(self):
-        """反向断言：基准日早于到期日时必须【不】到期 —— 防只测单向。"""
+        """反向断言：基准日早于到期日时必须【不】到期 —— 防只测单向。
+
+        🆕 2026-09-21：改用 **到期日前一天**（01-06）—— 比 01-03 更贴边，
+        能抓住「差一天」的 off-by-one，而 01-03 离得远、错了也照样通过。
+        """
+        self.assertEqual([d["id"] for d in dl.due_list(today=datetime.datetime(2026, 1, 6))], [])
+        self.assertEqual([d["id"] for d in dl.pending_list(today=datetime.datetime(2026, 1, 6))], [])
         self.assertEqual([d["id"] for d in dl.due_list(today=datetime.datetime(2026, 1, 3))], [])
-        self.assertEqual([d["id"] for d in dl.pending_list(today=datetime.datetime(2026, 1, 3))], [])
 
 
 class TestDueDate(unittest.TestCase):
-    def test_t_plus_3_natural_days(self):
-        self.assertEqual(dl.due_date({"date": "2026-08-29"}), "2026-09-01")
+    """T+3 到期日口径（2026-09-21 由**自然日**订正为**交易日**）。"""
+
+    def test_t_plus_3_trading_days(self):
+        # 2026-08-29 是周六 ⇒ 之后 3 个交易日 = 08-31(一)、09-01(二)、09-02(三)
+        self.assertEqual(dl.due_date({"date": "2026-08-29"}), "2026-09-02")
+
+    def test_friday_record_lands_on_wednesday(self):
+        # 2026-09-18(五) → 09-21(一)、09-22(二)、09-23(三)
+        self.assertEqual(dl.due_date({"date": "2026-09-18"}), "2026-09-23")
+
+    def test_reverse_natural_days_would_give_a_different_answer(self):
+        """🔴 反向断言：证明**口径订正确实改变了答案**。
+
+        2026-09-18（周五）：自然日+3 = **09-21（周一）**，交易日+3 = **09-23（周三）**。
+        若两者相同，则「改口径」这件事在测试上不可见 —— 也就没人能发现它被改回去了。
+        这正是 v4.5.9 记的缺陷一：自然日口径下**周五创建的决策只隔 1 个交易日**。
+        """
+        base = datetime.datetime(2026, 9, 18)
+        natural = (base + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        self.assertEqual(natural, "2026-09-21")
+        self.assertNotEqual(dl.due_date({"date": "2026-09-18"}), natural)
+
+    def test_calendar_unavailable_returns_none_not_a_guess(self):
+        """🔴 日历不覆盖时**返回 None**，⛔ 不得按星期几近似（那会把中秋当交易日）。"""
+        self.assertIsNone(dl.due_date({"date": "2025-10-10"}))
+        self.assertIsNone(dl.due_date({"date": "2027-01-04"}))
+
+    def test_reverse_weekday_approx_would_not_return_none(self):
+        """反向：同期若退回「自然日」近似，2025-10-10 会**给出一个日期**而不是 None。
+
+        两者必须不同 —— 这是「不猜」与「猜」的分界。
+        """
+        base = datetime.datetime(2025, 10, 10)
+        naive = (base + datetime.timedelta(days=3)).strftime("%Y-%m-%d")
+        self.assertIsNotNone(naive)
+        self.assertNotEqual(dl.due_date({"date": "2025-10-10"}), naive)
+
+
+class TestReviewable(unittest.TestCase):
+    """「到期」≠「可复盘」（v4.5.9 缺陷二）：判据数据未入库时不得当成『现在就能做』。"""
+
+    def setUp(self):
+        self._orig = dl.data_date
+
+    def tearDown(self):
+        dl.data_date = self._orig
+
+    def test_reviewable_only_when_data_covers_due_date(self):
+        dl.data_date = lambda: "2026-09-18"
+        d = {"id": "x", "date": "2026-09-14"}          # 到期 09-17 ≤ 09-18 ⇒ 可复盘
+        self.assertEqual(due_of(d), "2026-09-17")
+        ok, why = dl.reviewable(d)
+        self.assertTrue(ok, why)
+
+    def test_not_reviewable_when_data_is_earlier_than_due(self):
+        dl.data_date = lambda: "2026-09-18"
+        d = {"id": "x", "date": "2026-09-18"}          # 到期 09-23 > 09-18 ⇒ 不可复盘
+        ok, why = dl.reviewable(d)
+        self.assertFalse(ok)
+        self.assertIn("2026-09-23", why)               # 必须说清缺的是哪天
+
+    def test_reverse_ignoring_data_date_would_say_reviewable(self):
+        """反向：若只看「到期日已过」而不看判据数据，09-18 创建的那条会被误报为可复盘。
+
+        这正是 2026-09-21 实发的红色告警（报 #64 到期，而数据仍停在 09-18）。
+        """
+        dl.data_date = lambda: "2026-09-18"
+        d = {"id": "x", "date": "2026-09-18"}
+        # 只看到期日 ⇒ 旧实现会判「已到期」（09-23 尚未到，但旧口径给 09-21，已在今天之前）
+        self.assertEqual((datetime.datetime(2026, 9, 18) + datetime.timedelta(days=3)).strftime("%Y-%m-%d"),
+                         "2026-09-21")
+        self.assertLessEqual("2026-09-21", "2026-09-21")
+        # 但 reviewable 必须说「不」——两者结论相反，这个差值就是本测试的意义
+        self.assertFalse(dl.reviewable(d)[0])
+        # 且新口径的到期日（09-23）确实晚于今天，不再制造「天天亮着做不掉」的红警
+        self.assertGreater(dl.due_date(d), "2026-09-21")
+
+
+def due_of(d):
+    return dl.due_date(d)
 
 
 if __name__ == "__main__":

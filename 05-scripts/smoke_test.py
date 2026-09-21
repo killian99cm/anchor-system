@@ -470,6 +470,40 @@ def main():
     check("DDX 取数测试通过", "OK" in _ddx_out and r_ddx.returncode == 0,
           f"(rc={r_ddx.returncode}) {_ddx_out[-200:]}")
 
+    # 7-c2g. 交易日历测试（v4.5.10 · 登记表 §六 #C1-8）
+    #   缘起：T+3 原口径「自然日 +3」跨周末时**只覆盖 1 个交易日**（周五记录 → 周一到期），
+    #   使「准确率」混装 1 日与 3 日两种评价期（64 条中 14 条周五创建 ＝ 21.9%）。
+    #   用户 2026-09-21 裁决：改用**交易日** ⇒ 交易日历是其前置条件。
+    #   🔴 接入理由：本模块治的正是「**静默近似**」—— 若退回「按星期几猜」，
+    #   2026-09-25（周五·中秋）会被当成交易日，而**近似版不报错、只是答案是错的**。
+    #   故测试里 4 组反向断言钉住「不用本日历确实会出错」，防它退化成装饰。
+    print("\n[7-c2g] 交易日历测试 test_trading_calendar.py")
+    r_tc = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_trading_calendar.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    # ⚠️ 同 7-c2e/7-c2f：unittest 把 `OK` 写 stderr ⇒ 两路并取
+    _tc_out = (r_tc.stdout or "") + (r_tc.stderr or "")
+    check("交易日历测试通过", "OK" in _tc_out and r_tc.returncode == 0,
+          f"(rc={r_tc.returncode}) {_tc_out[-200:]}")
+
+    # 7-c2h. 板块双宇宙 + 主力资金回归测试（v4.5.10 · 登记表 §六 #C1-7 / G-3）
+    #   缘起：「概念板块主力资金」被当作长期缺口写进多份报告的缺口声明表，
+    #   实为 `board_movers_all()` **取了 f62 却在最后一跳丢掉**（v4.5.1 起的既存缺陷）。
+    #   🔴 接入理由：这类「取了没人接」**从产物上看与「无源」完全一样** ——
+    #   报告里两种成因都长成「无读数」，人眼无从分辨 ⇒ 只能靠测试钉住。
+    #   ⚠️ 同时钉住「t:2 与 t:3 互不覆盖、同名不同物」，防日后有人为省事把两宇宙并成一个。
+    print("\n[7-c2h] 板块双宇宙/主力资金测试 test_board_universe.py")
+    r_bu = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_board_universe.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    _bu_out = (r_bu.stdout or "") + (r_bu.stderr or "")
+    check("板块双宇宙测试通过", "OK" in _bu_out and r_bu.returncode == 0,
+          f"(rc={r_bu.returncode}) {_bu_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

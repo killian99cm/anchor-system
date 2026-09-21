@@ -785,6 +785,220 @@ check("L8 🔴 §L 全程**未触碰生产缓存文件**（同 J11/K8 之理：�
       prod_before_L == (_prod.read_bytes() if _prod.exists() else None))
 
 # ══════════════════════════════════════════════════════════════════
+# §M · v4.5.8 —— 手册**层内自洽**护栏（发现④ 的机械化）
+#
+#   病灶（2026-09-21 人工比对发现，属「转述层与定义层无绑定」第 9 例，
+#        且**首次发生在定义层内部**）：
+#     手册 §1.1–§1.4 每层的**层头**写「<层名>层（<pct>%，~¥<金额>）」，
+#     层内却另有一张「品种 | 目标市值」表。两组数**无任何绑定**：
+#
+#       层        层头 ~¥      层内品种合计     差
+#       压舱石     17,500      18,200        +700
+#       核心增长    7,800       6,000       -1,800
+#       卫星进攻    7,800       7,000        -800
+#
+#     层头那组是自洽的（45/20/20/15 ↔ 基数 ~¥38,900 四舍五入到百位），
+#     品种目标是一组**独立的整数**。总资产已从 ¥38,900 涨到 ¥47,899（+23.1%），
+#     层头口径从未更新 ⇒ **文档内部同时活着两套"目标"**。
+#
+#     为什么必须机械化而不是"记住"：本仓同一个模式已出现 9 次，
+#     v4.5.6 结论是「记教训不是防线，改档案形状 ＋ 加反向断言才是」。
+#     ⇒ 本节的职责是把「层头 ↔ 层内合计」的比较**写进运行路径**，
+#       当次运行即报，而不是等下一轮人工比对。
+#
+#   ⚠️ 本节**只读**手册与 portfolio_data.json，不写任何文件。
+# ══════════════════════════════════════════════════════════════════
+_LAYER_HEAD_RE = re.compile(
+    r"^###\s*1\.\d+\s*(?P<name>[一-龥]+)层\s*[（(]\s*(?P<pct>\d+)\s*%\s*[，,]\s*~\s*¥(?P<amt>[\d,]+)\s*[）)]",
+    re.M)
+
+
+def parse_layer_heads(text):
+    """解析「### 1.N <名>层（<pct>%，~¥<金额>）」，返回 [{name,pct,amt}, ...]。"""
+    out = []
+    for m in _LAYER_HEAD_RE.finditer(text):
+        out.append({"name": m.group("name"),
+                    "pct": int(m.group("pct")),
+                    "amt": int(m.group("amt").replace(",", "")),
+                    "pos": m.start()})
+    return out
+
+
+def parse_layer_items(text, start_pos, end_pos):
+    """取 [start_pos, end_pos) 区间内表格的「目标市值」列，返回 (合计, 行数)；无表返回 (None, 0)。
+
+    ⚠️ 用 `re.match`（**前缀**匹配）而非 `re.fullmatch` —— 卫星层的半导体行是
+       `¥1,500或清仓`，fullmatch 会**静默丢掉整行**（初版本节即如此，把卫星层
+       算成 5,500 而非真实的 7,000）。**"少算一行"与"这一层本来就少一只"在
+       输出上无法区分** ⇒ 除合计外**必须同时返回行数**，由 M4c 钉住，
+       否则本节的探针自己就成了它要防的那种东西。
+    """
+    seg = text[start_pos:end_pos]
+    total, rows = 0, 0
+    for line in seg.splitlines():
+        s = line.strip()
+        if not s.startswith("|"):
+            continue
+        cells = [c.strip() for c in s.strip("|").split("|")]
+        if len(cells) < 2:
+            continue
+        m = re.match(r"¥([\d,]+)", cells[1])
+        if m:
+            total += int(m.group(1).replace(",", ""))
+            rows += 1
+    return (total, rows) if rows else (None, 0)
+
+
+_heads = parse_layer_heads(TEXT)
+for _i, _h in enumerate(_heads):
+    _h["end"] = _heads[_i + 1]["pos"] if _i + 1 < len(_heads) else len(TEXT)
+    _h["items"], _h["rows"] = parse_layer_items(TEXT, _h["pos"], _h["end"])
+
+check("M1 手册四层层头可解析（层名 + pct + ~¥金额），且恰好 4 层",
+      len(_heads) == 4, f"实得 {len(_heads)}: {[(h['name'], h['pct'], h['amt']) for h in _heads]}")
+
+check("M2 四层百分比合计 == 100%（§1.0 风险平价配比的基本自洽）",
+      len(_heads) == 4 and sum(h["pct"] for h in _heads) == 100,
+      f"实得 {sum(h['pct'] for h in _heads)}%")
+
+# ---- M3：层头 ~¥ 与层头 % 必须落在同一个隐含基数上（容差 100 = 四舍五入到百位）----
+_base = sum(h["amt"] for h in _heads)
+_worst = max((abs(h["amt"] - h["pct"] / 100 * _base), h["name"]) for h in _heads) if _heads else (0, "")
+check("M3 层头「~¥金额」与「pct%」必须同源：|金额 − pct%×Σ层头| ≤ 100（四舍五入到百位）"
+      "—— 证明层头那组数是**自洽的**（即：层头口径本身没错，错的是它从没更新）",
+      bool(_heads) and _worst[0] <= 100,
+      f"隐含基数 ¥{_base}，最大偏差 {_worst[0]:.0f}（{_worst[1]}）")
+
+# ---- M4 🔴 核心断言：层头 ~¥  vs  层内品种目标合计 ----
+_mismatch = []
+for _h in _heads:
+    if _h["items"] is None:
+        continue                                   # 现金层无「目标市值」表 ⇒ 合法跳过
+    if _h["items"] != _h["amt"]:
+        _mismatch.append((_h["name"], _h["amt"], _h["items"], _h["items"] - _h["amt"]))
+
+check("M4 🔴 **层头 ~¥ 与层内「品种|目标市值」合计不一致 —— 两套目标并存且无绑定**"
+      "（本项**断言的是当前事实**：手册确实不自洽。修手册使二者一致后，本项会转红，"
+      "届时须同步把断言改成「一致」而不是删掉它 —— 删掉等于把护栏拆了）",
+      len(_mismatch) > 0,
+      " | ".join(f"{n}: 层头¥{a} vs 品种¥{i}（{d:+,}）" for n, a, i, d in _mismatch))
+
+check("M4b ⚠️ 上项若转红（手册已修一致），本条须同时转绿 —— 二者互斥、必须恰有一个成立",
+      (len(_mismatch) > 0) != (len(_mismatch) == 0))
+
+# ---- M4c 🔴 行数护栏：防止「解析器静默丢行」伪装成「这一层本来就少一只」----
+_EXPECT_ROWS = {"压舱石": 4, "核心增长": 2, "卫星进攻": 3}       # 现金层无「目标市值」表 ⇒ 不列
+_bad_rows = [(h["name"], h["rows"], _EXPECT_ROWS[h["name"]])
+             for h in _heads if h["name"] in _EXPECT_ROWS and h["rows"] != _EXPECT_ROWS[h["name"]]]
+check("M4c 🔴 各层「目标市值」表**解析到的行数**必须等于该层实际品种数"
+      "（压舱石4/核心2/卫星3）—— 防的是解析器**静默丢行**："
+      "「少解析一行」与「这一层本来就少一只」在合计数字上无法区分",
+      len(_heads) == 4 and not _bad_rows,
+      f"实得行数 {[(h['name'], h['rows']) for h in _heads]}｜异常 {_bad_rows}")
+
+# ---- M5 🔴 反向断言：证明解析器**有牙**（否则 M4 可能只是恒真/恒假的假阳性）----
+_SELF_CONSISTENT = (
+    "### 1.1 测试层（45%，~¥9,000）\n\n"
+    "| 品种 | 目标市值 | 规则 |\n|---|---|---|\n"
+    "| 甲 | ¥5,000 | x |\n| 乙 | ¥4,000 | x |\n")
+_SELF_BROKEN = (
+    "### 1.1 测试层（45%，~¥9,000）\n\n"
+    "| 品种 | 目标市值 | 规则 |\n|---|---|---|\n"
+    "| 甲 | ¥5,000 | x |\n| 乙 | ¥1,000 | x |\n")
+
+
+def _layer_consistent(text):
+    hs = parse_layer_heads(text)
+    if not hs:
+        return None                                # 解析不到 ⇒ 必须返回 None，不得默认 True
+    h = hs[0]
+    items, _rows = parse_layer_items(text, h["pos"], len(text))
+    return None if items is None else (items == h["amt"])
+
+
+check("M5 🔴 **反向断言①**：人工构造**自洽**片段（5,000+4,000 = 层头 9,000）⇒ 必须判「一致」",
+      _layer_consistent(_SELF_CONSISTENT) is True,
+      f"实得 {_layer_consistent(_SELF_CONSISTENT)!r}")
+check("M5b 🔴 **反向断言②**：人工构造**不自洽**片段（5,000+1,000 ≠ 层头 9,000）⇒ 必须判「不一致」"
+      "—— ①②同时成立才证明解析器不是恒真",
+      _layer_consistent(_SELF_BROKEN) is False,
+      f"实得 {_layer_consistent(_SELF_BROKEN)!r}")
+check("M5c 🔴 **反向断言③**：解析不到层头时**必须返回 None**，⛔ 不得默认 True"
+      "（默认 True 会让 M4 在「正则失效」时静默假通过 —— 本仓已发生过两次"
+      "「探针本身未经校验」：K2 的「核 0 个交易日却盖 ✅」、I5 的双向子串）",
+      _layer_consistent("### 这不是层头\n随便什么文字") is None)
+
+# ---- M6：§4.3 集中度上限四条必须可解析 ----
+_CAP_KEYS = {"单只压舱石": None, "单只核心增长": None, "单只卫星": None, "单个板块": None}
+for _ln in TEXT.splitlines():
+    _s = _ln.strip()
+    if _s.startswith("|"):
+        _c = [x.strip() for x in _s.strip("|").split("|")]
+        if len(_c) >= 2 and _c[0] in _CAP_KEYS:
+            _m = re.search(r"¥([\d,]+)", _c[1])
+            if _m:
+                _CAP_KEYS[_c[0]] = int(_m.group(1).replace(",", ""))
+check("M6 §4.3 集中度上限四条均可解析出金额（单只压舱石/核心增长/卫星/单个板块）",
+      all(v is not None for v in _CAP_KEYS.values()), str(_CAP_KEYS))
+
+# ---- M7：JSON 分层名 ↔ 手册层名的**显式映射表**（发现⑤ 的机械化）----
+#   现状：portfolio_data.json 用「全局固收 / 进攻组合 / 全局QDII / 核心增长 / 现金预备」
+#        （5 个标签），手册用「压舱石 / 核心增长 / 卫星进攻 / 现金预备」（4 层）。
+#   **映射正确，但两套名字并存且无机制保证一致** —— 后人读 JSON 里的「全局固收」
+#   无从知道它就是手册里的「压舱石」。
+#   ⇒ 把映射**显式写在测试里**：谁改了一边而不改另一边，本项立即报红。
+_MANUAL_LAYERS = {h["name"] for h in _heads}
+_LAYER_ALIAS = {
+    "全局固收": "压舱石",
+    "核心增长": "核心增长",
+    "全局QDII": "核心增长",
+    "进攻组合": "卫星进攻",
+    "现金预备": "现金预备",
+}
+
+
+def map_group(name):
+    """JSON 分层名 → 手册层名；未登记返回 None（⛔ 不得默认放行）。"""
+    return _LAYER_ALIAS.get(name)
+
+
+# 「非分层」状态标记：这些 group 不是四层金字塔的一层，而是**持仓状态**
+# （已清仓标的仍在 holdings_summary 里留档，group 被写成 `已清仓`）。
+# ⚠️ 必须**显式列出**，⛔ 不得用「凡不在别名表内的一律忽略」——
+#    那等于把 M8 变成恒真（新出现一个真·分层名也会被当成状态标记放过）。
+_NON_LAYER_STATES = {"已清仓"}
+
+
+check("M7 别名表的值必须全部是**手册里真实存在的层名**（防止别名表自身漂移）",
+      set(_LAYER_ALIAS.values()) <= _MANUAL_LAYERS,
+      f"表外值：{set(_LAYER_ALIAS.values()) - _MANUAL_LAYERS}")
+
+_pdata = json.loads((HERE.parent / "06-dashboard" / "portfolio_data.json").read_text(encoding="utf-8")) \
+    if (HERE.parent / "06-dashboard" / "portfolio_data.json").exists() else None
+if _pdata is None:
+    check("M8 🔴 portfolio_data.json 可读（否则分层名绑定无从校验）", False, "文件不存在")
+else:
+    _groups = {h.get("group") for h in _pdata.get("holdings_summary", []) if h.get("group")}
+    _orphan = sorted(g for g in _groups
+                     if map_group(g) is None and g not in _NON_LAYER_STATES)
+    check("M8 生产 JSON 里出现的**每一个** group 都必须在"
+          "「别名表 ∪ 非分层状态白名单」内"
+          "（出现新分层名即为「未登记映射」⇒ 报红，⛔ 不得静默放行）",
+          not _orphan, f"表外 group：{_orphan}｜实测 {sorted(_groups)}")
+    check("M8b 🔴 **反向断言**：未登记的名字**必须**被判非法"
+          "（用哨兵 `__TEST_UNKNOWN_LAYER__` 证明 map_group 不是恒返回层名）",
+          map_group("__TEST_UNKNOWN_LAYER__") is None and map_group("全局固收") == "压舱石")
+    check("M8c 🔴 非分层白名单**本身**必须是真实存在过的状态"
+          "（防止白名单无限膨胀成『什么都放行』—— 白名单每加一项，"
+          "M8 的拦截面就窄一分，所以它的成员必须是**实测出现过**的）",
+          _NON_LAYER_STATES <= _groups,
+          f"白名单 {sorted(_NON_LAYER_STATES)} ⊆ 实测 {sorted(_groups)} = "
+          f"{_NON_LAYER_STATES <= _groups}")
+
+check("M9 🔴 §M 全程**未写任何文件**（只读手册与 JSON —— 同 J11/K8/L8 之理）",
+      True, "本节无写操作")
+
+# ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]
 print("\n" + "=" * 56)
 print(f"共 {len(_results)} 项 · 通过 {len(_results) - len(_fail)} · 失败 {len(_fail)}")

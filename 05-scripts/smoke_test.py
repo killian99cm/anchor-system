@@ -522,6 +522,25 @@ def main():
     check("南向资金合计测试通过", "OK" in _sb_out and r_sb.returncode == 0,
           f"(rc={r_sb.returncode}) {_sb_out[-200:]}")
 
+    # 7-c2j. 中国10Y 换源回归测试（v4.5.12）
+    #   缘起：`cn10y()` 的 docstring 断言「**东财公开 API 不提供任何国债收益率**」并据此
+    #   **预期返回 None**、每份报告照走替代口径 —— **该断言已被实测证伪**。
+    #   真病根：旧写法只在 `push2/api/qt/stock/get` 试了 4 个码就断言「东财不提供」，
+    #   而收益率在**另一套服务** `datacenter-web` 的 `RPTA_WEB_TREASURYYIELD` 里
+    #   （实测 9/18 = 1.682）⇒ **试的是 A 服务，结论下在 B 服务**（病十四的服务级版本）。
+    #   🔴 接入理由：这是「结构性无源」四字被证伪的**第二个**案例（首个＝DDX），
+    #   且失败长相同样是「返回里就是没那个值」——**不报错**。同时钉住 `date`（数据日期）
+    #   与 `ts`（取数时刻）必须分开暴露，防换源成功后把取数时刻误当数据时点。
+    print("\n[7-c2j] 中国10Y 换源测试 test_cn10y.py")
+    r_cn = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_cn10y.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    _cn_out = (r_cn.stdout or "") + (r_cn.stderr or "")
+    check("中国10Y 换源测试通过", "OK" in _cn_out and r_cn.returncode == 0,
+          f"(rc={r_cn.returncode}) {_cn_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

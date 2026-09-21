@@ -666,6 +666,15 @@ _MUTUAL_TOTAL = "006"
 #      与本报表相差 100 倍**，互相校验会得到「差 100 倍」的假异常（2026-09-21 登记）。
 #   ⚠️ 空值约定在本报表内也不一致：`001/003` 的 HOLD_MARKET_CAP=`None` 而 `005`=`0`
 #      ⇒ 判空必须显式 `is None`，`if r.get(x)` 会把 None 与 0 区别对待。
+#
+#   ⛔ **接入 `HOLD_MARKET_CAP` 读取端之前，必须先验证 `006` 层是否翻倍**（强指征、未获证明，
+#      见 CHANGELOG v4.5.11 §⑥-2）：`006/002` 连续 6 个交易日恒为 `2.0003`，两腿相对差天天
+#      吻合到 0.03%，而同两行的 `NET` 有 10/66 天符号相反 ⇒ 疑为 `006` 对两腿双计。
+#      📌 **此为指针不是结论**（结论未证，刻意不写死）；**本字段当前全仓零读者**（v4.5.11 实测：
+#      4 处命中全是散文、代码零读零写）⇒ **误差今天到不了报告，但接上读取端的那一天就会到**，
+#      且形态是「**看起来正常的万亿数字**」而非报错 ⇒ 静默错值。
+#      🔴 本仓该类死字段**都长出了读者**（`watchlist[].today` v4.5.1、`index_secid` 排队中）
+#      ⇒ **「零读者」是今天为零、不是永远为零。**
 
 
 def southbound(days: int = 3) -> dict:
@@ -791,36 +800,95 @@ def southbound(days: int = 3) -> dict:
 
 # ---------------------------------------------------------------- 国债收益率 / 替代
 
+# ⚠️ **已证伪路径**（保留供审计 / 作末位兜底）—— 这 4 个码走 `push2` 的 `stock/get`，
+#    实测全部 `rc:100/102 data:null`。**但「这些码取不到」≠「东财不提供国债收益率」**（见下）。
 _CN10Y_SECIDS = ("100.CN10Y", "100.CN10YR", "1.CN10Y", "100.US10Y")
+
+# ✅ **正确源（2026-09-21 实测，v4.5.12）**：`datacenter-web` 报表端点在供，
+#    `reportName=RPTA_WEB_TREASURYYIELD`，中国 10 年期国债收益率字段 = `EMM00166466`
+#    （实测 2026-09-14~09-20 连续 6 个交易日：1.6888/1.6865/1.6858/1.6862/1.682/1.6818）。
+# 🔴 **原注释写「东财公开 API 不提供任何国债收益率」—— 已被实测证伪。**
+#    病根 ＝ 只在 `push2/api/qt/stock/get`（**另一套服务**）上试了 4 个码，就把结论下在
+#    「东财」这个整体上 —— **试的是 A 服务，结论下在 B 服务**。
+#    📌 与 v4.5.6「`stock/get`（单标的）不供 ≠ 该指标无源」（病十四）**同型，本次是服务级版本**。
+#    📌 **禁用项必须与正确项成对登记**（v4.5.5 病十三）：只写「不能用什么」的档案，
+#       会让每个后来人独立地重得出同一个「无源」结论。
+#    ⛔ 不得据此断言「新浪/中债/货币网也无源」—— 那三家**本轮未逐家实测**，「未试」不是「没有」。
+_CN10Y_DC = ("RPTA_WEB_TREASURYYIELD", "EMM00166466")
 
 
 def cn10y() -> dict:
-    """中国10年期国债收益率。
+    """中国10年期国债收益率（主源＝东财 `datacenter` 报表 `RPTA_WEB_TREASURYYIELD`）。
 
-    🔴 **预期返回 `value=None`** —— 已实测 4 个东财 secid 全部 `rc:100/102 data:null`，
-    即**东财公开 API 不提供任何国债收益率**。保留本函数是为了：
-      ① 留痕「已试 N 源」（数据必达铁律要求）
-      ② 源头将来若开放可自动生效，调用方不必改
-    调用方**不得**用 `None` 占位出报告，必须走 `bond_refs()` 替代口径并做五项登记。
+    ✅ **2026-09-21 换源（v4.5.12）**：本函数此前**预期返回 `value=None`** 并据此出报告，
+    原因写在旧 docstring 里 —— 「东财公开 API 不提供任何国债收益率」。**该断言已证伪**：
+    东财 `datacenter-web` 的该报表**一直可用**（见上方 `_CN10Y_DC` 实测值）。
+    旧写法之所以「4 源全失败」，是因为它**只试了 `push2` 那一套服务的 `stock/get`**，
+    而收益率在 **`datacenter-web` 这套服务**里 —— **两套服务，试错了那一套**。
+
+    取数优先级：① `datacenter` 报表（主源） → ② 旧 secid 循环（末位兜底，已证伪但仍留）。
+    ⚠️ 返回值带 `n_sources_tried`（**含两类源的尝试总数**）；调用方仍须在 `value=None` 时
+    走 `bond_refs()` 替代口径并做五项登记 —— **换源不等于保证永远拿得到**。
+
+    ⚠️⚠️ **`date` 可能落在「交易所休市日」上 —— 那不是数据错误，是两套日历不同**（2026-09-21 实测）：
+      实测 `date=2026-09-20`，而 `trading_calendar.is_trading_day(2026-09-20) = False`
+      （该日**是调休上班日**：`MAKEUP_WORKDAYS` 含它，但**A股调休周末不开市** ⇒ 交易所日历判 False）。
+      🔴 **银行间债市按银行工作日运行，调休上班日照常发布** ⇒ 该行**合法**。
+      ⛔ **不得据「日历说休市」反推「取数出错了」** —— 那会制造一条**必然误报的告警**
+      （v2.1 判例：**一条永远做不到/永远响的强制项会被学会忽略**）。
+      📌 **本仓的交易日历是「交易所日历」，不适用于债市** —— 两者**不得互相校验**。
     """
     if "cn10y" in _CACHE:
         return _CACHE["cn10y"]                                   # type: ignore[return-value]
 
-    attempts, got = [], None
-    for secid in _CN10Y_SECIDS:
-        data = _em_json("/api/qt/stock/get", {
-            "fltt": 2, "invt": 2, "fields": "f43,f57,f58,f169,f170", "secid": secid,
-        }, f"中国10Y·{secid}")
-        v = (data or {}).get("f43")
-        attempts.append({"secid": secid, "value": v})
-        if isinstance(v, (int, float)) and 0 < v < 20:            # 收益率合理区间
-            got = v
-            break
+    attempts, got, src = [], None, None
 
+    # ① 主源：datacenter 报表端点
+    name, field = _CN10Y_DC
+    url = ("https://datacenter-web.eastmoney.com/api/data/v1/get"
+           f"?reportName={name}&columns=ALL&pageSize=5"
+           "&sortColumns=SOLAR_DATE&sortTypes=-1")
+    rc, body = _http(url, "https://data.eastmoney.com/", 15, "utf-8")
+    if rc == 200:
+        try:
+            rows = ((json.loads(body).get("result") or {}).get("data")) or []
+        except Exception:
+            rows = []
+        for r in rows:
+            v = r.get(field)
+            attempts.append({"source": f"datacenter:{name}", "date": str(r.get("SOLAR_DATE"))[:10],
+                             "value": v})
+            if isinstance(v, (int, float)) and 0 < v < 20:        # 收益率合理区间
+                got, src = v, f"datacenter:{name}({field})"
+                break
+        if got is None and not rows:
+            attempts.append({"source": f"datacenter:{name}", "date": None, "value": None})
+    else:
+        attempts.append({"source": f"datacenter:{name}", "date": None, "value": None})
+        _record("中国10Y·datacenter", url, False, body)
+
+    # ② 末位兜底：旧 secid 循环（已证伪，保留防报表下线）
+    if got is None:
+        for secid in _CN10Y_SECIDS:
+            data = _em_json("/api/qt/stock/get", {
+                "fltt": 2, "invt": 2, "fields": "f43,f57,f58,f169,f170", "secid": secid,
+            }, f"中国10Y·{secid}")
+            v = (data or {}).get("f43")
+            attempts.append({"source": f"stock/get:{secid}", "date": None, "value": v})
+            if isinstance(v, (int, float)) and 0 < v < 20:
+                got, src = v, f"stock/get:{secid}"
+                break
+
+    # ⚠️ `ts` 是**取数时刻**，`date` 才是**数据自身日期** —— 两者必须分开暴露：
+    #    值恒为 None 时这个区别看不见，一旦换源成功就会把取数时刻误当数据时点
+    #    （同族：#138「拿到一个价 ≠ 拿到收盘价」、v4.5.2「按数据自身交易日归档而非 now」）。
+    data_date = attempts[0].get("date") if (got is not None and attempts) else None
     res = {
-        "value": got, "attempts": attempts, "n_sources_tried": len(attempts),
-        "note": ("东财公开 API 无国债收益率字段；新浪/中债/货币网无稳定 JSON。"
-                 "已试 %d 源全部失败。" % len(attempts)),
+        "value": got, "date": data_date, "source": src, "attempts": attempts,
+        "n_sources_tried": len(attempts),
+        "note": (f"主源=datacenter {name}（{field}）。已试 %d 源，%s"
+                 % (len(attempts),
+                    f"命中 {src}" if got is not None else "全部失败")),
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     _CACHE["cn10y"] = res

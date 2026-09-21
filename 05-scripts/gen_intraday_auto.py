@@ -347,10 +347,23 @@ def _append_flow(lines: list, market: dict) -> None:
     br = market.get("bond_refs") or {}
     lines.append("\n### 中国 10 年期国债收益率\n")
     if c.get("value") is not None:
-        lines.append(f"- **{c['value']}%**（{c['ts']}）\n")
+        # 🔴 **数据日期与取数时刻分开标注** —— 不得只写其中一个：
+        #    只写 `ts` 会把「我今天取的」误当成「今天的数据」（v2.3 §二.13 三源拆分各注时点）。
+        _dd = c.get("date") or "⚠️未知"
+        lines.append(f"- **{c['value']}%**（**数据日期 {_dd}**｜取数时刻 {c['ts']}｜源 "
+                     f"{c.get('source') or '—'}）\n")
     else:
-        lines.append(f"- 🔴 **无法获取** —— 已试 **{c.get('n_sources_tried', 0)} 源**全部失败；"
-                     f"{c.get('note', '')}\n")
+        # ⚠️ `n_sources_tried` **缺键**与**真的试了 0 个源**必须长得不一样 ——
+        #    原写法 `.get(..., 0)` 把两者渲染成同一句「已试 0 源全部失败」，
+        #    而缺键的真实含义是「**这个 key 根本没进 market**」（如 `fp is None`，
+        #    见本文件上方 `if fp is not None:` 守卫）⇒ **「没发起」被读成「试过并失败」**。
+        n = c.get("n_sources_tried")
+        if n is None:
+            lines.append("- 🔴 **无法获取** —— ⚠️ **未发起取数**（该结果不在 market 中，"
+                         "非「试过 N 源皆失败」）\n")
+        else:
+            lines.append(f"- 🔴 **无法获取** —— 已试 **{n} 源**全部失败；"
+                         f"{c.get('note', '')}\n")
         q = br.get("quotes") or {}
         if q:
             lines.append("- **替代口径**（国债现券 / 国债ETF 价格）：")

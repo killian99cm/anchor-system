@@ -541,6 +541,24 @@ def main():
     check("中国10Y 换源测试通过", "OK" in _cn_out and r_cn.returncode == 0,
           f"(rc={r_cn.returncode}) {_cn_out[-200:]}")
 
+    # 7-c2k. 南向 T+0 换源回归测试（v4.5.13）
+    #   缘起：`#C1-7`「换源」在 G-2（南向仅 T-1）上的落地。源＝`push2delay kamt/get`，
+    #   **T+0 当日实时**（实测 9/21 净买入 41.5 亿元、`netBuyAmt = buyAmt − sellAmt` 逐位相等）。
+    #   🔴 真正的接入理由是**防住同一响应里那个恒定假值**：`dayNetAmtIn` 名字叫「当日净流入额」，
+    #   实测却是**额度字段**（`≡420 亿`；`monthNetAmtIn`＝15×、`yearNetAmtIn`＝171×，
+    #   与当月/当年已过交易日数**逐位吻合**）⇒ **按名字取数会往每份报告注入同一个 420 亿，
+    #   不报错、量级正常**。另钉住「字段集依赖」（窄 `fields` 下**根本没有 `netBuyAmt`**，
+    #   与 v4.5.6「`stock/get` 不供 `f88` 族」同形）与「内部一致性不符即不采纳」。
+    print("\n[7-c2k] 南向 T+0 换源测试 test_southbound_intraday.py")
+    r_si = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_southbound_intraday.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    _si_out = (r_si.stdout or "") + (r_si.stderr or "")
+    check("南向 T+0 换源测试通过", "OK" in _si_out and r_si.returncode == 0,
+          f"(rc={r_si.returncode}) {_si_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

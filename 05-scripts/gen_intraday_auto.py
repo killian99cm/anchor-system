@@ -257,6 +257,7 @@ def collect_market() -> dict:
     if fp is not None:
         market["sector_flow"] = fp.sector_flow(top=10)
         market["southbound"] = fp.southbound()
+        market["southbound_intraday"] = fp.southbound_intraday()
         market["cn10y"] = fp.cn10y()
         market["bond_refs"] = fp.bond_refs()
     return market
@@ -342,6 +343,36 @@ def _append_flow(lines: list, market: dict) -> None:
                          f"⛔ 各腿之和不等于南向净流入，**不得相加后当合计引用**。")
     else:
         lines.append(f"\n### 南向资金\n- 🔴 **取数失败**：{(sb or {}).get('note', '未知')}\n")
+
+    # 🔴 **南向 T+0（另一条链路、另一个币种）—— 与上面那段⛔不得合并**（2026-09-21 新增，v4.5.13）
+    #    上面 ＝ datacenter **T-1 日终值，百万港元**；下面 ＝ `kamt/get` **T+0 当日实时，万元人民币**。
+    #    ⛔ **两者不得直接对拉** —— 币种不同（差约 HKD/CNY），且一个是定格值、一个是盘中值。
+    #    📌 **提前写下来**：将来有人发现「两条差 ~9%」时，须知道**这不是端点坏了**。
+    si = market.get("southbound_intraday")
+    # ⚠️ 标题级别＝`###`（**与 datacenter 那段平级**）—— 两条链路是**兄弟不是父子**，
+    #    写成 `####` 会让读者以为 T+0 是 datacenter 段的子项。
+    lines.append("\n### 南向资金 · T+0 当日实时（`kamt/get`，与上方**不同链路、不同币种**）\n")
+    if si and si.get("ok") and si.get("net_buy_yi") is not None:
+        lines.append(f"**南向净买入 {si['net_buy_yi']:+} 亿元**（数据日期 {si['date']}｜"
+                     f"取数时刻 {si['ts']}｜单位：万元人民币）\n")
+        parts = []
+        for d in si["detail"]:
+            v = d.get("net_buy_wan")
+            parts.append(f"{d['label']} {v / 10000.0:+.2f} 亿"
+                         if isinstance(v, (int, float)) else f"{d['label']} 🔴缺")
+        lines.append("分腿：" + "｜".join(parts) + "\n")
+        lines.append("- ⚠️ **盘中值，`close_confirmed=False`** ⇒ ⛔ **不得作任何触发线判据**（F5）；"
+                     "港股 16:10 收盘竞价后才定格\n")
+        lines.append(f"- ⚠️ **币种＝人民币（依据：{si['currency_basis']}），但 `currency_proven=False`** "
+                     f"⇒ ⛔ **不得与上方「百万港元」的 T-1 值直接对拉**（差约 HKD/CNY 属正常，非端点故障）\n")
+        lines.append("- ⛔ 本值**刻意不读** `dayNetAmtIn` 族 —— 该族名字叫「净流入额」但**是额度分配**"
+                     "（实测 `dayNetAmtIn` ≡ 420 亿／`monthNetAmtIn`＝15×／`yearNetAmtIn`＝171×，"
+                     "与当月／当年已过交易日数逐位吻合），**取值恒定、与市场资金流无关**\n")
+    elif si and si.get("ok"):
+        miss = "、".join(si.get("missing_legs") or []) or "真流量字段 `netBuyAmt`"
+        lines.append(f"- 🔴 **无法给出 T+0 南向合计**（缺 {miss}）—— ⛔ **不列合计、不相加当合计引用**\n")
+    else:
+        lines.append(f"- 🔴 **取数失败**：{(si or {}).get('note', '未知')}\n")
 
     c = market.get("cn10y") or {}
     br = market.get("bond_refs") or {}

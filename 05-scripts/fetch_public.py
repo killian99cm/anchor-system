@@ -677,6 +677,25 @@ _MUTUAL_TOTAL = "006"
 #      ⇒ **「零读者」是今天为零、不是永远为零。**
 
 
+
+# ---------------------------------------------------------------- kamt/get
+# 🔴 **`kamt/get` 的字段集是显式契约，不是默认全给**：
+#    实测 `fields2=f51..f56` 时**根本没有 `netBuyAmt` 这一列**（只回 6 键），
+#    要宽到 f1..f79 才出现 16 键（含 `netBuyAmt`/`buyAmt`/`sellAmt`）。
+#    📌 与 v4.5.6「`stock/get` 不供 `f88` 族」**同形**：**「没要这个字段」与
+#    「这个字段没有值」返回值一样** —— 本仓同族第 4 次。故此处**故意要宽**。
+_KAMT_FIELDS = ",".join(f"f{i}" for i in range(1, 80))
+_KAMT_LEGS = (("sh2hk", "港股通(沪)"), ("sz2hk", "港股通(深)"))
+# 官方每日额度（**万元**）—— 既是**单位锚点**，也是**「额度族 vs 流量族」判别式**。
+# 实测 沪/深南向各 4200000 万元 = 420 亿、北向 5200000 = 520 亿，
+# **逐位吻合官方人民币额度** ⇒ 该字段族为**人民币**。
+_KAMT_QUOTA_WAN = {"sh2hk": 4200000.0, "sz2hk": 4200000.0,
+                   "hk2sh": 5200000.0, "hk2sz": 5200000.0}
+# ⛔ 这些键名读起来都像「净流入额」，**实测全是 `交易日数 × 日额度` 的额度分配**：
+#    dayNetAmtIn = 4200000（＝全额度的 1 倍）、monthNetAmtIn = 15 ×（9 月 15 个交易日）、
+#    yearNetAmtIn = 171 ×（2026 年 171 个交易日）。**一律禁止读取。**
+_KAMT_QUOTA_KEYS = ("dayNetAmtIn", "monthNetAmtIn", "yearNetAmtIn", "allNetAmtIn")
+
 def southbound(days: int = 3) -> dict:
     """南向资金（datacenter `RPT_MUTUAL_DEAL_HISTORY`）。
 
@@ -793,6 +812,113 @@ def southbound(days: int = 3) -> dict:
         "cross_check": cross,
         "ts": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "is_t_minus_1": date != datetime.now().strftime("%Y-%m-%d"),
+    }
+    _CACHE[key] = res
+    return res
+
+def southbound_intraday() -> dict:
+    """南向资金 **T+0 当日实时值**（`kamt/get` 的 `netBuyAmt`）。
+
+    ⛔⛔ **只读 `netBuyAmt` / `buyAmt` / `sellAmt`；`dayNetAmtIn` 那一族一律禁止读取。**
+
+    **为什么必须写死这条禁令（2026-09-21 实测，v4.5.13）**：
+        `dayNetAmtIn` 的**字面意思是「当日净流入额」**，但它**是额度字段不是流量字段**：
+            `dayNetAmtIn  = 4200000   = 1 × 4200000`（＝**全额度**）
+            `monthNetAmtIn= 63000000  = 15 × 4200000`（9 月已过 **15** 个交易日）
+            `yearNetAmtIn = 718200000 = 171 × 4200000`（2026 年已过 **171** 个交易日）
+        ⇒ **整族 ＝ 交易日数 × 日额度 ＝ 额度分配，与市场资金流无关。**
+    🔴 **危险在于它每天恒等于 420 亿、量级很像个大额净流入、名字还就叫「净流入额」**
+        ⇒ 谁按名字取数，就往每份报告注入一个**恒定 420 亿**，**不报错、无形态变化**
+        （与 v4.5.5／v4.5.6／v4.5.11 同族）。
+
+    **真正的流量字段 ＝ `netBuyAmt`**，实测 `netBuyAmt = buyAmt − sellAmt` **逐位相等**
+    （沪 3047585.83−2737929.90＝309655.94 ✅／深 1645664.69−1540365.87＝105298.82 ✅），
+    单位 **万元**，沪+深 ＝ 南向净买入。
+
+    ⚠️ **币种 ＝ 人民币**，依据＝`dayAmtThreshold` 逐位吻合官方人民币额度（见
+    `_KAMT_QUOTA_WAN`）；⛔ 但**与 `southbound()`（datacenter，单位「百万港元」）
+    不得直接对拉** —— **币种不同**（差约 HKD/CNY），**且后者是 T-1 日终值**。
+    📌 **「对不上」在这里不是端点坏了**，这正是要提前写下来的。
+
+    ⚠️ **盘中值，`close_confirmed` 恒 False** ⇒ ⛔ **不得作任何触发线判据**
+    （F5／v4.5.2「拿到一个价 ≠ 拿到收盘价」）。
+    """
+    key = "southbound_intraday"
+    if key in _CACHE:
+        return _CACHE[key]                                       # type: ignore[return-value]
+
+    url = (f"https://push2delay.eastmoney.com/api/qt/kamt/get"
+           f"?fields1={_KAMT_FIELDS}&fields2={_KAMT_FIELDS}")
+    rc, body = _http(url, "https://data.eastmoney.com/", 15, "utf-8")
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if rc != 200:
+        _record("南向T+0", url, False, body)
+        res = {"ok": False, "ts": ts, "note": f"取数失败 rc={rc}"}
+        _CACHE[key] = res
+        return res
+    try:
+        data = (json.loads(body) or {}).get("data") or {}
+    except json.JSONDecodeError:
+        _record("南向T+0", url, False, f"非 JSON: {body[:80]}")
+        res = {"ok": False, "ts": ts, "note": "返回非 JSON"}
+        _CACHE[key] = res
+        return res
+
+    if not isinstance(data, dict) or not data:
+        _record("南向T+0", url, False, "data 为空")
+        res = {"ok": False, "ts": ts, "note": "data 为空（港股休市或端点变更）"}
+        _CACHE[key] = res
+        return res
+
+    detail, missing = [], []
+    for leg, label in _KAMT_LEGS:
+        v = data.get(leg)
+        if not isinstance(v, dict):
+            missing.append(f"{leg} {label}")
+            continue
+        net, buy, sell = v.get("netBuyAmt"), v.get("buyAmt"), v.get("sellAmt")
+        if not isinstance(net, (int, float)):
+            missing.append(f"{leg} {label}（无 netBuyAmt）")
+            continue
+        # 🔴 内部一致性：`netBuyAmt` 必须等于 `buyAmt − sellAmt`。
+        #    不等 ⇒ 该腿**不参与合计**（⛔ 不静默采纳，也不静默丢弃 —— 报出来）。
+        ident = None
+        if isinstance(buy, (int, float)) and isinstance(sell, (int, float)):
+            ident = abs(round(buy - sell, 2) - round(net, 2)) < 0.02
+        detail.append({
+            "leg": leg, "label": label,
+            "net_buy_wan": round(net, 2), "buy_wan": buy, "sell_wan": sell,
+            "identity_ok": ident,
+            "quota_wan": v.get("dayAmtThreshold"),
+        })
+
+    bad_ident = [d["label"] for d in detail if d["identity_ok"] is False]
+    usable = [d for d in detail if d["identity_ok"] is not False]
+    complete = (len(missing) == 0 and len(usable) == len(_KAMT_LEGS))
+    total_wan = round(sum(d["net_buy_wan"] for d in usable), 2) if complete else None
+
+    _record("南向T+0", url, True,
+            f"{len(data)} 腿；净买入合计={'%.2f 万元' % total_wan if total_wan is not None else '不完整'}")
+
+    res = {
+        "ok": True, "date": (data.get("sh2hk") or {}).get("date2"),
+        "ts": ts,
+        "net_buy_wan": total_wan,
+        "net_buy_yi": round(total_wan / 10000.0, 2) if total_wan is not None else None,
+        "detail": detail,
+        "complete": complete,
+        "legs_expected": len(_KAMT_LEGS), "legs_found": len(detail),
+        "missing_legs": missing,
+        "identity_failed": bad_ident,
+        "unit": "万元", "currency": "CNY", "currency_proven": False,
+        "currency_basis": ("dayAmtThreshold 沪/深 4200000＝420 亿、北向 5200000＝520 亿，"
+                           "逐位吻合官方人民币额度"),
+        # ⛔ **恒 False**：这是盘中/当日实时值，不是定格收盘值
+        "close_confirmed": False,
+        "source": "push2delay kamt/get netBuyAmt",
+        "forbidden_use": "⛔ 不得作触发线判据（盘中值）；⛔ 不得与 datacenter T-1 值直接对拉（币种不同）",
+        "note": ("南向 T+0（沪+深），单位万元人民币。"
+                 "⛔ 本函数**刻意不读** dayNetAmtIn 族（那是额度分配，恒为交易日数×420 亿）。"),
     }
     _CACHE[key] = res
     return res

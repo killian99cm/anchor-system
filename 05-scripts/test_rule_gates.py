@@ -365,11 +365,25 @@ check("I4 板块查不到 ⇒ 判定为不可判（不得当作『未命中』�
 try:
     _old_only_t2 = fp.sector_movers(top=500, pz=500)      # 旧实现：单宇宙 + 单页
     _old_names = {r["name"] for r in (_old_only_t2.get("gainers") or []) + (_old_only_t2.get("losers") or [])}
-    _old_found = [s for s in ("固态电池", "人形机器人", "智能驾驶") if
-                  any(s in n or n in s for n in _old_names)]
-    check("I5 反向断言：旧实现（仅 t:2 行业宇宙）**找不到** 3 个概念主题中的任何一个",
+    # 🔴 **探针订正（2026-09-21）**：必须**严格**匹配 `s in n`，⛔ 不得双向子串。
+    #    原写法 `any(s in n or n in s)` 的 `n in s` 方向会把**行业板块「电池」**
+    #    判成**概念主题「固态电池」**（`'电池' in '固态电池' == True`）、
+    #    **「机器人」**判成**「人形机器人」** ⇒ 本断言**长期靠运气通过** ——
+    #    只因那两个行业板块恰好不在当日涨跌幅前 100 名窗口内；9/21 它们进了窗口
+    #    ⇒ 断言翻红。**红的不是实现，是探针**（同族：memory「验证探针本身未经校验」）。
+    _old_found = [s for s in ("固态电池", "人形机器人", "智能驾驶") if s in _old_names]
+    check("I5 反向断言：旧实现（仅 t:2 行业宇宙）**找不到** 3 个概念主题中的任何一个"
+          "（**严格匹配**）",
           len(_old_found) == 0,
           f"旧实现却找到了 {_old_found} —— 若不为空则本修复无必要，须复核")
+    # 🔴 反向断言的**反向断言**：证明上面的「找不到」不是探针查了个空集合而空手而归。
+    #    两部分：① 确定性证明宽松匹配确实会误判（纯字符串运算，不依赖行情）
+    #           ② 非空性 —— 宇宙样本必须真有内容，否则 ① 的结论落在空集上仍是假的。
+    check("I5b 🔴 探针自检：① 证明 `n in s` 方向确实误判"
+          "（`'电池' in '固态电池'` 为真、`'机器人' in '人形机器人'` 为真）"
+          "② 且 t:2 宇宙样本非空（≥100）⇒「严格匹配找不到」是**真结论**而非空集假象",
+          ("电池" in "固态电池") and ("机器人" in "人形机器人") and len(_old_names) >= 100,
+          f"① 误判机制成立；② 宇宙样本 {len(_old_names)} 个")
 
     _t2rows, _t2total = fp._sector_rows(1, 500, "probe t:2")
     check("I6 反向断言：`pz=500` **实际只回 100 行**（total=496）"
@@ -657,6 +671,118 @@ finally:
 
 check("K8 🔴 缺口自检全程**未触碰生产缓存文件**（同 J11 之理：换路径隔离，不靠 finally）",
       _prod_before == (_prod.read_bytes() if _prod.exists() else None))
+
+# ══════════════════════════════════════════════════════════════════
+# §L · v4.5.7 —— A2 前日判据的**读取侧**护栏（写侧早有，读侧一直缺）
+#
+#   病灶：`prev_trading_day(kl, t)` 取的是**严格早于 t** 的交易日，而 `kl` 的末条
+#        就是 `ref_date` 自身 ⇒ 传 `now`（墙钟）时，**非交易日**运行会让
+#        `ref_date < now` 成立 ⇒ 返回 `ref_date` **自己** ⇒ 拿当日与前一日比。
+#   症状：`watchlist[].today` 四条「当日值」与「前一日值」**逐位相同**，
+#        A2 分支② **全面假阳性**（实发：9/20 21:41 落盘，四条全 ⛔ 禁买）。
+#   方向虽为 fail-closed（多拦、不放行，**不产生错误买入**），但按 v2.1 判例
+#        「一条永远做不到的强制项会训练出『照抄免责』的习惯」——
+#        **天天响的假告警会被学会忽略，届时真命中会被一起无视**。
+#   对照：写侧 `board_history_record` 早有「按数据自身交易日归档而非 now」的护栏，
+#        **读侧从未获得同等保护** —— v4.5.2 只修了写路径。
+# ══════════════════════════════════════════════════════════════════
+_KL_L = [{"date": d} for d in ["2026-09-16", "2026-09-17", "2026-09-18"]]
+
+check("L1 读侧判据：以 **ref_date（数据自身交易日 09-18）** 为基准 ⇒ 前一日 = 09-17",
+      fp.prev_trading_day(_KL_L, "2026-09-18") == "2026-09-17",
+      str(fp.prev_trading_day(_KL_L, "2026-09-18")))
+
+# ---- L2 🔴 反向断言：证明**原写法**在非交易日确实会错（否则本修复无从证明必要）----
+_old_l = fp.prev_trading_day(_KL_L, "2026-09-20")     # 修前：传 now（周日）
+_new_l = fp.prev_trading_day(_KL_L, "2026-09-18")     # 修后：传 ref_date
+check("L2 🔴 **原写法**（传 now = 周日 09-20）返回 **09-18 自身** ⇒ 当日与自身比较 ⇒ "
+      "分支② 假阳性；新写法返回 09-17 ⇒ 两者**必须不同**"
+      "（此断言证明修复是**必需**而非装饰；若将来谁改回 `now`，本项必失败）",
+      _old_l == "2026-09-18" and _new_l == "2026-09-17" and _old_l != _new_l,
+      f"原写法={_old_l}　新写法={_new_l}")
+
+# ---- L-a 端到端：周末跑一次，结论必须与交易日跑**一致** ----
+_L_TMP = tempfile.mkdtemp(prefix="anchor_prevday_")
+_L_PATH = Path(_L_TMP) / "bh.json"
+prod_before_L = _prod.read_bytes() if _prod.exists() else None
+os.environ["ANCHOR_BOARD_HISTORY"] = str(_L_PATH)
+_L_PATH.write_text(json.dumps({"schema": 1, "days": {
+    "2026-09-17": {"BK1090": {"name": "固态电池", "chg_pct": -0.50, "board_type": "概念板块"}},
+    "2026-09-18": {"BK1090": {"name": "固态电池", "chg_pct": +1.20, "board_type": "概念板块"}},
+}}, ensure_ascii=False), encoding="utf-8")
+
+_L_BOARDS = {"by_name": {"固态电池": {"name": "固态电池", "code": "BK1090",
+                                      "chg_pct": 1.69, "board_type": "概念板块"}},
+             "universes": {"概念板块": {"total": 504, "fetched": 504, "complete": True}},
+             "complete": True}
+_L_DATA = {"watchlist": [{"sector": "固态电池", "etf_code": "159755"}]}
+_L_KL = [{"date": "2026-09-16"}, {"date": "2026-09-17"}, {"date": "2026-09-18"}]
+_L_BARS = [{"date": "2026-09-07", "close": 1.30}, {"date": "2026-09-08", "close": 1.31},
+           {"date": "2026-09-09", "close": 1.32}, {"date": "2026-09-10", "close": 1.33},
+           {"date": "2026-09-11", "close": 1.34}, {"date": "2026-09-15", "close": 1.35},
+           {"date": "2026-09-16", "close": 1.36}, {"date": "2026-09-17", "close": 1.37},
+           {"date": "2026-09-18", "close": 1.38}, {"date": "2026-09-21", "close": 1.40}]
+
+_orig_bma, _orig_rltd, _orig_dk = (fp.board_movers_all, fp.ref_last_trading_day,
+                                   fp.daily_kline)
+try:
+    fp.board_movers_all = lambda *a, **k: _L_BOARDS                      # type: ignore
+    fp.ref_last_trading_day = lambda *a, **k: ("2026-09-18", _L_KL)      # type: ignore
+    fp.daily_kline = lambda *a, **k: list(_L_BARS)                       # type: ignore
+
+    # 周末（周日 09-20）跑 —— 这正是生产里出假阳性的那个时点
+    _sw = gws.build_status(_L_DATA, {"rules": {}}, datetime(2026, 9, 20, 21, 41),
+                           record_history=False)
+    _sw_e = _sw["entries"][0]
+    check("L3 周末（09-20）跑：前一日取 **09-17**（−0.50%）⇒ 分支②不成立 ⇒ "
+          "A2 不成立且**完全判定**（⛔ 不得报『连续 2 日飘红』）",
+          _sw["prev_day"]["date"] == "2026-09-17"
+          and (_sw_e["a2_hit"], _sw_e["a2_determined"]) == (False, True),
+          f"prev_date={_sw['prev_day']['date']} "
+          f"hit/det=({_sw_e['a2_hit']},{_sw_e['a2_determined']}) 判词={_sw_e['a2_detail'][:80]}")
+
+    # 🔴 L4 反向断言：**用修前那条线算出前一日**（＝09-18 自己，+1.20%）喂给同一函数，
+    #    必须命中分支② ⇒ 直接把生产里的假阳性在这里复现出来。
+    _bad_prev_date = fp.prev_trading_day(_L_KL, "2026-09-20")      # 修前写法
+    _bad_prev_day = fp.board_history_day(_bad_prev_date)
+    _bad_hit, _bad_det, _bad_txt = gws._eval_a2("固态电池", _L_BOARDS, 2.0,
+                                                _bad_prev_day, _bad_prev_date)
+    check("L4 🔴 用**修前写法**得到的前一日（09-18 自身）喂进去 ⇒ 确实**命中分支②**、"
+          "报文写着『连续 2 日飘红』—— 这就是生产里四条 watchlist 被误标 ⛔ 的完整机制"
+          "（证明该 bug 真实存在，不是推测）",
+          (_bad_hit, _bad_det) == (True, True) and "连续 2 日飘红" in _bad_txt,
+          f"得 ({_bad_hit},{_bad_det})：{_bad_txt[:90]}")
+
+    # ---- L5 幂等：交易日跑与周末跑必须给出**同一**结论 ----
+    _td = gws.build_status(_L_DATA, {"rules": {}}, datetime(2026, 9, 18, 15, 30),
+                           record_history=False)
+    check("L5 同一份数据：**交易日收盘后**跑 与 **周末**跑 ⇒ 前一日与 A2 结论必须一致"
+          "（修前两者会给出不同结论：交易日对、周末错 —— 即『同一份数据两种答案』）",
+          _td["prev_day"]["date"] == _sw["prev_day"]["date"]
+          and _td["entries"][0]["a2_hit"] == _sw_e["a2_hit"],
+          f"交易日 prev={_td['prev_day']['date']} hit={_td['entries'][0]['a2_hit']}　"
+          f"周末 prev={_sw['prev_day']['date']} hit={_sw_e['a2_hit']}")
+
+    # ---- L6 🔴 参考指数日K不可用 ⇒ **不猜**，fail-closed，⛔ 不得回退到 now ----
+    fp.ref_last_trading_day = lambda *a, **k: (None, None)               # type: ignore
+    _nd = gws.build_status(_L_DATA, {"rules": {}}, datetime(2026, 9, 20, 21, 41),
+                           record_history=False)
+    check("L6 🔴 ref_date 缺失（日K取不到）⇒ prev_date **必须为 None** 且 A2 不可判"
+          "（⛔ 不得回退用 `now` —— 那正是本 bug 的成因；fail-closed 见 v4.5.0 第 7 项）",
+          _nd["prev_day"]["date"] is None
+          and _nd["entries"][0]["a2_determined"] is False,
+          f"prev_date={_nd['prev_day']['date']} det={_nd['entries'][0]['a2_determined']}")
+finally:
+    fp.board_movers_all, fp.ref_last_trading_day, fp.daily_kline = (
+        _orig_bma, _orig_rltd, _orig_dk)                                 # type: ignore
+    os.environ.pop("ANCHOR_BOARD_HISTORY", None)
+    shutil.rmtree(_L_TMP, ignore_errors=True)
+
+check("L7 测试后已还原被 monkeypatch 的 fetch_public 函数",
+      fp.board_movers_all is _orig_bma and fp.ref_last_trading_day is _orig_rltd
+      and fp.daily_kline is _orig_dk)
+check("L8 🔴 §L 全程**未触碰生产缓存文件**（同 J11/K8 之理：换路径隔离，不靠 finally）",
+      prod_before_L == (_prod.read_bytes() if _prod.exists() else None))
 
 # ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]

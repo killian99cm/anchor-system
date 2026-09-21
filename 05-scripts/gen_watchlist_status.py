@@ -271,7 +271,17 @@ def build_status(data: dict, contract: dict, now: datetime,
     # 🔴 交易日历取自**参考指数自身日K的末日**，而不是 `now` 的日期 ——
     #    否则周末/节假日跑一次就会把上一交易日的收盘值标成今天（日期错标）。
     ref_date, ref_kl = fp.ref_last_trading_day()
-    prev_date = fp.prev_trading_day(ref_kl, now.strftime("%Y-%m-%d"))
+    # 🔴 **读取侧护栏** —— 与写入侧 `board_history_record` 那条「按数据自身交易日归档
+    #    而非 `now`」同源。此处必须用 `ref_date` 而非 `now`：
+    #    `prev_trading_day(kl, t)` 取的是**严格早于 t** 的交易日，而 `ref_kl` 的末条
+    #    就是 `ref_date` 本身 ⇒ 若传 `now`，在**非交易日**（周末/节假日）运行时
+    #    `ref_date < now` 成立 ⇒ 返回 `ref_date` 自身 ⇒ **拿当日和前一日比**，
+    #    四个板块的「当日值」与「前一日值」逐位相同 ⇒ **A2 分支② 全面假阳性**。
+    #    方向虽为 fail-closed（多拦不放行，不产生错误买入），但违反 v2.1 判例
+    #    「一条永远做不到的强制项会训练出『照抄免责』的习惯」—— 天天响的假告警
+    #    会被学会忽略，届时真命中会被一起无视。
+    #    `ref_date` 缺失（日K 取不到）⇒ **不猜**，一律置 None ⇒ 下游 fail-closed。
+    prev_date = fp.prev_trading_day(ref_kl, ref_date) if ref_date else None
     prev_day = fp.board_history_day(prev_date) if prev_date else None
     record = (fp.board_history_record(allboards, ref_date, now) if record_history
               else {"recorded": False, "reason": "本次未落盘（dry-run / --json）"})

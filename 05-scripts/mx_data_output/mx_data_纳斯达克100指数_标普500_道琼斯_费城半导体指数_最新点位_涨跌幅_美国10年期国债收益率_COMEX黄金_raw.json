@@ -1,0 +1,1476 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "ea968408-7476-4351-9db5-c5ae3ae99854",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "a30e70e5-9f5c-4c2c-be55-fbe4849062c2",
+        "dataTableDTOList": [
+          {
+            "code": "NDX.GI",
+            "entityName": "2026-09-22 22:37",
+            "table": {
+              "8002": [
+                "3.065万",
+                "7767",
+                "1.243万"
+              ],
+              "8004": [
+                "0.56%",
+                "0.03%",
+                "0%"
+              ],
+              "headName": [
+                "纳斯达克100(NDX.GI)(指数)",
+                "标普500(SPX.GI)(指数)",
+                "费城半导体指数(SOX.GI)(指数)"
+              ]
+            },
+            "rawTable": {
+              "8002": [
+                "30653.82",
+                "7766.72",
+                "12433.17"
+              ],
+              "8004": [
+                "0.5600",
+                "0.03000",
+                "0.0"
+              ],
+              "headName": [
+                "纳斯达克100(NDX.GI)(指数)",
+                "标普500(SPX.GI)(指数)",
+                "费城半导体指数(SOX.GI)(指数)"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "8002": "最新价",
+              "headNameSub": "数据来源",
+              "8004": "涨跌幅",
+              "securityName": "股票名称"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZXJ_8002_choice",
+              "returnName": "最新价",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "dateGranularity": "DAY",
+              "defineType": 0,
+              "isLoopN": false,
+              "apiCode": "100",
+              "isGroup": false,
+              "returnSourceCode": "8002",
+              "returnSourceName": "最新价",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "纳斯达克100(NDX.GI)(指数)": {
+                "entityId": "1000386329",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "纳斯达克100指数",
+                "shortName": "",
+                "matchWord": "纳斯达克100指数",
+                "secuCode": "NDX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "标普500(SPX.GI)(指数)": {
+                "entityId": "1000163992",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "标准普尔500指数",
+                "shortName": "标普500",
+                "matchWord": "标普500",
+                "offset": 10,
+                "length": 5,
+                "secuCode": "SPX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "correctWord": "",
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "费城半导体指数(SOX.GI)(指数)": {
+                "entityId": "1003396563",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "费城半导体指数",
+                "shortName": "",
+                "matchWord": "费城半导体指数",
+                "offset": 20,
+                "length": 7,
+                "secuCode": "SOX",
+                "market": "251",
+                "marketChar": ".GI",
+                "correct": false,
+                "correctWord": "",
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "NDX.GI",
+              "SPX.GI",
+              "SOX.GI"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZXJ_8002_choice",
+                "returnName": "最新价",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "100",
+                "isGroup": false,
+                "returnSourceCode": "8002",
+                "returnSourceName": "最新价",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDF_8004_choice",
+                "returnName": "涨跌幅",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "100",
+                "isGroup": false,
+                "returnSourceCode": "8004",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "%",
+                "unitDesc": "10802:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "8002",
+              "8004"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "纳斯达克100(NDX.GI)(指数)等当前的最新价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftEntityTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000386329",
+              "entityType": "INDEX",
+              "entityTypeCode": "INDEX",
+              "entityTypeName": "INDEX",
+              "classCode": "006002",
+              "className": "全球指数",
+              "publishCode": "",
+              "fullName": "纳斯达克100指数",
+              "shortName": "",
+              "matchWord": "纳斯达克100指数",
+              "secuCode": "NDX",
+              "market": "100",
+              "marketChar": ".GI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000386329",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "纳斯达克100指数",
+                "shortName": "",
+                "matchWord": "纳斯达克100指数",
+                "secuCode": "NDX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1000163992",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "标准普尔500指数",
+                "shortName": "标普500",
+                "matchWord": "标普500",
+                "offset": 10,
+                "length": 5,
+                "secuCode": "SPX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "correctWord": "",
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1003396563",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "费城半导体指数",
+                "shortName": "",
+                "matchWord": "费城半导体指数",
+                "offset": 20,
+                "length": 7,
+                "secuCode": "SOX",
+                "market": "251",
+                "marketChar": ".GI",
+                "correct": false,
+                "correctWord": "",
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22 22:37": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          },
+          {
+            "code": "NDX.GI",
+            "entityName": "纳斯达克100(NDX.GI)(指数)",
+            "table": {
+              "325898": [
+                "30653.82点",
+                "30482.35点",
+                "29644.17点",
+                "29446.98点",
+                "28945.06点",
+                "28937.84点"
+              ],
+              "326865": [
+                "0.5625",
+                "2.827",
+                "0.6696",
+                "1.734",
+                "0.02495",
+                "-0.65"
+              ],
+              "headName": [
+                "2026-09-22(日)",
+                "2026-09-21(日)",
+                "2026-09-18(日)",
+                "2026-09-17(日)",
+                "2026-09-16(日)",
+                "2026-09-15(日)"
+              ]
+            },
+            "rawTable": {
+              "325898": [
+                "30653.82",
+                "30482.35",
+                "29644.17",
+                "29446.98",
+                "28945.06",
+                "28937.84"
+              ],
+              "326865": [
+                "0.562522246480344100",
+                "2.82746995446322300",
+                "0.669644221580612700",
+                "1.734043736651429500",
+                "0.02495003082469584400",
+                "-0.649977546729580600"
+              ],
+              "headName": [
+                "2026-09-22",
+                "2026-09-21",
+                "2026-09-18",
+                "2026-09-17",
+                "2026-09-16",
+                "2026-09-15"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "325898": "收盘价",
+              "headNameSub": "数据来源",
+              "326865": "涨跌幅"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "325898",
+              "returnName": "收盘价",
+              "classCode": "007121",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "dateGranularity": "DAY",
+              "defineType": 0,
+              "isLoopN": false,
+              "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+              "isGroup": false,
+              "returnSourceCode": "CLOSE",
+              "returnSourceName": "收盘价",
+              "graph": "2",
+              "unit": "2",
+              "tableType": "20",
+              "unitName": "点",
+              "dcsdField": true
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "NDX.GI"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "326865",
+                "returnName": "涨跌幅",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=3,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "PCTCHANGE",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "20",
+                "unitDesc": "100%",
+                "dcsdField": true
+              },
+              {
+                "returnCode": "325898",
+                "returnName": "收盘价",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "CLOSE",
+                "returnSourceName": "收盘价",
+                "graph": "2",
+                "unit": "2",
+                "tableType": "20",
+                "unitName": "点",
+                "dcsdField": true
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "325898",
+              "326865"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "纳斯达克100(NDX.GI)(指数)的收盘价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=INDEX&code=NDX.GI&indId=100000000006220|121:2026-09-22,100000000006180|121:2026-09-22",
+                "typeName": "指数数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000386329",
+              "entityType": "INDEX",
+              "entityTypeCode": "INDEX",
+              "entityTypeName": "INDEX",
+              "classCode": "006002",
+              "className": "全球指数",
+              "publishCode": "",
+              "fullName": "纳斯达克100指数",
+              "shortName": "",
+              "matchWord": "纳斯达克100指数",
+              "secuCode": "NDX",
+              "market": "100",
+              "marketChar": ".GI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000386329",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "纳斯达克100指数",
+                "shortName": "",
+                "matchWord": "纳斯达克100指数",
+                "secuCode": "NDX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "SPX.GI",
+            "entityName": "标普500(SPX.GI)(指数)",
+            "table": {
+              "325898": [
+                "7764.7点",
+                "7650.5点",
+                "7637.76点",
+                "7551.81点",
+                "7585.73点"
+              ],
+              "326865": [
+                "1.493",
+                "0.1668",
+                "1.138",
+                "-0.4472",
+                "-0.4495"
+              ],
+              "headName": [
+                "2026-09-21(日)",
+                "2026-09-18(日)",
+                "2026-09-17(日)",
+                "2026-09-16(日)",
+                "2026-09-15(日)"
+              ]
+            },
+            "rawTable": {
+              "325898": [
+                "7764.7",
+                "7650.5",
+                "7637.76",
+                "7551.81",
+                "7585.73"
+              ],
+              "326865": [
+                "1.49271289458205100",
+                "0.1668028322440058600",
+                "1.138137744461259100",
+                "-0.447155382540627800",
+                "-0.44947624534447600"
+              ],
+              "headName": [
+                "2026-09-21",
+                "2026-09-18",
+                "2026-09-17",
+                "2026-09-16",
+                "2026-09-15"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "325898": "收盘价",
+              "headNameSub": "数据来源",
+              "326865": "涨跌幅"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "325898",
+              "returnName": "收盘价",
+              "classCode": "007121",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "dateGranularity": "DAY",
+              "defineType": 0,
+              "isLoopN": false,
+              "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+              "isGroup": false,
+              "returnSourceCode": "CLOSE",
+              "returnSourceName": "收盘价",
+              "graph": "2",
+              "unit": "2",
+              "tableType": "20",
+              "unitName": "点",
+              "dcsdField": true
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "SPX.GI"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "326865",
+                "returnName": "涨跌幅",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=3,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "PCTCHANGE",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "20",
+                "unitDesc": "100%",
+                "dcsdField": true
+              },
+              {
+                "returnCode": "325898",
+                "returnName": "收盘价",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "CLOSE",
+                "returnSourceName": "收盘价",
+                "graph": "2",
+                "unit": "2",
+                "tableType": "20",
+                "unitName": "点",
+                "dcsdField": true
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "325898",
+              "326865"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "标普500(SPX.GI)(指数)的收盘价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=INDEX&code=SPX.GI&indId=100000000006220|121:2026-09-22,100000000006180|121:2026-09-22",
+                "typeName": "指数数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000163992",
+              "entityType": "INDEX",
+              "entityTypeCode": "INDEX",
+              "entityTypeName": "INDEX",
+              "classCode": "006002",
+              "className": "全球指数",
+              "publishCode": "",
+              "fullName": "标准普尔500指数",
+              "shortName": "标普500",
+              "matchWord": "标普500",
+              "offset": 10,
+              "length": 5,
+              "secuCode": "SPX",
+              "market": "100",
+              "marketChar": ".GI",
+              "correct": false,
+              "correctWord": "",
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000163992",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "标准普尔500指数",
+                "shortName": "标普500",
+                "matchWord": "标普500",
+                "offset": 10,
+                "length": 5,
+                "secuCode": "SPX",
+                "market": "100",
+                "marketChar": ".GI",
+                "correct": false,
+                "correctWord": "",
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-21": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "SOX.GI",
+            "entityName": "费城半导体指数(SOX.GI)(指数)",
+            "table": {
+              "325898": [
+                "12433.17点",
+                "12433.17点",
+                "11921.69点",
+                "11599.49点",
+                "11246.11点",
+                "11175.55点"
+              ],
+              "326865": [
+                "0",
+                "4.29",
+                "2.778",
+                "3.142",
+                "0.6314",
+                "0.3977"
+              ],
+              "headName": [
+                "2026-09-22(日)",
+                "2026-09-21(日)",
+                "2026-09-18(日)",
+                "2026-09-17(日)",
+                "2026-09-16(日)",
+                "2026-09-15(日)"
+              ]
+            },
+            "rawTable": {
+              "325898": [
+                "12433.17",
+                "12433.17",
+                "11921.69",
+                "11599.49",
+                "11246.11",
+                "11175.55"
+              ],
+              "326865": [
+                "0.0",
+                "4.29033132047553300",
+                "2.777708330280044500",
+                "3.14224207303680300",
+                "0.631378321424908100",
+                "0.397708080292640300"
+              ],
+              "headName": [
+                "2026-09-22",
+                "2026-09-21",
+                "2026-09-18",
+                "2026-09-17",
+                "2026-09-16",
+                "2026-09-15"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "325898": "收盘价",
+              "headNameSub": "数据来源",
+              "326865": "涨跌幅"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "325898",
+              "returnName": "收盘价",
+              "classCode": "007121",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "dateGranularity": "DAY",
+              "defineType": 0,
+              "isLoopN": false,
+              "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+              "isGroup": false,
+              "returnSourceCode": "CLOSE",
+              "returnSourceName": "收盘价",
+              "graph": "2",
+              "unit": "2",
+              "tableType": "20",
+              "unitName": "点",
+              "dcsdField": true
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "SOX.GI"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "326865",
+                "returnName": "涨跌幅",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=3,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "PCTCHANGE",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "20",
+                "unitDesc": "100%",
+                "dcsdField": true
+              },
+              {
+                "returnCode": "325898",
+                "returnName": "收盘价",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "CLOSE",
+                "returnSourceName": "收盘价",
+                "graph": "2",
+                "unit": "2",
+                "tableType": "20",
+                "unitName": "点",
+                "dcsdField": true
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "325898",
+              "326865"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "费城半导体指数(SOX.GI)(指数)的收盘价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=INDEX&code=SOX.GI&indId=100000000006220|121:2026-09-22,100000000006180|121:2026-09-22",
+                "typeName": "指数数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1003396563",
+              "entityType": "INDEX",
+              "entityTypeCode": "INDEX",
+              "entityTypeName": "INDEX",
+              "classCode": "006002",
+              "className": "全球指数",
+              "publishCode": "",
+              "fullName": "费城半导体指数",
+              "shortName": "",
+              "matchWord": "费城半导体指数",
+              "offset": 20,
+              "length": 7,
+              "secuCode": "SOX",
+              "market": "251",
+              "marketChar": ".GI",
+              "correct": false,
+              "correctWord": "",
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1003396563",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006002",
+                "className": "全球指数",
+                "publishCode": "",
+                "fullName": "费城半导体指数",
+                "shortName": "",
+                "matchWord": "费城半导体指数",
+                "offset": 20,
+                "length": 7,
+                "secuCode": "SOX",
+                "market": "251",
+                "marketChar": ".GI",
+                "correct": false,
+                "correctWord": "",
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "GC00Y.CMX",
+            "entityName": "COMEX黄金",
+            "table": {
+              "325898": [
+                "4381元",
+                "4415.9元",
+                "4380.6元",
+                "4302.5元",
+                "4333.4元"
+              ],
+              "326865": [
+                "-0.9921",
+                "0.3682",
+                "-0.1573",
+                "-0.6993",
+                "-0.4251"
+              ],
+              "headName": [
+                "2026-09-21(日)",
+                "2026-09-18(日)",
+                "2026-09-17(日)",
+                "2026-09-16(日)",
+                "2026-09-15(日)"
+              ]
+            },
+            "rawTable": {
+              "325898": [
+                "4381.0",
+                "4415.9",
+                "4380.6",
+                "4302.5",
+                "4333.4"
+              ],
+              "326865": [
+                "-0.992100",
+                "0.368200",
+                "-0.157300",
+                "-0.699300",
+                "-0.425100"
+              ],
+              "headName": [
+                "2026-09-21",
+                "2026-09-18",
+                "2026-09-17",
+                "2026-09-16",
+                "2026-09-15"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "325898": "收盘价",
+              "headNameSub": "数据来源",
+              "326865": "涨跌幅"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "325898",
+              "returnName": "收盘价",
+              "classCode": "007121",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "dateGranularity": "DAY",
+              "defineType": 0,
+              "isLoopN": false,
+              "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+              "isGroup": false,
+              "returnSourceCode": "CLOSE",
+              "returnSourceName": "收盘价",
+              "graph": "2",
+              "unit": "2",
+              "tableType": "20",
+              "unitName": "元",
+              "dcsdField": true
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "GC00Y.CMX"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "326865",
+                "returnName": "涨跌幅",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=2,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "PCTCHANGE",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "20",
+                "unitDesc": "100%",
+                "dcsdField": true
+              },
+              {
+                "returnCode": "325898",
+                "returnName": "收盘价",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "fixedParamValue": "AdjustFlag=1,CurType=1,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "CLOSE",
+                "returnSourceName": "收盘价",
+                "graph": "2",
+                "unit": "2",
+                "tableType": "20",
+                "unitName": "元",
+                "dcsdField": true
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "325898",
+              "326865"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "COMEX黄金的收盘价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=FUTURE&code=GC00Y.CMX&indId=100000000014743|121:2026-09-22|261:101:元:元,100000000014752|121:2026-09-22|261:108:%:%",
+                "typeName": "期货数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "21099158145591",
+              "entityType": "FUTURE",
+              "entityTypeCode": "FUTURE",
+              "entityTypeName": "行情期货",
+              "classCode": "021101",
+              "className": "纽约商品交易所期货",
+              "publishCode": "",
+              "fullName": "COMEX黄金",
+              "shortName": "",
+              "matchWord": "COMEX黄金",
+              "secuCode": "GC00Y",
+              "market": "101",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "21099158145591",
+                "entityType": "FUTURE",
+                "entityTypeCode": "FUTURE",
+                "entityTypeName": "行情期货",
+                "classCode": "021101",
+                "className": "纽约商品交易所期货",
+                "publishCode": "",
+                "fullName": "COMEX黄金",
+                "shortName": "",
+                "matchWord": "COMEX黄金",
+                "secuCode": "GC00Y",
+                "market": "101",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-21": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "GC00Y.CMX",
+            "entityName": "COMEX黄金",
+            "table": {
+              "ZXJ_f2_3": [
+                "4365.8"
+              ],
+              "ZDF_f3_3": [
+                "-0.41%"
+              ],
+              "headName": [
+                "2026-09-22 22:27"
+              ]
+            },
+            "rawTable": {
+              "ZXJ_f2_3": [
+                "4365.8"
+              ],
+              "ZDF_f3_3": [
+                "-0.41"
+              ],
+              "headName": [
+                "2026-09-22 22:27"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZXJ_f2_3": "最新价",
+              "headNameSub": "数据来源",
+              "ZDF_f3_3": "涨跌幅"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZXJ_f2_3",
+              "returnName": "最新价",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "dateGranularity": "DAY",
+              "defineType": 0,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f2",
+              "returnSourceName": "最新价",
+              "graph": "2",
+              "unit": "0",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {},
+            "entityCodes": [
+              "GC00Y.CMX"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZXJ_f2_3",
+                "returnName": "最新价",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f2",
+                "returnSourceName": "最新价",
+                "graph": "2",
+                "unit": "0",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "ZDF_f3_3",
+                "returnName": "涨跌幅",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "dateGranularity": "DAY",
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f3",
+                "returnSourceName": "涨跌幅",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "%",
+                "unitDesc": "901:%:%",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "ZXJ_f2_3",
+              "ZDF_f3_3"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "COMEX黄金当前的最新价、涨跌幅",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "21099158145591",
+              "entityType": "FUTURE",
+              "entityTypeCode": "FUTURE",
+              "entityTypeName": "行情期货",
+              "classCode": "021101",
+              "className": "纽约商品交易所期货",
+              "publishCode": "",
+              "fullName": "COMEX黄金",
+              "shortName": "",
+              "matchWord": "COMEX黄金",
+              "secuCode": "GC00Y",
+              "market": "101",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "21099158145591",
+                "entityType": "FUTURE",
+                "entityTypeCode": "FUTURE",
+                "entityTypeName": "行情期货",
+                "classCode": "021101",
+                "className": "纽约商品交易所期货",
+                "publishCode": "",
+                "fullName": "COMEX黄金",
+                "shortName": "",
+                "matchWord": "COMEX黄金",
+                "secuCode": "GC00Y",
+                "market": "101",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22 22:27": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          }
+        ],
+        "condition": {
+          "search_data_task_1": [
+            "纳斯达克100指数标准普尔500指数费城半导体指数",
+            "最新价收盘价涨跌幅",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_0": [
+            "COMEX黄金",
+            "最新价收盘价涨跌幅",
+            "2026-09-22至2026-09-22"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1000386329",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006002",
+            "className": "全球指数",
+            "publishCode": "",
+            "fullName": "纳斯达克100指数",
+            "shortName": "",
+            "matchWord": "纳斯达克100指数",
+            "secuCode": "NDX",
+            "market": "100",
+            "marketChar": ".GI",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1000163992",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006002",
+            "className": "全球指数",
+            "publishCode": "",
+            "fullName": "标准普尔500指数",
+            "shortName": "标普500",
+            "matchWord": "标普500",
+            "offset": 10,
+            "length": 5,
+            "secuCode": "SPX",
+            "market": "100",
+            "marketChar": ".GI",
+            "correct": false,
+            "correctWord": "",
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1003396563",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006002",
+            "className": "全球指数",
+            "publishCode": "",
+            "fullName": "费城半导体指数",
+            "shortName": "",
+            "matchWord": "费城半导体指数",
+            "offset": 20,
+            "length": 7,
+            "secuCode": "SOX",
+            "market": "251",
+            "marketChar": ".GI",
+            "correct": false,
+            "correctWord": "",
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "21099158145591",
+            "entityType": "FUTURE",
+            "entityTypeCode": "FUTURE",
+            "entityTypeName": "行情期货",
+            "classCode": "021101",
+            "className": "纽约商品交易所期货",
+            "publishCode": "",
+            "fullName": "COMEX黄金",
+            "shortName": "",
+            "matchWord": "COMEX黄金",
+            "secuCode": "GC00Y",
+            "market": "101",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "2a99cc7bb1584851bf0a12b2d4202b91"
+}

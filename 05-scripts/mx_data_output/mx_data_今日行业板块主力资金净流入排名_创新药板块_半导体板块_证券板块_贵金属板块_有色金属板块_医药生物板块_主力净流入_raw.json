@@ -1,0 +1,1253 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "4ee16b22-b6e1-4c8a-9893-bb16b37e24d8",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "7c222203-cd5f-4ed7-a7f8-3f29aee3eec1",
+        "dataTableDTOList": [
+          {
+            "code": "90.BK1106",
+            "entityName": "2026-09-22(日)",
+            "table": {
+              "327791": [
+                "-18.27亿",
+                "-",
+                "-13.39亿",
+                "-9.539亿",
+                "-19.12亿",
+                "-2.021亿"
+              ],
+              "328083": [
+                "-",
+                "-18.27亿",
+                "-",
+                "-",
+                "-",
+                "-"
+              ],
+              "headName": [
+                "创新药(板块)",
+                "创新药(指数)",
+                "半导体(板块)",
+                "证券Ⅱ(板块)",
+                "贵金属(板块)",
+                "有色金属(板块)"
+              ]
+            },
+            "rawTable": {
+              "327791": [
+                "-1827229058",
+                "-",
+                "-1338705966",
+                "-953897454",
+                "-1911757882",
+                "-202121967"
+              ],
+              "328083": [
+                "-",
+                "-1827229058",
+                "-",
+                "-",
+                "-",
+                "-"
+              ],
+              "headName": [
+                "创新药(板块)",
+                "创新药(指数)",
+                "半导体(板块)",
+                "证券Ⅱ(板块)",
+                "贵金属(板块)",
+                "有色金属(板块)"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "327791": "主力净流入资金(合计)",
+              "headNameSub": "数据来源",
+              "securityName": "股票名称",
+              "328083": "主力净流入资金"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "327791",
+              "returnName": "主力净流入资金(合计)",
+              "classCode": "007121",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "fixedParamValue": "IsHistory=0,CurType=2,Period=1",
+              "isGroup": false,
+              "returnSourceCode": "NETINFLOWMSUM",
+              "returnSourceName": "主力净流入资金(合计)_板块",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "20",
+              "unitDesc": "元",
+              "dcsdField": true
+            },
+            "entityName2TagMap": {
+              "创新药(板块)": {
+                "entityId": "BK1106",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "创新药",
+                "shortName": "",
+                "matchWord": "创新药",
+                "secuCode": "BK1106",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "创新药(指数)": {
+                "entityId": "1003272607",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "创新药",
+                "shortName": "",
+                "secuCode": "861468",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "半导体(板块)": {
+                "entityId": "BK1036",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "半导体",
+                "shortName": "",
+                "matchWord": "半导体",
+                "secuCode": "BK1036",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "证券Ⅱ(板块)": {
+                "entityId": "BK0473",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "证券Ⅱ",
+                "shortName": "",
+                "matchWord": "证券",
+                "secuCode": "BK0473",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "贵金属(板块)": {
+                "entityId": "BK0732",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "贵金属",
+                "shortName": "",
+                "secuCode": "BK0732",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "有色金属(板块)": {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "90.BK1106",
+              "861468.EI",
+              "90.BK1036",
+              "90.BK0473",
+              "90.BK0732",
+              "90.BK0478"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "327791",
+                "returnName": "主力净流入资金(合计)",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "IsHistory=0,CurType=2,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "NETINFLOWMSUM",
+                "returnSourceName": "主力净流入资金(合计)_板块",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "20",
+                "unitDesc": "元",
+                "dcsdField": true
+              },
+              {
+                "returnCode": "328083",
+                "returnName": "主力净流入资金",
+                "classCode": "007121",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "fixedParamValue": "CurType=2,Period=1",
+                "isGroup": false,
+                "returnSourceCode": "MAINDEAL_NETQ",
+                "returnSourceName": "主力净流入资金",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "20",
+                "unitDesc": "元",
+                "dcsdField": true
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "327791",
+              "328083"
+            ],
+            "tipFlags": [],
+            "dataType": "数据浏览器",
+            "title": "创新药(板块)等的主力净流入资金(合计)、主力净流入资金",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftEntityTop",
+            "orderCol": {},
+            "jumpUrlList": [
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=BLOCK&code=007468,90.BK1036,90.BK0473,90.BK0732,90.BK0478&indId=100000000016959|121:2026-09-22|469:0|261:101:元:元",
+                "typeName": "数据浏览器"
+              },
+              {
+                "choiceUrl": "EM://stockdatacenter?type=browser&modType=INDEX&code=861468.EI&indId=100000000021056|121:2026-09-22|261:101:元:亿元",
+                "typeName": "数据浏览器"
+              }
+            ],
+            "dataTypeEnum": "DATA_BROWSER",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "BK1106",
+              "entityType": "BLOCK",
+              "entityTypeCode": "BLOCK",
+              "entityTypeName": "概念板块",
+              "classCode": "005003",
+              "className": "概念板块",
+              "publishCode": "",
+              "fullName": "创新药",
+              "shortName": "",
+              "matchWord": "创新药",
+              "secuCode": "BK1106",
+              "market": "90",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "BK1106",
+                "entityType": "BLOCK",
+                "entityTypeCode": "BLOCK",
+                "entityTypeName": "概念板块",
+                "classCode": "005003",
+                "className": "概念板块",
+                "publishCode": "",
+                "fullName": "创新药",
+                "shortName": "",
+                "matchWord": "创新药",
+                "secuCode": "BK1106",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1003272607",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "创新药",
+                "shortName": "",
+                "secuCode": "861468",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "BK1036",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "半导体",
+                "shortName": "",
+                "matchWord": "半导体",
+                "secuCode": "BK1036",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0473",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "证券Ⅱ",
+                "shortName": "",
+                "matchWord": "证券",
+                "secuCode": "BK0473",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0732",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "贵金属",
+                "shortName": "",
+                "secuCode": "BK0732",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "TDAY"
+          },
+          {
+            "code": "861468.EI",
+            "entityName": "主力排名",
+            "table": {
+              "创新药(指数)": [
+                "0"
+              ],
+              "半导体(板块)": [
+                "290"
+              ],
+              "证券Ⅱ(板块)": [
+                "857"
+              ],
+              "贵金属(板块)": [
+                "1026"
+              ],
+              "有色金属(板块)": [
+                "274"
+              ],
+              "headName": [
+                "2026-09-22 22:37"
+              ]
+            },
+            "rawTable": {
+              "创新药(指数)": [
+                "0"
+              ],
+              "半导体(板块)": [
+                "290"
+              ],
+              "证券Ⅱ(板块)": [
+                "857"
+              ],
+              "贵金属(板块)": [
+                "1026"
+              ],
+              "有色金属(板块)": [
+                "274"
+              ],
+              "headName": [
+                "2026-09-22 22:37"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZLPM_f469_0": "主力排名",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZLPM_f469_0",
+              "returnName": "主力排名",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "0",
+              "isGroup": false,
+              "returnSourceCode": "f469",
+              "returnSourceName": "主力排名",
+              "graph": "0",
+              "unit": "0",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "创新药(指数)": {
+                "entityId": "1003272607",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "创新药",
+                "shortName": "",
+                "secuCode": "861468",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "半导体(板块)": {
+                "entityId": "BK1036",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "半导体",
+                "shortName": "",
+                "matchWord": "半导体",
+                "secuCode": "BK1036",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "证券Ⅱ(板块)": {
+                "entityId": "BK0473",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "证券Ⅱ",
+                "shortName": "",
+                "matchWord": "证券",
+                "secuCode": "BK0473",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "贵金属(板块)": {
+                "entityId": "BK0732",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "贵金属",
+                "shortName": "",
+                "secuCode": "BK0732",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "有色金属(板块)": {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "861468.EI",
+              "90.BK1036",
+              "90.BK0473",
+              "90.BK0732",
+              "90.BK0478"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZLPM_f469_0",
+                "returnName": "主力排名",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "0",
+                "isGroup": false,
+                "returnSourceCode": "f469",
+                "returnSourceName": "主力排名",
+                "graph": "0",
+                "unit": "0",
+                "tableType": "2",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "创新药(指数)",
+              "半导体(板块)",
+              "证券Ⅱ(板块)",
+              "贵金属(板块)",
+              "有色金属(板块)"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "创新药(指数)等当前的主力排名",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "EntityLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1003272607",
+              "entityType": "INDEX",
+              "entityTypeCode": "DC_CONCEPT",
+              "entityTypeName": "东财概念指数",
+              "classCode": "006007",
+              "className": "DC_CONCEPT_INDEX",
+              "fullName": "创新药",
+              "shortName": "",
+              "secuCode": "861468",
+              "marketChar": ".EI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": true
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1003272607",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "创新药",
+                "shortName": "",
+                "secuCode": "861468",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "BK1036",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "半导体",
+                "shortName": "",
+                "matchWord": "半导体",
+                "secuCode": "BK1036",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0473",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "证券Ⅱ",
+                "shortName": "",
+                "matchWord": "证券",
+                "secuCode": "BK0473",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0732",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "贵金属",
+                "shortName": "",
+                "secuCode": "BK0732",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22 22:37": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          },
+          {
+            "code": "861468.EI",
+            "entityName": "主力净流入资金",
+            "table": {
+              "创新药(指数)": [
+                "-18.34亿元"
+              ],
+              "半导体(板块)": [
+                "-13.39亿元"
+              ],
+              "证券Ⅱ(板块)": [
+                "-9.539亿元"
+              ],
+              "贵金属(板块)": [
+                "-19.12亿元"
+              ],
+              "有色金属(板块)": [
+                "-2.021亿元"
+              ],
+              "headName": [
+                "2026-09-22 22:37"
+              ]
+            },
+            "rawTable": {
+              "创新药(指数)": [
+                "-1834376448.0"
+              ],
+              "半导体(板块)": [
+                "-1338705664.0"
+              ],
+              "证券Ⅱ(板块)": [
+                "-953897520.0"
+              ],
+              "贵金属(板块)": [
+                "-1911757872.0"
+              ],
+              "有色金属(板块)": [
+                "-202122240.0"
+              ],
+              "headName": [
+                "2026-09-22 22:37"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "ZLJE_f62_3": "主力净流入资金",
+              "headNameSub": "数据来源"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "ZLJE_f62_3",
+              "returnName": "主力净流入资金",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": false,
+              "dateGranularity": "DAY",
+              "defineType": -1,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f62",
+              "returnSourceName": "主力净额",
+              "graph": "1",
+              "unit": "1",
+              "tableType": "2",
+              "unitName": "元",
+              "unitDesc": "101:元:元",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "创新药(指数)": {
+                "entityId": "1003272607",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "创新药",
+                "shortName": "",
+                "secuCode": "861468",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              "半导体(板块)": {
+                "entityId": "BK1036",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "半导体",
+                "shortName": "",
+                "matchWord": "半导体",
+                "secuCode": "BK1036",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "证券Ⅱ(板块)": {
+                "entityId": "BK0473",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "证券Ⅱ",
+                "shortName": "",
+                "matchWord": "证券",
+                "secuCode": "BK0473",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "贵金属(板块)": {
+                "entityId": "BK0732",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "贵金属",
+                "shortName": "",
+                "secuCode": "BK0732",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "有色金属(板块)": {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "861468.EI",
+              "90.BK1036",
+              "90.BK0473",
+              "90.BK0732",
+              "90.BK0478"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "ZLJE_f62_3",
+                "returnName": "主力净流入资金",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": false,
+                "dateGranularity": "DAY",
+                "defineType": -1,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f62",
+                "returnSourceName": "主力净额",
+                "graph": "1",
+                "unit": "1",
+                "tableType": "2",
+                "unitName": "元",
+                "unitDesc": "101:元:元",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "创新药(指数)",
+              "半导体(板块)",
+              "证券Ⅱ(板块)",
+              "贵金属(板块)",
+              "有色金属(板块)"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "创新药(指数)等当前的主力净流入资金",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "EntityLeftTimeTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1003272607",
+              "entityType": "INDEX",
+              "entityTypeCode": "DC_CONCEPT",
+              "entityTypeName": "东财概念指数",
+              "classCode": "006007",
+              "className": "DC_CONCEPT_INDEX",
+              "fullName": "创新药",
+              "shortName": "",
+              "secuCode": "861468",
+              "marketChar": ".EI",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": true
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1003272607",
+                "entityType": "INDEX",
+                "entityTypeCode": "DC_CONCEPT",
+                "entityTypeName": "东财概念指数",
+                "classCode": "006007",
+                "className": "DC_CONCEPT_INDEX",
+                "fullName": "创新药",
+                "shortName": "",
+                "secuCode": "861468",
+                "marketChar": ".EI",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": true
+              },
+              {
+                "entityId": "BK1036",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "半导体",
+                "shortName": "",
+                "matchWord": "半导体",
+                "secuCode": "BK1036",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0473",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "证券Ⅱ",
+                "shortName": "",
+                "matchWord": "证券",
+                "secuCode": "BK0473",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0732",
+                "entityType": "BLOCK",
+                "entityTypeCode": "3",
+                "entityTypeName": "财富通行业板块2级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "贵金属",
+                "shortName": "",
+                "secuCode": "BK0732",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "BK0478",
+                "entityType": "BLOCK",
+                "entityTypeCode": "2",
+                "entityTypeName": "财富通行业板块1级",
+                "classCode": "005002",
+                "className": "行业板块",
+                "publishCode": "",
+                "fullName": "有色金属",
+                "shortName": "",
+                "secuCode": "BK0478",
+                "market": "90",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22 22:37": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          }
+        ],
+        "condition": {
+          "search_data_task_2": [
+            "创新药创新药",
+            "主力净流入资金(合计)主力排名主力净流入资金",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_4": [
+            "半导体",
+            "主力排名主力净流入资金主力净流入资金(合计)",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_0": [
+            "证券Ⅱ",
+            "主力排名主力净流入资金主力净流入资金(合计)",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_3": [
+            "贵金属",
+            "主力排名主力净流入资金主力净流入资金(合计)",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_1": [
+            "有色金属",
+            "主力排名主力净流入资金主力净流入资金(合计)",
+            "2026-09-22至2026-09-22"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "BK1106",
+            "entityType": "BLOCK",
+            "entityTypeCode": "BLOCK",
+            "entityTypeName": "概念板块",
+            "classCode": "005003",
+            "className": "概念板块",
+            "publishCode": "",
+            "fullName": "创新药",
+            "shortName": "",
+            "matchWord": "创新药",
+            "secuCode": "BK1106",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1003272607",
+            "entityType": "INDEX",
+            "entityTypeCode": "DC_CONCEPT",
+            "entityTypeName": "东财概念指数",
+            "classCode": "006007",
+            "className": "DC_CONCEPT_INDEX",
+            "fullName": "创新药",
+            "shortName": "",
+            "secuCode": "861468",
+            "marketChar": ".EI",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": true
+          },
+          {
+            "entityId": "BK1036",
+            "entityType": "BLOCK",
+            "entityTypeCode": "3",
+            "entityTypeName": "财富通行业板块2级",
+            "classCode": "005002",
+            "className": "行业板块",
+            "publishCode": "",
+            "fullName": "半导体",
+            "shortName": "",
+            "matchWord": "半导体",
+            "secuCode": "BK1036",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "BK0473",
+            "entityType": "BLOCK",
+            "entityTypeCode": "3",
+            "entityTypeName": "财富通行业板块2级",
+            "classCode": "005002",
+            "className": "行业板块",
+            "publishCode": "",
+            "fullName": "证券Ⅱ",
+            "shortName": "",
+            "matchWord": "证券",
+            "secuCode": "BK0473",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "BK0732",
+            "entityType": "BLOCK",
+            "entityTypeCode": "3",
+            "entityTypeName": "财富通行业板块2级",
+            "classCode": "005002",
+            "className": "行业板块",
+            "publishCode": "",
+            "fullName": "贵金属",
+            "shortName": "",
+            "secuCode": "BK0732",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "BK0478",
+            "entityType": "BLOCK",
+            "entityTypeCode": "2",
+            "entityTypeName": "财富通行业板块1级",
+            "classCode": "005002",
+            "className": "行业板块",
+            "publishCode": "",
+            "fullName": "有色金属",
+            "shortName": "",
+            "secuCode": "BK0478",
+            "market": "90",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "03536f5edb574440a02dec65bdf19532"
+}

@@ -1,0 +1,456 @@
+{
+  "success": true,
+  "status": 0,
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "requestId": null,
+    "message": "OK",
+    "status": 0,
+    "code": 0,
+    "data": {
+      "protocolType": "SEARCH_DATA",
+      "id": "b1bff2c8-786a-4a0a-ae6a-d693edb00a4e",
+      "refSeq": null,
+      "keyEntityList": null,
+      "searchDataResultDTO": {
+        "questionId": "cae872e7-4902-4dd7-96ed-8fde87e13d45",
+        "dataTableDTOList": [
+          {
+            "code": "510880.SH",
+            "entityName": "2026-09-22 22:37",
+            "hsjDelay": false,
+            "table": {
+              "5RDDX_f91_3": [
+                "0.275",
+                "-0.943",
+                "-0.003"
+              ],
+              "10RDDX_f94_3": [
+                "-0.954",
+                "-1.343",
+                "-0.035"
+              ],
+              "3RDDX_f396_3": [
+                "0.096",
+                "-0.386",
+                "0.005"
+              ],
+              "DRDDX_f88_3": [
+                "0.222",
+                "-0.011",
+                "-0.003"
+              ],
+              "headName": [
+                "华泰柏瑞上证红利ETF(510880.SH)",
+                "易方达中证红利ETF(515180.SH)",
+                "中证红利(000922.SH)(指数)"
+              ]
+            },
+            "rawTable": {
+              "5RDDX_f91_3": [
+                "0.275",
+                "-0.943",
+                "-0.003"
+              ],
+              "10RDDX_f94_3": [
+                "-0.954",
+                "-1.343",
+                "-0.035"
+              ],
+              "3RDDX_f396_3": [
+                "0.096",
+                "-0.386",
+                "0.005"
+              ],
+              "DRDDX_f88_3": [
+                "0.222",
+                "-0.011",
+                "-0.003"
+              ],
+              "headName": [
+                "华泰柏瑞上证红利ETF(510880.SH)",
+                "易方达中证红利ETF(515180.SH)",
+                "中证红利(000922.SH)(指数)"
+              ]
+            },
+            "truncateRawTable": {},
+            "nameMap": {
+              "5RDDX_f91_3": "5日DDX",
+              "headNameSub": "数据来源",
+              "10RDDX_f94_3": "10日DDX",
+              "3RDDX_f396_3": "3日DDX",
+              "DRDDX_f88_3": "当日DDX",
+              "securityName": "股票名称"
+            },
+            "headNameMap": {},
+            "field": {
+              "returnCode": "5RDDX_f91_3",
+              "returnName": "5日DDX",
+              "classCode": "007001",
+              "checkedRelatedIndicators": true,
+              "startDate": "2026-09-22 00:00:00",
+              "endDate": "2026-09-22 00:00:00",
+              "fuzzy": true,
+              "defineType": 0,
+              "isLoopN": false,
+              "apiCode": "3",
+              "isGroup": false,
+              "returnSourceCode": "f91",
+              "returnSourceName": "5日DDX",
+              "graph": "2",
+              "unit": "1",
+              "tableType": "2",
+              "dcsdField": false
+            },
+            "entityName2TagMap": {
+              "华泰柏瑞上证红利ETF(510880.SH)": {
+                "entityId": "1000009420",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "上证红利交易型开放式指数证券投资基金",
+                "shortName": "华泰柏瑞上证红利ETF",
+                "matchWord": "红利ETF",
+                "secuCode": "510880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "易方达中证红利ETF(515180.SH)": {
+                "entityId": "1002019817",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "易方达中证红利交易型开放式指数证券投资基金",
+                "shortName": "易方达中证红利ETF",
+                "matchWord": "515180",
+                "secuCode": "515180",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              "中证红利(000922.SH)(指数)": {
+                "entityId": "1000157392",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006010",
+                "className": "中证指数",
+                "publishCode": "",
+                "fullName": "中证红利指数",
+                "shortName": "中证红利",
+                "matchWord": "000922",
+                "secuCode": "000922",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            },
+            "entityCodes": [
+              "510880.SH",
+              "515180.SH",
+              "000922.SH"
+            ],
+            "macroAttributeExcelMap": {},
+            "fieldSet": [
+              {
+                "returnCode": "3RDDX_f396_3",
+                "returnName": "3日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f396",
+                "returnSourceName": "3日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "10RDDX_f94_3",
+                "returnName": "10日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f94",
+                "returnSourceName": "10日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "DRDDX_f88_3",
+                "returnName": "当日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f88",
+                "returnSourceName": "当日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              },
+              {
+                "returnCode": "5RDDX_f91_3",
+                "returnName": "5日DDX",
+                "classCode": "007001",
+                "checkedRelatedIndicators": true,
+                "startDate": "2026-09-22 00:00:00",
+                "endDate": "2026-09-22 00:00:00",
+                "fuzzy": true,
+                "defineType": 0,
+                "isLoopN": false,
+                "apiCode": "3",
+                "isGroup": false,
+                "returnSourceCode": "f91",
+                "returnSourceName": "5日DDX",
+                "graph": "2",
+                "unit": "1",
+                "tableType": "2",
+                "dcsdField": false
+              }
+            ],
+            "dataTableType": "NORM_TABLE",
+            "rowInfo": {},
+            "colInfo": {},
+            "indicatorOrder": [
+              "5RDDX_f91_3",
+              "10RDDX_f94_3",
+              "3RDDX_f396_3",
+              "DRDDX_f88_3"
+            ],
+            "tipFlags": [
+              "0"
+            ],
+            "dataType": "行情数据",
+            "title": "华泰柏瑞上证红利ETF(510880.SH)等当前的5日DDX、10日DDX等",
+            "hasThumbnail": true,
+            "indicatorLimited": false,
+            "dataPositionEnum": "MetricLeftEntityTop",
+            "orderCol": {},
+            "jumpUrlList": [],
+            "dataTypeEnum": "HQ",
+            "dateRuleSet": [],
+            "freqConvert": false,
+            "deleteInfo": [],
+            "macroCodeMap": {},
+            "entityTagDTO": {
+              "entityId": "1000009420",
+              "entityType": "FUND",
+              "entityTypeCode": "059002",
+              "entityTypeName": "开放式基金",
+              "classCode": "003002",
+              "className": "场内ETF基金（非货币/QDII）",
+              "publishCode": "",
+              "fullName": "上证红利交易型开放式指数证券投资基金",
+              "shortName": "华泰柏瑞上证红利ETF",
+              "matchWord": "红利ETF",
+              "secuCode": "510880",
+              "market": "1",
+              "marketChar": ".SH",
+              "correct": false,
+              "hasKLine": false,
+              "valuation": false,
+              "relatedEntity": false
+            },
+            "entityTagDTOList": [
+              {
+                "entityId": "1000009420",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "上证红利交易型开放式指数证券投资基金",
+                "shortName": "华泰柏瑞上证红利ETF",
+                "matchWord": "红利ETF",
+                "secuCode": "510880",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1002019817",
+                "entityType": "FUND",
+                "entityTypeCode": "059002",
+                "entityTypeName": "开放式基金",
+                "classCode": "003002",
+                "className": "场内ETF基金（非货币/QDII）",
+                "publishCode": "",
+                "fullName": "易方达中证红利交易型开放式指数证券投资基金",
+                "shortName": "易方达中证红利ETF",
+                "matchWord": "515180",
+                "secuCode": "515180",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              },
+              {
+                "entityId": "1000157392",
+                "entityType": "INDEX",
+                "entityTypeCode": "INDEX",
+                "entityTypeName": "INDEX",
+                "classCode": "006010",
+                "className": "中证指数",
+                "publishCode": "",
+                "fullName": "中证红利指数",
+                "shortName": "中证红利",
+                "matchWord": "000922",
+                "secuCode": "000922",
+                "market": "1",
+                "marketChar": ".SH",
+                "correct": false,
+                "hasKLine": false,
+                "valuation": false,
+                "relatedEntity": false
+              }
+            ],
+            "indexTable": false,
+            "edbThirdData": false,
+            "dataUpdate": {
+              "2026-09-22 22:37": false
+            },
+            "supportsTimeSeries": false,
+            "estimatedTokens": 0,
+            "summaryTips": {
+              "periodicalReport": null
+            },
+            "nestEntityListMap": {},
+            "excelTimeTruncate": false,
+            "frontendEntityName": "",
+            "frontendEntityCode": "",
+            "frontendTitle": "",
+            "frontendDesc": "",
+            "indicatorCount": 0,
+            "fieldParameterStr": "",
+            "tdayEnum": "NORMAL"
+          }
+        ],
+        "condition": {
+          "search_data_task_0": [
+            "上证红利交易型开放式指数证券投资基金",
+            "5日DDX10日DDX3日DDX当日DDX",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_2": [
+            "易方达中证红利交易型开放式指数证券投资基金",
+            "5日DDX10日DDX3日DDX当日DDX",
+            "2026-09-22至2026-09-22"
+          ],
+          "search_data_task_1": [
+            "中证红利指数",
+            "5日DDX10日DDX3日DDX当日DDX",
+            "2026-09-22至2026-09-22"
+          ]
+        },
+        "entityTagDTOList": [
+          {
+            "entityId": "1000009420",
+            "entityType": "FUND",
+            "entityTypeCode": "059002",
+            "entityTypeName": "开放式基金",
+            "classCode": "003002",
+            "className": "场内ETF基金（非货币/QDII）",
+            "publishCode": "",
+            "fullName": "上证红利交易型开放式指数证券投资基金",
+            "shortName": "华泰柏瑞上证红利ETF",
+            "matchWord": "红利ETF",
+            "secuCode": "510880",
+            "market": "1",
+            "marketChar": ".SH",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1002019817",
+            "entityType": "FUND",
+            "entityTypeCode": "059002",
+            "entityTypeName": "开放式基金",
+            "classCode": "003002",
+            "className": "场内ETF基金（非货币/QDII）",
+            "publishCode": "",
+            "fullName": "易方达中证红利交易型开放式指数证券投资基金",
+            "shortName": "易方达中证红利ETF",
+            "matchWord": "515180",
+            "secuCode": "515180",
+            "market": "1",
+            "marketChar": ".SH",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          },
+          {
+            "entityId": "1000157392",
+            "entityType": "INDEX",
+            "entityTypeCode": "INDEX",
+            "entityTypeName": "INDEX",
+            "classCode": "006010",
+            "className": "中证指数",
+            "publishCode": "",
+            "fullName": "中证红利指数",
+            "shortName": "中证红利",
+            "matchWord": "000922",
+            "secuCode": "000922",
+            "market": "1",
+            "marketChar": ".SH",
+            "correct": false,
+            "hasKLine": false,
+            "valuation": false,
+            "relatedEntity": false
+          }
+        ]
+      },
+      "entityName": null,
+      "message": null,
+      "tableTruncated": false
+    },
+    "stack": null
+  },
+  "requestId": "6ce4910b921e4ad796c746ef8c76543f"
+}

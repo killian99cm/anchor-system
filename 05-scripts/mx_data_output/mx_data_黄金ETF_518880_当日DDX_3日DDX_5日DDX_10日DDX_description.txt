@@ -1,0 +1,8 @@
+金融数据查询结果说明
+========================================
+查询内容: 黄金ETF 518880 当日DDX 3日DDX 5日DDX 10日DDX
+数据文件路径: 05-scripts\mx_data_output\mx_data_黄金ETF_518880_当日DDX_3日DDX_5日DDX_10日DDX.xlsx
+描述文件路径: 05-scripts\mx_data_output\mx_data_黄金ETF_518880_当日DDX_3日DDX_5日DDX_10日DDX_description.txt
+数据行数: 1
+表数量: 1
+Sheet 列表: 华安黄金ETF(518880.SH)当前的5日DDX、10日DDX等

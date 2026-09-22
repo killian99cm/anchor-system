@@ -36,11 +36,67 @@ MANUAL = latest_manual()
 TEXT = MANUAL.read_text(encoding="utf-8")
 
 _results = []
+_skips = []
 
 
 def check(name, cond, detail=""):
     _results.append((name, bool(cond), detail))
     print(f"{'✅' if cond else '❌'} {name}" + (f" — {detail}" if detail else ""))
+
+
+def skip(name, reason):
+    """**第三种状态：无法判定**（⛔ 既不是通过、也不是不通过）。
+
+    v4.5.17 新增，动机是一桩实发：§I 的板块榜断言**只捕获异常**，
+    而东财限流时的长相是 **HTTP 200 + 0 行** —— 不抛异常。
+    于是断言失败，报文却写着「宇宙样本 0 个 ⇒ 探针自检」，
+    **把「取数失败」渲染成了「代码有问题」**（本仓「我没取到 ≠ 它没有」家族）。
+
+    ⇒ 一条**看起来永远红的**断言会被学会忽略（报告标准 v2.1 判例），
+      故此处显式区分三态：通过 / **无法判定（附原因）** / 不通过。
+    """
+    _skips.append((name, reason))
+    print(f"⏭ {name} — **无法判定**：{reason}")
+
+
+def _ib_skip_reason(names) -> "str | None":
+    """§I-b 的**三态判据**（`inbox/144` R1）：源返回 **0 行** ⇒ 无法判定；有行 ⇒ 交给断言判。
+
+    🔴 v4.5.17：**抽成函数是为了可测** —— 144 §3 验收第 1、2 条要求**一对反向断言**：
+      ① 源不可达（0 行）⇒ **SKIP**，⛔ 不是 FAIL
+      ② **源可达但数据错**（非空但不对）⇒ **必须 FAIL**
+    ⛔ **只证 ① 是不够的** —— 那可能把闸门改成**恒放行**（本仓 v4.5.5/6/7 连续三次教训：
+      不测「原写法确实会错」的测试，可能在「护栏根本没跑」的假阳性下通过）。
+    ⇒ 判据只看 **「取到几行」**，**完全不看内容对错**：
+      空 ⇒ 不知道；非空 ⇒ 内容对不对由断言说了算。这就是 ② 成立的结构性理由。
+    """
+    if len(names) == 0:
+        return ("板块榜活源本次**返回 0 行**（东财 IP 级限流，HTTP 200 但不报错）"
+                "⇒ I5–I8 全部**无法判定**。⛔ 这既不是「通过」也不是「代码坏了」——"
+                "复跑前请先确认该端点有数据")
+    return None
+
+
+def _ib_placehold(items, done, reason, emit=None) -> list:
+    """§I-b **中途失败**时的占位：把尚未发出的项逐个**登记 + 报出**，返回新占位的项名。
+
+    🔴 v4.5.17：**抽成函数是为了可测** —— 本机制初版**有 bug，而套件抓不到它**：
+       占位 `skip()` **没有把项名登记进 `done`** ⇒ 一旦活源在 §I-b 中途失败，
+       紧随其后的 I8b（占位完备性检查）会把「**源抖了一下**」判成
+       「**代码坏了**」—— 恰恰就是本单（144）要治的那个病。
+       🔴 抓到它的是一个**独立探针**（隔离语境下把本机制单独复现一遍）：
+          ⛔ **读代码看不出来**，`_IB_DONE.add` 少了那一行的症状只在**真跑**时才现形。
+       ⇒ 结论与前几次一致（v4.5.7 K2）：**记教训不是防线，改档案形状才是** ——
+         所以本机制提为**纯函数**，`emit` 可注入，从而能被下面的 N41–N43 **真断言**。
+    """
+    _emit = emit or skip
+    placed = []
+    for nm in items:
+        if nm not in done:
+            done.add(nm)                      # 🔴 占位**也算登记**（缺此行 ⇒ I8b 假红）
+            _emit(f"{nm}（**未跑到**）", reason)
+            placed.append(nm)
+    return placed
 
 
 def run_pre_trade(*args):
@@ -90,8 +146,19 @@ check("C1 删掉「A2 优先于」→ a2_priority_over_watchlist 必须 WARN",
       "a2_priority_over_watchlist" in w2, f"warns={w2}")
 
 _r3, w3 = extract(TEXT.replace("A2 不成立", "【已删除】"))
-check("C2 删掉 watchlist 判据「A2 不成立」→ 必须 WARN",
-      "watchlist_confirm" in w3, f"warns={w3}")
+# v4.5.17：旧实现把**两个键合并成一个告警名** `warns.append("watchlist_confirm")`
+#   ⇒ 谁坏了、坏成什么样，从告警名上**看不出来**。注册表拆为两个键、各自实名告警。
+#   ⇒ 断言随之改为**精确键名**（⛔ 不放宽为子串匹配 —— 那会让「名字错了」也通过）。
+check("C2 删掉 watchlist 判据「A2 不成立」→ 必须 WARN（精确键名）",
+      "watchlist_confirm_requires_a2_pass" in w3, f"warns={w3}")
+# 🔴 反向断言：旧合并告警名**不得**再出现（钉住「合并名」这个形态本身已消失）。
+#    ⚠️ 这里用的是**列表精确成员**判断 —— 若谁把它改回 `"watchlist_confirm" in s for s in w3`
+#    这类**子串**写法，本断言会失守，故保留精确成员形式。
+check("C2b 反向·旧合并告警名 'watchlist_confirm' 不得再作为元素出现",
+      "watchlist_confirm" not in w3, f"warns={w3}")
+# 同一替换下 `收盘价 ≥ 当日 MA5` **仍在** ⇒ MA 周期键**不得**误报
+check("C2c 哨兵各管各的：MA 周期键不得因邻键哨兵消失而误报",
+      "watchlist_confirm_ma_period" not in w3, f"warns={w3}")
 
 # ══════════════════════════════════════════════════════════════════
 print("\n########## D. 门禁：A2 追红日禁买 ##########")
@@ -362,9 +429,35 @@ check("I4 板块查不到 ⇒ 判定为不可判（不得当作『未命中』�
       (_hit, _det) == (None, False), f"得 {_hit},{_det}")
 
 # ---- I-b 🔴 反向断言：证明「双宇宙 + 分页」是**必需**而非装饰 ----
+#
+# 🔴 v4.5.17（`inbox/144` §3 验收 5「⛔ 不得虚增通过数」的**反向**情形）：
+#    本块是**全仓唯一**的直连活源断言点（其余四个取数测试文件全部走离线夹具
+#    —— `_board_page` / `_http` / `_em_json` 被 monkeypatch，不碰网络）。
+#    但原实现有个**比虚增更隐蔽**的洞：412/438/444 任一处**中途**抛异常 ⇒
+#    `except` 只 print 一行，而 I5–I8 **既不在 `_results` 也不在 `_skips`**
+#    ⇒ 它们**从分母里静默消失**。少了几项没人会去数，多了几项一眼能看出来。
+#    ⇒ 改为**预登记全部项名，异常时把尚未发出的项逐个 `skip()`**：
+#      三项必占位，位置永不空缺（"没跑到" 与 "跑了但没过" 必须长得不一样）。
+_IB_ITEMS = ("I5", "I5b", "I6", "I7", "I8")
+_IB_DONE: set = set()
+_IB_SKIP = None
+
+
+def _ib(name, cond, detail=""):
+    """§I-b 专用断言器：源断 ⇒ 记 **skip**；源通 ⇒ 交给 `check` 判。
+
+    ⛔ 判据**只看「取到几行」，完全不看内容对错** —— 这正是 144 验收②成立的理由：
+       空 ⇒ 不知道（skip）；非空 ⇒ 内容对不对**由断言说了算**（该 FAIL 就 FAIL）。
+    """
+    _IB_DONE.add(name.split(" ")[0])
+    return skip(name, _IB_SKIP) if _IB_SKIP else check(name, cond, detail)
+
+
 try:
     _old_only_t2 = fp.sector_movers(top=500, pz=500)      # 旧实现：单宇宙 + 单页
     _old_names = {r["name"] for r in (_old_only_t2.get("gainers") or []) + (_old_only_t2.get("losers") or [])}
+    _IB_SKIP = _ib_skip_reason(_old_names)
+
     # 🔴 **探针订正（2026-09-21）**：必须**严格**匹配 `s in n`，⛔ 不得双向子串。
     #    原写法 `any(s in n or n in s)` 的 `n in s` 方向会把**行业板块「电池」**
     #    判成**概念主题「固态电池」**（`'电池' in '固态电池' == True`）、
@@ -372,37 +465,60 @@ try:
     #    只因那两个行业板块恰好不在当日涨跌幅前 100 名窗口内；9/21 它们进了窗口
     #    ⇒ 断言翻红。**红的不是实现，是探针**（同族：memory「验证探针本身未经校验」）。
     _old_found = [s for s in ("固态电池", "人形机器人", "智能驾驶") if s in _old_names]
-    check("I5 反向断言：旧实现（仅 t:2 行业宇宙）**找不到** 3 个概念主题中的任何一个"
-          "（**严格匹配**）",
-          len(_old_found) == 0,
-          f"旧实现却找到了 {_old_found} —— 若不为空则本修复无必要，须复核")
+    _ib("I5 反向断言：旧实现（仅 t:2 行业宇宙）**找不到** 3 个概念主题中的任何一个"
+        "（**严格匹配**）",
+        len(_old_found) == 0,
+        f"旧实现却找到了 {_old_found} —— 若不为空则本修复无必要，须复核")
     # 🔴 反向断言的**反向断言**：证明上面的「找不到」不是探针查了个空集合而空手而归。
     #    两部分：① 确定性证明宽松匹配确实会误判（纯字符串运算，不依赖行情）
     #           ② 非空性 —— 宇宙样本必须真有内容，否则 ① 的结论落在空集上仍是假的。
-    check("I5b 🔴 探针自检：① 证明 `n in s` 方向确实误判"
-          "（`'电池' in '固态电池'` 为真、`'机器人' in '人形机器人'` 为真）"
-          "② 且 t:2 宇宙样本非空（≥100）⇒「严格匹配找不到」是**真结论**而非空集假象",
-          ("电池" in "固态电池") and ("机器人" in "人形机器人") and len(_old_names) >= 100,
-          f"① 误判机制成立；② 宇宙样本 {len(_old_names)} 个")
+    _ib("I5b 🔴 探针自检：① 证明 `n in s` 方向确实误判"
+        "（`'电池' in '固态电池'` 为真、`'机器人' in '人形机器人'` 为真）"
+        "② 且 t:2 宇宙样本非空（≥100）⇒「严格匹配找不到」是**真结论**而非空集假象",
+        ("电池" in "固态电池") and ("机器人" in "人形机器人") and len(_old_names) >= 100,
+        f"① 误判机制成立；② 宇宙样本 {len(_old_names)} 个")
 
     _t2rows, _t2total = fp._sector_rows(1, 500, "probe t:2")
-    check("I6 反向断言：`pz=500` **实际只回 100 行**（total=496）"
-          "⇒ v4.4.12 记的『改 pz=500 覆盖全集』**这句话不成立**",
-          len(_t2rows) == 100 and _t2total >= 400,
-          f"实回 {len(_t2rows)} 行 / total={_t2total} —— 若真回 500 行，本反向断言失效，须复核")
+    _ib("I6 反向断言：`pz=500` **实际只回 100 行**（total=496）"
+        "⇒ v4.4.12 记的『改 pz=500 覆盖全集』**这句话不成立**",
+        len(_t2rows) == 100 and _t2total >= 400,
+        f"实回 {len(_t2rows)} 行 / total={_t2total} —— 若真回 500 行，本反向断言失效，须复核")
 
     _all = fp.board_movers_all()
     _u = _all.get("universes") or {}
-    check("I7 新实现取到**两套宇宙的全量**（行业≥400 且 概念≥400）",
-          _u.get("行业板块", {}).get("fetched", 0) >= 400 and
-          _u.get("概念板块", {}).get("fetched", 0) >= 400,
-          f"实得 {_u}")
+    _ib("I7 新实现取到**两套宇宙的全量**（行业≥400 且 概念≥400）",
+        _u.get("行业板块", {}).get("fetched", 0) >= 400 and
+        _u.get("概念板块", {}).get("fetched", 0) >= 400,
+        f"实得 {_u}")
     _names = set((_all.get("by_name") or {}).keys())
     _now_found = [s for s in ("固态电池", "人形机器人", "智能驾驶", "有色金属") if s in _names]
-    check("I8 新实现能同时命中**两套宇宙**的主题（概念 3 个 ＋ 行业 1 个）",
-          len(_now_found) == 4, f"命中 {_now_found}")
+    _ib("I8 新实现能同时命中**两套宇宙**的主题（概念 3 个 ＋ 行业 1 个）",
+        len(_now_found) == 4, f"命中 {_now_found}")
 except Exception as _e:                                    # noqa: BLE001
-    print(f"  [SKIP] I5–I8 需联网取板块榜，本次跳过：{type(_e).__name__} {_e}")
+    # 🔴 **中途失败**（如 412 成功、444 抛异常）：尚未发出的项必须**逐个占位**，
+    #    ⛔ 不得让它们从分母里消失 —— 否则「少了几项」比「多了几项」更难发现。
+    _ib_placehold(_IB_ITEMS, _IB_DONE,
+                  f"§I-b 活源中途失败：{type(_e).__name__} {_e}")
+
+# 🔴 **占位完备性（双向）**：无论走哪条分支（活源通 / 活源断 / 中途抛异常），
+#    五项**都必须占到位**，且**不得冒出计划外的第六项**。
+#
+#    ⚠️ **本断言自己被抓过一次 bug**（2026-09-22）：初版 `except` 里的占位 `skip()`
+#       **没有登记进 `_IB_DONE`** ⇒ 中途失败时本项会**误报红**，把「源抖了一下」
+#       说成「代码坏了」—— 恰恰就是本单（144）要治的那个病。
+#       抓到它的是我另跑的一个**独立探针**（把本节的占位机制在隔离语境下单独复现）：
+#       ⛔ 只读代码是看不出这个的，**机制必须真跑才作数**。
+#
+#    ⇒ 现在两个方向都断言：
+#       ① `_IB_ITEMS ⊆ _IB_DONE` —— 登记了却没发出（块被执行到一半就断了 / 有人删了 `_ib` 调用）
+#       ② `_IB_DONE ⊆ _IB_ITEMS` —— 发出了却没登记（**relay 病史 3 次的同一族**：
+#          新增一项而清单未同步 ⇒ 占位机制对新项静默失效）
+_missing = [n for n in _IB_ITEMS if n not in _IB_DONE]
+_extra = [n for n in sorted(_IB_DONE) if n not in _IB_ITEMS]
+check("I8b §I-b **双向**占位完备：① 计划内五项全发出 ② 无计划外项"
+      "（活源通/断/中途异常三态都不许从分母里消失；新项漏登记同样在此变红）",
+      not _missing and not _extra,
+      f"未发 {_missing} / 计划外 {_extra}；实发 {sorted(_IB_DONE)}")
 
 # ---- I-c 🔴 MA5 口径歧义：两解必须是**可分辨的不同值** ----
 _klt = [{"date": f"2026-09-{10+i:02d}", "close": c}
@@ -999,13 +1115,387 @@ check("M9 🔴 §M 全程**未写任何文件**（只读手册与 JSON —— �
       True, "本节无写操作")
 
 # ══════════════════════════════════════════════════════════════════
+print("\n########## N. E4 卫星月净投入·三重缺陷 ＋ 阈值单一真源（v4.5.17） ##########")
+# 背景（`_handoff/inbox/146`）：2026-09-22 实发 —— E4 闸门对**全部表内卫星标的恒拦**，
+# 且 10/1 月度重置后仍恒拦。三重缺陷：
+#   ① 阈值被解析成 ¥1（真值 ¥1,500，**差 1500 倍**）
+#   ② `"" in k` 恒真 ⇒ 无名记录虚增 ¥4,000
+#   ③「净投入」不扣赎回 ⇒ **连正负号都相反**（报 +6,300，真值净回笼 −1,174）
+# 本节**每条都带反向断言**（本仓惯例：不只测「改对了」，还测「原写法确实会错」）。
+
+from extract_rule_contract import extract_full as _extract_full  # noqa: E402
+import rule_keys as _rk  # noqa: E402
+import pre_trade_check as _ptc  # noqa: E402
+
+# ── N-a 🔴 A1 反向：真定义**之前**放干扰文本 ⇒ 必须取真值，且 ≠ 干扰值 ──
+# 直接复现事故形态：手册 §4.2.1 正文里那句「…现金出口被 **§1.4** 堵死」排在 §4.3 之前。
+_FAKE = (
+    "## §4.2.1 压舱石层适用性\n"
+    "> 改买低配层又撞 A2、E1、E4；现金出口被 **§1.4** 堵死。还要守 §1.3 与 §4.3。\n"
+    "\n"
+    "## §4.3 卫星层闸门\n"
+    "- **E1 单只卫星市值 ≤¥3,000**（示例）\n"
+    "- **E4 卫星月净投入 ≤¥1,500**：卫星层连续 2 月净贡献为负 → 下月额度砍半\n"
+)
+_r_fake, _w_fake, _s_fake, _rej_fake, _wd_fake = _extract_full(_FAKE)
+check("N1 🔴 A1 反向·干扰文本在前 ⇒ 锚定提取必须取**真定义值** ¥1,500",
+      _r_fake.get("e4_monthly_net_cap") == 1500,
+      f"实得 {_r_fake.get('e4_monthly_net_cap')!r}（若为 1 即旧『全文首匹配』病复发）")
+check("N2 🔴 A1 反向·且**必须不等于干扰值** 1（取到 1 就是命中了 §1.4）",
+      _r_fake.get("e4_monthly_net_cap") != 1,
+      f"实得 {_r_fake.get('e4_monthly_net_cap')!r}")
+_src_e4 = _s_fake.get("e4_monthly_net_cap") or {}
+check("N3 A1 来源留痕：E4 须标 `anchored`，且**原文指向 E4 那一行**"
+      "（⛔ 不得指向 §1.4 干扰行 —— 断言原文内容而非硬编码行号，行号是夹具的意外属性）",
+      _src_e4.get("tier") == "anchored"
+      and "E4 卫星月净投入" in (_src_e4.get("text") or "")
+      and "§1.4" not in (_src_e4.get("text") or "")
+      and (_src_e4.get("line") or 0) > 0,
+      f"tier={_src_e4.get('tier')} line={_src_e4.get('line')} text={(_src_e4.get('text') or '')[:40]!r}")
+# 🔴 反向·钉死「旧写法确实会错」：用**旧正则 + 全文首匹配**在同一段文本上跑
+_OLD_PAT = r"E4[^\n]{0,24}?¥?\s*([\d,，]+)"
+_m_old = re.search(_OLD_PAT, _FAKE)
+_old_val = int(_m_old.group(1).replace(",", "").replace("，", "")) if _m_old else None
+check("N4 🔴 A1 反向·**复现旧写法**：同一段文本上『全文首匹配』确实得到 **1**"
+      "（⇒ 证明锚定不是装饰：无它本测试必失败）",
+      _old_val == 1 and _r_fake.get("e4_monthly_net_cap") != _old_val,
+      f"旧写法得 {_old_val!r} / 新写法得 {_r_fake.get('e4_monthly_net_cap')!r}")
+
+# ── N-b 🔴 A2 反向：抽到越界值 ⇒ 必须**拒收**并回退 builtin ──
+_FAKE_BAD = "## §4.3 卫星层闸门\n- **E4 卫星月净投入 ≤¥1**：故意写成坏值\n"
+_r_bad, _w_bad, _s_bad, _rej_bad, _wd_bad = _extract_full(_FAKE_BAD)
+check("N5 🔴 A2 反向·抽到越界值 ¥1 ⇒ **warns 必须非空**"
+      "（改回「只修正则、不加区间断言」本项必失败）",
+      "e4_monthly_net_cap" in _w_bad, f"warns={_w_bad}")
+check("N6 🔴 A2 越界值必须**拒收并回退 builtin**，⛔ 不得让 1 进入契约",
+      _r_bad.get("e4_monthly_net_cap") == 1500, f"实得 {_r_bad.get('e4_monthly_net_cap')!r}")
+check("N7 A2 拒收须落 `sanity_rejected` 且带**原值与区间**（可审计，非只报一句话）",
+      (_rej_bad.get("e4_monthly_net_cap") or {}).get("value") == 1
+      and (_rej_bad.get("e4_monthly_net_cap") or {}).get("range") == [100, 500000],
+      f"实得 {_rej_bad.get('e4_monthly_net_cap')}")
+
+# ── N-c 单一真源：改一处 ⇒ 三处跟随（「以便未来维护」的核验点） ──
+check("N8 提取侧默认值与注册表同源（E4 = 1500）",
+      _rk.defaults()["e4_monthly_net_cap"] == 1500,
+      f"实得 {_rk.defaults().get('e4_monthly_net_cap')!r}")
+check("N9 🔴 注册表 → pre_trade 内置：`e4_sat_monthly_net` == 1500（经 `internal` 派生，无需手抄）",
+      _ptc.BUILTIN_THRESHOLDS.get("e4_sat_monthly_net") == 1500,
+      f"实得 {_ptc.BUILTIN_THRESHOLDS.get('e4_sat_monthly_net')!r}")
+check("N10 🔴 `_KEY_MAP` 翻译层**由注册表派生**（⛔ 不再手工维护两份键名表）",
+      _ptc._KEY_MAP.get("e4_monthly_net_cap") == "e4_sat_monthly_net",
+      f"实得 {_ptc._KEY_MAP.get('e4_monthly_net_cap')!r}")
+check("N11 🔴 `_NUMERIC_KEYS` **只含数值键** —— 整表入内会让 `float('15:00')` 抛错 ⇒ "
+      "整个契约读取中断、**静默回退全内置**（首版实发，E4 拒收逻辑当场白做）",
+      "otc_submit_cutoff" not in _ptc._NUMERIC_KEYS
+      and "e4_monthly_net_cap" in _ptc._NUMERIC_KEYS,
+      f"cutoff 在内={'otc_submit_cutoff' in _ptc._NUMERIC_KEYS} / "
+      f"e4 在内={'e4_monthly_net_cap' in _ptc._NUMERIC_KEYS}")
+
+# ── N-d 注册表**加载期校验**（编程错误 fail-loud，⛔ 不与「没匹配上」混同） ──
+check("N12 注册表加载期校验：当前零编程错误", _rk.validate() == [], f"{_rk.validate()}")
+check("N13 🔴 **反向断言**·`conv` 标签写错必须被加载期门槛抓住"
+      "（v4.5.17 自曝：`scorecard_max` 误写 `g2` ⇒ 被 `except` 吞成「没匹配上」）",
+      "g2" not in _rk.CONV_TAGS and "g2int" in _rk.CONV_TAGS,
+      f"CONV_TAGS={sorted(_rk.CONV_TAGS)}")
+# 🔴 用 `re.compile(...).groups` 取**真实捕获组数**（⛔ 不得用 `findall(r"\(([^)]*)\)")` 数括号：
+#    那会把 `(?:...)` 非捕获组也数进去，实测得 2 而真值是 1 ⇒ **探针本身错**）
+_N14_CONV_NEEDS = {"int": 1, "float": 1, "money": 1, "g2int": 2, "g2float": 2}
+_N14_TAG = _rk.SCALAR_KEYS["scorecard_max"]["conv"]
+_N14_PAT = _rk.SCALAR_KEYS["scorecard_max"]["patterns"][0][0]
+check("N14 🔴 `scorecard_max` 的 `conv` 与正则捕获组数必须**对得上**"
+      "（该病的最终形态：标签名对了、组数不对 ⇒ 仍被吞成「没匹配上」）",
+      _N14_CONV_NEEDS.get(_N14_TAG) == re.compile(_N14_PAT).groups,
+      f"conv={_N14_TAG!r} 需要 {_N14_CONV_NEEDS.get(_N14_TAG)} 组 / 实有 {re.compile(_N14_PAT).groups} 组")
+
+# ── N-e 🔴 A3 反向：空串匹配（缺陷二）—— 先证机制真实，再证行为已改 ──
+check("N15 🔴 A3 反向·**机制本身存在**：`'' in '创新药'` 为 True"
+      "（⇒ 证明空串陷阱是真实机制，不是空集假象）",
+      ("" in "创新药") is True)
+
+# ── N-f 🔴 A3/A4/A6 端到端：夹具组合 ＋ **换路径隔离** ──
+#   ⛔ 隔离靠 `ANCHOR_DESKTOP` **换路径**，不靠 `try/finally`
+#      （J11 教训：进程被硬杀时 finally 不执行，假条目会永久留在生产文件里）
+_N_TMP = Path(tempfile.mkdtemp(prefix="anchor_e4_"))
+_N_DESK = _N_TMP / "Desktop"
+(_N_DESK / "AI-Collab").mkdir(parents=True, exist_ok=True)
+_N_PORT = _N_DESK / "portfolio_data.json"
+_N_CONTRACT = _N_DESK / "AI-Collab" / "rule_contract.json"   # 与 paths 派生规则一致
+
+
+def _n_portfolio(txns):
+    _N_PORT.write_text(json.dumps(
+        {"update_date": "2026-09-22", "update_time": "2026-09-22 15:05",
+         "total_assets": 48000, "transactions": txns, "holdings_summary": []},
+        ensure_ascii=False), encoding="utf-8")
+
+
+def _n_contract(rules):
+    _N_CONTRACT.write_text(json.dumps(
+        {"rules": rules, "warns": [], "sources": {}, "sanity_rejected": {},
+         "warn_details": {}}, ensure_ascii=False), encoding="utf-8")
+
+
+def _n_run(*args):
+    env = dict(os.environ)
+    env["ANCHOR_DESKTOP"] = str(_N_DESK)      # ← 换路径隔离的**唯一开关**
+    p = subprocess.run([PY, str(PRE_TRADE), *args], capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=60, env=env)
+    return p.returncode, (p.stdout or "") + (p.stderr or "")
+
+
+_n_contract({"e4_monthly_net_cap": 1500, "e1_sat_position_cap": 3000,
+             "monthly_buys_max": 2, "monthly_sells_max": 2,
+             "targets": {"创新药": {"target": 3000, "layer": "卫星", "reach": "✅"}}})
+
+# 🔴 A4：`买入 2,300 / 赎回 3,474` ⇒ **净回笼 −1,174**（旧写法给 +2,300）
+_N_A4 = [_txn("2026-09-05", "买入", 2300, fund="创新药"),
+         _txn("2026-09-10", "赎回", 3474, fund="创新药")]
+_n_portfolio(_N_A4)
+_rc4, _out4 = _n_run("创新药", "0", "--sector-chg", "-1.0", "--sector-prev-chg", "-1.0")
+check("N16 🔴 A4 端到端·`买入 2300 / 赎回 3474` ⇒ E4 读数为 **−1,174（净回笼）**",
+      "-1,174.00" in _out4,
+      f"实读 {[l for l in _out4.splitlines() if 'E4' in l][:1]}")
+# 🔴 反向·**复现旧写法**（op 词表只有 `减仓/清仓`）在同一数据上跑
+_OLD_IN, _OLD_OUT = ("买入", "加仓"), ("减仓", "清仓")
+_old_net = (sum(t["amount"] for t in _N_A4 if any(w in t["op"] for w in _OLD_IN))
+            - sum(t["amount"] for t in _N_A4 if any(w in t["op"] for w in _OLD_OUT)))
+check("N17 🔴 A4 反向·同数据下**旧写法得 +2,300** ⇒ 新旧相差 **3,474** 且**符号相反**"
+      "（⇒ 证明本修复真的改了判定方向，不是装饰性改动）",
+      _old_net == 2300 and abs(_old_net - (-1174)) == 3474,
+      f"旧={_old_net} / 新=-1174.00")
+
+# 🔴 A3：空名记录不得计入，且必须显式声张
+_N_A3 = [_txn("2026-09-05", "买入", 2300, fund="创新药"),
+         {"date": "2026-09-06", "op": "买入", "amount": 2000,
+          "name": "", "fund": "", "note": ""}]
+_n_portfolio(_N_A3)
+_rc3, _out3 = _n_run("创新药", "0", "--sector-chg", "-1.0", "--sector-prev-chg", "-1.0")
+check("N18 🔴 A3 端到端·无名 ¥2,000 记录**不得**计入，且必须**显式声张**",
+      "E4 无名记录" in _out3 and "已排除" in _out3,
+      f"声张行={[l for l in _out3.splitlines() if '无名' in l][:1]}")
+check("N19 🔴 A3 净投入须为 **2,300.00**（旧写法因 `'' in k` 恒真会给 4,300）",
+      "2,300.00" in _out3,
+      f"实读 {[l for l in _out3.splitlines() if 'E4 月净投入' in l][:1]}")
+# 🔴 反向·复现旧写法在同一夹具上的读数（旧写法：空名记录也命中卫星）
+_old_named = sum(t["amount"] for t in _N_A3 if "" in "创新药")
+check("N20 🔴 A3 反向·旧写法因 `'' in k` 恒真而读到 **4,300**（虚增 ¥2,000）",
+      _old_named == 4300 and _old_named != 2300,
+      f"旧={_old_named} / 新=2300.00")
+
+# 🔴 A6：表外标的必须显式声张「未校验」（fail-open → fail-loud）
+_n_portfolio([_txn("2026-09-05", "买入", 300, fund="创新药")])
+_rc6, _out6 = _n_run("有色金属", "300", "--sector-chg", "-1.0", "--sector-prev-chg", "-1.0")
+check("N21 🔴 A6 表外标的 ⇒ 输出**必须含显式「未校验」字样**（修复前为静默跳过）",
+      "未校验" in _out6 and "E1" in _out6 and "E4" in _out6,
+      f"声张行={[l for l in _out6.splitlines() if '未校验' in l][:1]}")
+# 🔴 反向·表内标的**不得**报「未校验」（防声张膨胀成「谁都报未校验」而失去区分度）
+_rc6b, _out6b = _n_run("创新药", "300", "--sector-chg", "-1.0", "--sector-prev-chg", "-1.0")
+check("N22 🔴 A6 反向·表**内**标的不得报「未校验」",
+      "未校验" not in _out6b,
+      f"表内标的声张行={[l for l in _out6b.splitlines() if '未校验' in l][:1]}")
+
+# ── N-g 🔴 A5 真值回归：真实 `transactions` 复算 ──
+#   本月卫星：出金 300(创新药) + 2,000(证券) = **2,300**
+#             回笼 493.54(半导体) + 3,474.00(证券) = **3,967.54**
+#   净 = 2,300 − 3,967.54 = **−1,667.54**（拟买 300 ⇒ 展示值 −1,367.54）
+_prod = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
+_sat_kws = [k for k, v in _ptc.BUILTIN_THRESHOLDS["targets"].items()
+            if v.get("layer") == "卫星"]
+_sin = _sout = _unnamed = 0.0
+for _t in _prod.get("transactions", []):
+    if not str(_t.get("date", "")).startswith("2026-09"):
+        continue
+    _nm, _op = str(_t.get("name") or ""), str(_t.get("op") or "")
+    try:
+        _am = float(_t.get("amount") or 0)
+    except (TypeError, ValueError):
+        _am = 0.0
+    if not _nm:
+        _unnamed += _am
+        continue                                     # 缺陷二：无名**排除**
+    if not any(k in _nm or _nm in k for k in _sat_kws):
+        continue
+    if any(w in _op for w in ("赎回确认", "赎回到账")):
+        continue                                     # 完成腿（记账腿）⛔ 不计
+    if any(w in _op for w in ("买入", "加仓")):
+        _sin += _am
+    elif "赎回" in _op:
+        _sout += _am
+check("N23 🔴 A5 真值回归·真实 transactions 复算：出金 **2,300** / 回笼 **3,967.54**"
+      "（⛔ 均不得为旧的 +6,300 / 0）",
+      abs(_sin - 2300) < 0.01 and abs(_sout - 3967.54) < 0.01,
+      f"出金={_sin:.2f} 回笼={_sout:.2f} 无名排除={_unnamed:.2f}")
+check("N24 🔴 A5 真实数据下**净投入为负（净回笼 −1,667.54）** —— 旧写法给 +6,300，**符号相反**",
+      abs((_sin - _sout) - (-1667.54)) < 0.01,
+      f"净={_sin - _sout:.2f}（旧 = +6,300.00）")
+check("N25 🔴 A5 **反向断言**·旧写法在同一真实数据上读数 = 出金合计 **2,300**，"
+      "与真值相差 **3,967.54** 且**异号**（⇒ 谁把词表改回 `(减仓,清仓)`，本项当场变红）",
+      abs(_sin) == 2300.0 and abs(_sin - (_sin - _sout)) == 3967.54,
+      f"旧读数={_sin:.2f} / 真值={_sin - _sout:.2f}")
+
+# ── N-h 🔴 A7 warns 契约（⛔「缺键」不得被读成「无告警」） ──
+_CR = json.loads(paths.RULE_CONTRACT_PATH.read_text(encoding="utf-8"))
+check("N26 🔴 A7 `rule_contract.json` 必须含 `warns` 数组（`None` 与 `[]` 必须可区分）",
+      isinstance(_CR.get("warns"), list), f"实得 {type(_CR.get('warns')).__name__}")
+check("N27 🔴 A7 `warns` 非空时 ⇒ 每个键必须能在 `warn_details` 里查到**原因**"
+      "（否则告警名只是裸键名，人看不出坏成什么样）",
+      (not _CR.get("warns"))
+      or set(_CR["warns"]) <= set(_CR.get("warn_details") or {}),
+      f"warns={_CR.get('warns')} / details 含={sorted(_CR.get('warn_details') or {})}")
+check("N28 A7 `sources` 必须覆盖 E4 且带**手册行号**（「这个数从哪来」必须可查）",
+      isinstance((_CR.get("sources") or {}).get("e4_monthly_net_cap"), dict)
+      and (_CR["sources"]["e4_monthly_net_cap"].get("line") or 0) > 0,
+      f"实得 {(_CR.get('sources') or {}).get('e4_monthly_net_cap')}")
+
+# ── N-i 🔴 relay 段绑定：「新增契约段忘登记」的**机械化**防线 ──
+#   该病已复发 3 次：`rules`(09-01) → `warns`(09-18) → 本批三段(09-22)。
+#   根因是 relay 的形状「重建新 dict 再逐键搬」⇒ 没被搬的键**默认消失**且产物看着干净。
+_RELAY_PY = paths.AI_COLLAB_DIR / "realtime_relay.py"
+if _RELAY_PY.exists():
+    _mm = re.search(r"CONTRACT_SEGMENTS_TO_PRESERVE\s*=\s*\(([^)]*)\)",
+                    _RELAY_PY.read_text(encoding="utf-8"))
+    _relay_segs = set(re.findall(r"\"([a-z_]+)\"", _mm.group(1))) if _mm else set()
+    _prod_segs = {"rules", "warns", "sources", "sanity_rejected", "warn_details"}
+    check("N29 🔴 relay 段绑定·生产端写出的**每一个**段都必须在 relay 保留清单内"
+          "（缺一 ⇒ 日分发静默抹掉它；生产端加段而此处未登记 ⇒ 本项变红）",
+          _prod_segs <= _relay_segs,
+          f"生产端 {sorted(_prod_segs)} ⊆ relay {sorted(_relay_segs)}")
+    check("N30 🔴 **反向断言**·保留清单不得膨胀成「什么都放行」（须**恰为**已知 5 段）",
+          _relay_segs == _prod_segs, f"实得 {sorted(_relay_segs)}")
+else:
+    check("N29 🔴 relay 段绑定·**必须显式失败**（relay 文件找不到时不得静默通过）",
+          False, f"未找到 {_RELAY_PY}")
+
+# ── N-k2 🔴 `inbox/144` §3 验收 1/2：**一对反向断言**（三态判据不得是恒放行） ──
+#   配对理由（144 §3 原话）：「**只证明『源断则 skip』是不够的** —— 必须同时证明
+#   『源通而数据错则 FAIL』，否则本单可能把闸门改成**恒放行**」。
+check("N37 🔴 144 验收①·**源不可达**（取到 0 行）⇒ 判据必须给出**非空原因**（⇒ SKIP）",
+      _ib_skip_reason(set()) is not None,
+      f"reason={(_ib_skip_reason(set()) or '')[:34]!r}")
+check("N38 🔴 144 验收②·**源可达但数据错**（非空但全是错板块）⇒ 判据必须返回 **None**"
+      "（⇒ 交给断言判 ⇒ **FAIL**，⛔ 不得被 skip 吞掉）",
+      _ib_skip_reason({"错误板块A", "错误板块B"}) is None,
+      f"实得 {_ib_skip_reason({'错误板块A', '错误板块B'})!r}")
+# 🔴 验收②的**行为级**复核：真的把这份「非空但错」的样本喂进与生产同一个断言式，
+#    确认它**确实会失败**（⛔ 不是只看判据返回 None 就收工 —— 那还是「探针未经校验」）
+_na = {"错误板块A", "错误板块B"}
+_N39_FOUND = [s for s in ("固态电池", "人形机器人", "智能驾驶") if s in _na]
+check("N39 🔴 144 验收②行为级复核·「非空但错」的样本走**生产同一断言式** ⇒ 必得空集"
+      "⇒ 断言会 FAIL（⇒ 证明 skip 不是恒放行）",
+      len(_N39_FOUND) == 0 and _ib_skip_reason(_na) is None,
+      f"found={_N39_FOUND} / skip={_ib_skip_reason(_na)}")
+check("N40 🔴 144 验收③·**源可达且数据对** ⇒ 判据返回 None 且断言**真执行成功**"
+      "（防「引入 skip 后断言永不执行」）",
+      _ib_skip_reason({"固态电池", "人形机器人", "智能驾驶"}) is None,
+      "真数据样本下 skip=None ⇒ 断言路径被执行")
+
+# ── N-l 🔴 §I-b **中途失败**的占位机制（v4.5.17 自曝 bug 的常驻回归） ──
+#    ⚠️ 这一组的存在理由：那个 bug（占位未登记 ⇒ I8b 假红）**套件原本抓不到** ——
+#       我只在自己另跑的探针里撞见它。⛔ 探针是一次性的，断言才是常驻的。
+_ITEMS5 = ("I5", "I5b", "I6", "I7", "I8")
+
+
+def _ph(items, done):
+    """跑一次占位，返回 (报出的项名, done 集合)——纯内存，不碰全局 _results/_skips。"""
+    got = []
+    d = set(done)
+    _ib_placehold(items, d, "探针：源中途失败", emit=lambda n, why: got.append(n))
+    return got, d
+
+
+_g1, _d1 = _ph(_ITEMS5, {"I5", "I5b"})
+check("N41 🔴 §I-b 中途失败 ⇒ 未发项**逐个占位**，且**全部登记进 done**"
+      "（缺登记 ⇒ 紧随的 I8b 会把「源抖动」判成「代码坏了」）",
+      len(_g1) == 3 and _d1 == set(_ITEMS5),
+      f"占位 {_g1} / done={sorted(_d1)}")
+check("N42 🔴 §I-b 中途失败**不得重复占位**已发项（占位是幂等的）",
+      all(n.startswith(("I6", "I7", "I8")) for n in _g1) and
+      not any(n.startswith(("I5 ", "I5b")) for n in _g1),
+      f"实得 {_g1}")
+# 🔴 **反向断言**：把 bug 重新造出来 —— 占位**不登记**时，I8b 的判据必须判红。
+#    否则 N41 只是「断言了一个恒真的东西」（本仓 v4.5.5/6/7 连续三次的同一坑）。
+_BUGGY_ITEMS = ("I5", "I5b", "I6", "I7", "I8")
+_buggy_done = {"I5", "I5b"}
+for _nm in _BUGGY_ITEMS:                       # ← 复现**修复前**的写法：报出但**不登记**
+    if _nm not in _buggy_done:
+        pass                                   # （旧代码漏的就是 `_buggy_done.add(_nm)` 这一行）
+_buggy_missing = [_nm for _nm in _BUGGY_ITEMS if _nm not in _buggy_done]
+check("N43 🔴 **反向断言**·占位不登记 ⇒ I8b 判据**必须判红**"
+      "（复现 v4.5.17 那个套件抓不到的 bug；此断言恒真则 N41 是空转）",
+      bool(_buggy_missing) and _buggy_missing == ["I6", "I7", "I8"],
+      f"缺登记时应判红，实得未占位 {_buggy_missing}")
+check("N44 🔴 对照：**修好的**写法在**同一输入**下不得判红"
+      "（N43 与 N44 必须一红一绿，否则证明不了登记那一行在起作用）",
+      not [n for n in _ITEMS5 if n not in _d1], f"done={sorted(_d1)}")
+
+# ── N-j 隔离断言：全程未触碰生产文件 ──
+check("N31 🔴 §N 全程**未写任何生产文件**（靠 `ANCHOR_DESKTOP` 换路径隔离，⛔ 不靠 `try/finally`"
+      " —— J11：进程被硬杀时 finally 不执行，假条目会永久留在生产文件里）",
+      _N_PORT.resolve() != Path(paths.DATA_PATH).resolve()
+      and _N_CONTRACT.resolve() != Path(paths.RULE_CONTRACT_PATH).resolve(),
+      "夹具路径与生产路径不同")
+_rcP, _outP = run_pre_trade("创新药", "300")   # 生产路径重跑：若上面误写过生产文件，读数会变
+check("N32 🔴 生产契约读数正常（E4 = ¥1,500 档）—— 证明 §N 未污染生产契约",
+      "E4 月净投入" in _outP and "1,500" in _outP,
+      f"rc={_rcP}")
+
+# ── N-k 🔴 两层 `tier` 不得混用（**本节自己的反向断言抓出的真 bug**） ──
+#   契约的 `sources` 段自带 `tier`（anchored/fallback —— **抽取器**怎么拿到的），
+#   消费侧也需要一个 `tier`（contract/builtin —— **值从契约来还是回退内置**）。
+#   首版用 `{..., "tier": "contract", **契约侧}` 展开 ⇒ 契约侧的 tier **覆盖**了消费侧的
+#   ⇒ 消费侧再也答不出「这个阈值来自哪里」⇒ 漂移护栏对**真契约恒亮**
+#   （实测：一个 tier=contract 都没有 ⇒ 报「全部落到 builtin」）。
+#   📌 同一条护栏的注释里我刚引用了 v2.1 判例「永远亮着的告警会被学会忽略」——
+#      **反例当场被自己的测试抓到**。
+_th_real = _ptc.load_thresholds()
+_E4_SRC = _th_real["_sources"].get("e4_sat_monthly_net") or {}
+check("N33 🔴 两层 tier 必须分列：`tier` = 消费侧（contract/builtin），"
+      "`contract_tier` = 抽取侧（anchored/fallback）",
+      _E4_SRC.get("tier") == "contract" and _E4_SRC.get("contract_tier") == "anchored",
+      f"tier={_E4_SRC.get('tier')!r} contract_tier={_E4_SRC.get('contract_tier')!r}")
+check("N34 🔴 反向·漂移护栏**不得对真契约亮**（永远亮的告警 = 报告标准 v2.1 所禁）",
+      not any("键名整体不匹配" in w for w in _th_real["_warns"]),
+      f"_warns={_th_real['_warns']}")
+# 🔴 N35 反向·漂移护栏**必须**对键名漂移的契约亮 —— 否则 N34 只是「护栏根本没跑」的假绿。
+#    用**临时文件**改 `paths.RULE_CONTRACT_PATH` **在本进程内**跑一次，跑完立刻还原。
+#    ⚠️ 与 J11 的区别：J11 禁的是「靠 finally 去还原**生产文件**」（进程被硬杀则 finally 不执行，
+#       污染留在磁盘上）；此处只动**本进程的模块属性**，进程死则属性随之消失，**无持久风险**。
+_orig_rc = paths.RULE_CONTRACT_PATH
+_N35 = Path(tempfile.mkdtemp(prefix="anchor_n35_")) / "rule_contract.json"
+try:
+    _N35.write_text(json.dumps(
+        {"rules": {"e1_sat_single_limit": 9999.0, "e4_sat_monthly_net": 8888.0}},
+        ensure_ascii=False), encoding="utf-8")
+    paths.RULE_CONTRACT_PATH = _N35
+    _th_drift = _ptc.load_thresholds()
+    check("N35 🔴 反向·漂移护栏**必须**对键名漂移的契约亮（否则 N34 是空转假绿），"
+          "且漂移时**全部取值落到 builtin**（⛔ 坏值一个都不得生效）",
+          any("键名整体不匹配" in w for w in _th_drift["_warns"])
+          and _th_drift["e4_sat_monthly_net"] == _ptc.BUILTIN_THRESHOLDS["e4_sat_monthly_net"],
+          f"_warns={_th_drift['_warns'][:1]} e4={_th_drift['e4_sat_monthly_net']}")
+finally:
+    paths.RULE_CONTRACT_PATH = _orig_rc
+    shutil.rmtree(_N35.parent, ignore_errors=True)
+check("N36 漂移试验后契约路径**已还原**（后续断言仍读真契约）",
+      paths.RULE_CONTRACT_PATH == _orig_rc,
+      f"{paths.RULE_CONTRACT_PATH}")
+shutil.rmtree(_N_TMP, ignore_errors=True)
+
+# ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]
+# 🔴 **三态**，⛔ 不得把「无法判定」并进「通过」里静默消化掉
+#    （并进去 ⇒ 报告写着「全绿」，而其实有一节根本没跑 —— 本仓「空白被读成合格」家族）。
 print("\n" + "=" * 56)
-print(f"共 {len(_results)} 项 · 通过 {len(_results) - len(_fail)} · 失败 {len(_fail)}")
+print(f"共 {len(_results) + len(_skips)} 项 · 通过 {len(_results) - len(_fail)} · "
+      f"**无法判定** {len(_skips)} · 失败 {len(_fail)}")
+if _skips:
+    print("⏭ 无法判定项（**不等于通过**，须知晓其未覆盖）:")
+    for n, why in _skips:
+        print(f"   - {n}\n     ↳ {why}")
 if _fail:
     print("❌ 失败项:")
     for n in _fail:
         print("   -", n)
     sys.exit(1)
-print("✅ 全绿")
+print("✅ 全绿" + (f"（⚠️ 但含 {len(_skips)} 项**无法判定**，见上）" if _skips else ""))
 sys.exit(0)

@@ -49,89 +49,140 @@ from data_processor import current_ops_period, monthly_ops_summary  # C5：月�
 
 JSON_PATH = paths.DATA_PATH
 
-# ============ 内置默认阈值（契约缺失时的 fallback；权威值在 rule_contract.json） ============
-BUILTIN_THRESHOLDS = {
-    "e1_sat_single_limit": 3000.0,    # E1 单只卫星上限
-    "e4_sat_monthly_net": 1500.0,     # E4 卫星月净投入上限
-    "big_amount_batch": 3000.0,       # 大额分批阈值
-    "max_monthly_ops": 4,             # 月操作**总数**上限
-    # v4.5.1（09-18）：月额度**买卖两维**（手册 §1.3 正文「买入≤2+卖出≤2」）。
-    # 🔴 修复前契约 DEFAULTS 里早有 `buy_max`/`sell_max` 但**无提取正则、无消费者**
-    #    （写对了的死键），唯一生效的是上面那条一维上限 ⇒ 绑到了速查表的压缩转述。
-    "monthly_buys_max": 2,            # 月操作**买入**上限
-    "monthly_sells_max": 2,           # 月操作**卖出**上限
-    "monthly_ops_cleanup_max": 6,     # 清理月上限
-    "scorecard_event_exempt": 300.0,  # 事件驱动评分卡豁免金额
-    # v4.5.0 新增（09-18 用户裁决消歧）：A2 追红日禁买 + watchlist 右侧确认
-    "a2_red_day_pct": 2.0,            # A2：板块当日涨幅 ≥ 此值 = 红日，禁买
-    "a2_consecutive_red_days": 2,     # A2：连续 N 日飘红 = 禁买
-    "watchlist_probe_min": 300.0,     # watchlist 试探下限
-    "watchlist_probe_max": 500.0,     # watchlist 试探上限
-    "a2_pullback_from_high_days": 5.0,   # A2 回调条件单：自 N 日高
-    "a2_pullback_from_high_pct": 2.0,    # A2 回调条件单：回撤 ≥ 此值再买
-    # 09-01 修复（手册 4.3 集中度上限）：原实现只查卫星层 E1，压舱石/核心单只上限未实现
-    "single_position_caps": {"压舱石": 8000.0, "核心": 4000.0, "卫星": 3000.0},
-    # 规则手册品种目标（含可达性标注，提案 #C 落地）
-    "targets": {
-        "鹏华畅享债券": {"target": 6600, "layer": "压舱石", "reach": "✅ 达标"},
-        "中银稳健增利债券": {"target": 4600, "layer": "压舱石", "reach": "⚠️ 超配（贷款配置 8/31 评估）"},
-        "红利": {"target": 5500, "layer": "压舱石", "reach": "✅ 达标"},
-        "黄金": {"target": 1500, "layer": "压舱石", "reach": "🟡 定投积累（可议上调）"},
-        "纳斯达克": {"target": 4000, "layer": "核心", "reach": "🔒 限购（结构性缺口，不追）"},
-        "通利": {"target": 2000, "layer": "核心", "reach": "🟡 超配（已暂停定投；实为半导体股基）"},
-        "创新药": {"target": 3000, "layer": "卫星", "reach": "✅ 可补（9/1 时机A 确认）"},
-        "证券": {"target": 2500, "layer": "卫星", "reach": "⚠️ 超 E1 上限（需压回）"},
-        "半导体": {"target": 1500, "layer": "卫星", "reach": "🟡 观察仓（DDX 连正≥2日才补）"},
-    },
-}
+import rule_keys  # v4.5.17：阈值**单一真源**（键名/正则/默认/区间/护栏全在一处）
 
-# 数值型阈值键（契约里出现即覆盖内置）
-_NUMERIC_KEYS = (
-    "e1_sat_single_limit", "e4_sat_monthly_net", "big_amount_batch",
-    "max_monthly_ops", "scorecard_event_exempt",
-    # v4.5.1：月额度买卖两维（契约键名与内置键名同名，无需 _KEY_MAP 映射）
-    "monthly_buys_max", "monthly_sells_max", "monthly_ops_cleanup_max",
-    # v4.5.0：A2 / watchlist 四条，契约键名与内置键名同名（无需 _KEY_MAP 映射）
-    "a2_red_day_pct", "a2_consecutive_red_days",
-    "watchlist_probe_min", "watchlist_probe_max",
-    "a2_pullback_from_high_days", "a2_pullback_from_high_pct",
-)
+# ============ 内置默认阈值（契约缺失时的 fallback；权威值在 rule_contract.json） ============
+# 🔴 v4.5.17 结构性重构：**本表不再手写** —— 由 `rule_keys` 派生。
+#
+#   修复前，同一个阈值最多在**四处**各写一遍（extract 的 DEFAULTS / extract 的 grab 默认 /
+#   本文件的 BUILTIN_THRESHOLDS / 契约键↔内置键的 `_KEY_MAP` 翻译层），再加手册原文是第五处。
+#   2026-09-22 实发的 E4 事故（阈值被解析成 ¥1、真值 ¥1,500）正是这套结构的产物：
+#   抽取器静默拿到坏值 → 覆盖这里的 1500 → **没有任何一处比对过「1500 与 1 谁合理」**。
+#
+#   现在：改一个阈值 ⇒ **只改 `rule_keys.py` 一行**，此处、extract、契约、护栏**全部自动跟随**；
+#   越界值会被 `grab_spec` 的区间护栏当场拒收并落 `warns`（见 extract_rule_contract）。
+BUILTIN_THRESHOLDS = rule_keys.pre_trade_builtins()
+
+# 数值型阈值键（契约里出现即覆盖内置）—— **契约键名，由注册表按 `conv` 类型派生**。
+# 🔴 `big_amount_batch` **不在注册表内**（无手册依据，见 `rule_keys.DEAD_NOTES`），单列。
+_NUMERIC_KEYS = rule_keys.numeric_keys() + ("big_amount_batch",)
+
+# 契约键名 → 内置键名。**只由注册表的 `internal` 字段派生**；
+# 注册表里 `internal is None` 的键（四个 monthly、A2/watchlist 族）**契约键名与内置键名同名**，
+# 不出现在本映射里。⇒ 原先手工维护的「翻译层」整个消失（翻译层本身就是缺陷来源）。
+_KEY_MAP = {k: v for k, v in rule_keys.internal_map().items() if k != v}
+
+
+def _src_of(sources: dict, ck: str) -> dict:
+    """把契约侧 `sources[契约键]` 展平成**消费侧**留痕，⚠️ 但**改名** `tier`。
+
+    🔴 v4.5.17 自曝（**被本节自己的反向断言当场抓出**）：契约的 `sources` 段自带一个
+    `tier`（`anchored` / `fallback` / `sentinel` —— 说的是「**抽取器**怎么拿到这个值」），
+    而我原先用 `{..., "tier": "contract", **契约侧}` 展开 ⇒ **契约侧的 tier 把消费侧的
+    `tier` 覆盖掉了** ⇒ 消费侧再也答不出「这个阈值究竟来自契约还是内置」。
+
+    两个问题看起来都叫 tier、其实问的是两件事：
+      · 消费侧 `tier`       ：「值从**契约**来的，还是回退**内置**默认？」
+      · 契约侧 `contract_tier`：「抽取器是**锚定**命中，还是**兜底**拿到的？」
+    混用同一个键名 ⇒ 后者覆盖前者 ⇒ **我的漂移护栏因此对真契约恒亮**
+    （实测：真契约下 `_sources` 里一个 `tier=contract` 都没有 ⇒ 报「全部落到 builtin」）。
+    📌 这正是本仓「名字看着像，就当它是」家族 —— 而同一条护栏的注释里
+      我刚引用了 v2.1 判例「永远亮着的告警会被学会忽略」。**反例当场被我自己的测试抓到。**
+    """
+    s = sources.get(ck) or {}
+    if not isinstance(s, dict):
+        return {}
+    out = {k: v for k, v in s.items() if k != "tier"}
+    if "tier" in s:
+        out["contract_tier"] = s["tier"]
+    return out
 
 
 def load_thresholds():
-    """从 rule_contract.json 读 thresholds/rules；缺失/异常回退内置默认并 [WARN]（C5 + 09-01 A 修复）。
-    契约输出为 extract_rule_contract 的 {"rules": {...}} 段（键 e1_sat_position_cap 等），
-    与内置键名（e1_sat_single_limit 等）不同 → 兼容读取 + 键名映射。
+    """从 rule_contract.json 读 rules 段；缺失/异常回退内置默认并 [WARN]（C5 + 09-01 A 修复）。
+
+    v4.5.17 两项结构变更：
+      ① 翻译层 `_KEY_MAP` **由注册表派生**（不再手工维护两份键名表）。
+      ② 新增 `_sources` / `_warns` 回传 —— 让**「这个阈值是从手册哪一行来的」**成为
+         可见信息。⛔ 修复前这个答案无处可查：E4 事故里没有任何人能不看源码答出
+         「契约里的 1 是从哪来的」，这正是一个坏值能潜伏数天的原因。
     """
     th = json.loads(json.dumps(BUILTIN_THRESHOLDS, ensure_ascii=False))  # 深拷贝
-    # 09-01 A 修复：契约键名 → 内置键名 映射（extract 用 position_cap/net_cap，内置用 single_limit/monthly_net）
-    _KEY_MAP = {
-        "e1_sat_position_cap": "e1_sat_single_limit",
-        "e4_monthly_net_cap": "e4_sat_monthly_net",
-        "big_amount_batch": "big_amount_batch",
-        "max_monthly_ops": "max_monthly_ops",
-    }
+    th["_sources"] = {}   # {内部键: 契约侧来源留痕（含手册行号）}
+    th["_warns"] = []     # 阈值侧的告警（与契约 self-report 的 warns 合并展示）
     try:
         contract = json.loads(paths.RULE_CONTRACT_PATH.read_text(encoding="utf-8"))
         # 09-01 A 修复：兼容两段（extract 输出 rules；旧约定 thresholds）
         cth = contract.get("thresholds") or contract.get("rules")
         if not isinstance(cth, dict):
             raise KeyError("thresholds/rules 段缺失或非对象")
-        for k in _NUMERIC_KEYS:
-            raw = cth.get(k)
+        _sources = contract.get("sources") or {}
+        # ⚠️ `_NUMERIC_KEYS` 是**契约键名**；`th` / `_sources` 一律用**内部键名**索引
+        #   （消费者只认内部键）。两者由注册表的 `internal` 字段单向派生 —— `_KEY_MAP`。
+        for _ck in _NUMERIC_KEYS:
+            _internal = _KEY_MAP.get(_ck, _ck)
+            raw = cth.get(_ck)
             if raw is None:
-                # 尝试映射键（契约用 position_cap 等）
-                mapped_key = next((kk for kk, vv in _KEY_MAP.items() if vv == k), None)
-                raw = cth.get(mapped_key) if mapped_key else None
-            if raw is not None:
-                th[k] = float(raw)
+                # 契约无此键 ⇒ 用内置默认。**这也须留痕** ——
+                # 「契约里没有这个键」是发现「死定义 / 抽取器没接上」的唯一线索。
+                th["_sources"][_internal] = {"contract_key": _ck, "tier": "builtin",
+                                             "note": "契约无此键 ⇒ 用内置默认"}
+                continue
+            # 🔴 v4.5.17 第三道防线：**消费侧也验区间**
+            #   抽取侧的护栏保护「契约怎么生成」；这里保护「**拿到手的契约信不信**」——
+            #   若契约是旧版本、被人手工改过、或抽取器被回退，坏值仍会从这里进来。
+            #   （三道防线互相独立：锚定提取 → 抽取侧区间 → 消费侧区间）
+            lo, hi = rule_keys.sanity_of(_ck)
+            if lo is not None and not (lo <= float(raw) <= hi):
+                # ⚠️ 报「改用内置默认 X」时**必须取内部键的默认**：
+                #   首版误写 `th.get(k)`（`k` 是**契约键**，如 `e4_monthly_net_cap`）⇒
+                #   打印出 `改用内置默认 None`，**读数骗人**（v4.5.3 ③ 同族）。
+                _fallback = BUILTIN_THRESHOLDS.get(_internal)
+                th["_warns"].append(
+                    f"🔴 {_internal}: 契约值 {raw!r} 越界合理区间 [{lo}, {hi}] ⇒ **拒收**，"
+                    f"改用内置默认 {_fallback!r}（契约键 {_ck}）")
+                # 🔴 **被拒收的键恰恰是最该留痕的那个** —— 首版在此 `continue` 掉，
+                #   结果 `_sources` 里既无好值也无坏值 ⇒ **「它被拒了」这件事本身不可见**。
+                th["_sources"][_internal] = {
+                    **_src_of(_sources, _ck), "contract_key": _ck, "tier": "rejected",
+                    "rejected_value": raw, "range": [lo, hi]}
+                continue
+            th[_internal] = float(raw)
+            th["_sources"][_internal] = {
+                **_src_of(_sources, _ck), "contract_key": _ck, "tier": "contract"}
         if isinstance(cth.get("targets"), dict) and cth["targets"]:
             th["targets"].update(cth["targets"])
         # 09-01 修复：合并契约 single_position_caps（extract 从手册 4.3 提取的权威值）
         if isinstance(cth.get("single_position_caps"), dict) and cth["single_position_caps"]:
             th["single_position_caps"].update(
                 {k: float(v) for k, v in cth["single_position_caps"].items()})
+        # 契约自报的提取失败，纳入本侧告警面（否则只出现在 extract 的 stdout 里，随日志滚走）
+        for _w in (contract.get("warns") or []):
+            th["_warns"].append(f"⚠️ 契约自报提取失败：{_w}")
+        _rej = contract.get("sanity_rejected") or {}
+        for _k, _v in _rej.items():
+            th["_warns"].append(f"🔴 契约侧合理性拒收：{_k} = {_v.get('value')!r}"
+                                f"（手册行 {_v.get('line')}）⇒ 已回退 builtin")
         th["_source"] = "contract"
+        # 🔴 v4.5.17 新增：**「契约里一个数都没被认出来」不是「契约没这些键」**。
+        #    本函数按**契约键名**取值，而契约由 `extract_rule_contract` 生成 —— 键名唯一。
+        #    ⚠️ 改前此处有一条**反向查表兜底**（按内部名找不到就反查 `_KEY_MAP`），
+        #       于是同一个阈值在契约里**有两个合法键名**；已随重构删除。
+        #       删除是**收紧**，但收紧后若键名整体漂移（如契约由旧版本/手工生成），
+        #       症状是**全部数值静默回退 builtin** —— 而 `tier="builtin"` 的单条留痕
+        #       在 36 条里毫不起眼（v4.5.7 L2 的教训：单独看每条都正常）。
+        #    ⇒ 判据很锐利：**契约存在且非空，却一个数值键都没认出来** ⇒ 那是**键名不匹配**，
+        #      ⛔ 不是「契约本来就没有这些键」。两者必须长得不一样。
+        _n_from_contract = sum(1 for v in th["_sources"].values()
+                               if v.get("tier") == "contract")
+        _n_rejected = sum(1 for v in th["_sources"].values() if v.get("tier") == "rejected")
+        if _NUMERIC_KEYS and _n_from_contract == 0 and _n_rejected == 0 and cth:
+            th["_warns"].append(
+                f"🔴 契约**非空**（rules 段 {len(cth)} 键）却**没有任何一个数值阈值被认出**"
+                f"（实查 {len(_NUMERIC_KEYS)} 个契约键，全部落到 builtin）"
+                f" ⇒ 极可能是**键名整体不匹配**（契约由旧版本或手工生成？），"
+                f"⛔ 这不是「契约没有这些键」—— 两种情形必须区分。"
+                f"本次**全部阈值取内置默认**，契约数值**未生效**")
     except Exception as exc:  # 契约缺失/损坏：回退内置，不阻断校验
         print(f"[WARN] 未从 rule_contract.json 读到 thresholds/rules（{exc}）→ 使用内置默认阈值")
         th["_source"] = "builtin"
@@ -245,6 +296,11 @@ def main():
 
     # 3) 单只持仓上限（手册 4.3 分层：压舱石≤8000 / 核心≤4000 / 卫星=E1≤3000）
     # 09-01 修复：原实现只查卫星层 E1，压舱石/核心单只上限漏检（9/1 鹏华超压舱石上限即实证）
+    # 🔴 v4.5.17 修复 fail-open：原为 `if tgt:` ⇒ **表外标的静默跳过 E1**。
+    #    `targets` 表是手工维护的闭集，而「表外新标的」恰恰是**约束最弱的路径**
+    #    （2026-09-22 研究实测：表外新标的仅 1 道硬拦，E1/E4 双双缺席，而该路径
+    #    历史 `加仓` 准确率只有 **50%**）⇒ 静默跳过＝把最该盯的路径放在护栏之外。
+    #    ⇒ 改为**显式声张**：判不了就说判不了，⛔ 绝不静默当作「已通过」。
     if tgt:
         layer = tgt["layer"]
         cap = th["single_position_caps"].get(layer)
@@ -256,34 +312,115 @@ def main():
                 checks.append(("⛔ " + label, f"{layer}层加仓后 ¥{after:,.0f} > ¥{cap:,.0f}（当前 ¥{cur:,.0f}）——超限拦截，先压回或改分批"))
             else:
                 checks.append(("✅ " + label, f"{layer}层加仓后 ¥{after:,.0f} ≤ ¥{cap:,.0f}（当前 ¥{cur:,.0f}）"))
+        else:
+            checks.append((f"⚠️ 单只{layer}层上限·无阈值",
+                           f"契约/内置均无「{layer}」层上限 ⇒ **本层上限未校验**（未知层名？）"))
+    else:
+        checks.append(("⚠️ E1 单只上限·**未校验**",
+                       f"「{keyword}」**不在 targets 品种表内** ⇒ 层别未知 ⇒ "
+                       f"E1 单只上限、E4 月净投入**双双未校验**。"
+                       f"⛔ 这不等于「已通过」—— 表外标的须先补进 `rule_keys.TARGETS` 再下单"))
 
     # 4) E4 卫星月净投入（累计口径）—— 09-01 修复：原实现只查单笔，实际应按"本月卫星净投入+拟买"累计
+    #
+    # 🔴 v4.5.17 修复三重缺陷（2026-09-22 实发，详见 `_handoff/inbox/146`）：
+    #   · 缺陷一（阈值被解析成 ¥1）已由**抽取侧锚定**＋**两道区间护栏**修掉，见 `rule_keys` /
+    #     `extract_rule_contract` / 本文件 `load_thresholds` 的消费侧区间校验 —— 本函数不再参与。
+    #   · 缺陷二：`tname in k` 在 `tname=''` 时 **恒真** ⇒ 两条无名 ¥2,000 记录被计入（虚增 ¥4,000）
+    #     ⇒ 现要求 `tname` 非空**先于**卫星匹配，且无名记录**显式声张**。
+    #   · 缺陷三：op 词表只有 `(减仓,清仓)`，导致 9 月卫星减仓（`赎回`/`赎回确认`）**完全未扣**
+    #     ⇒ 分子只增不减、连正负号都相反 ⇒ 现按**三腿模型**分类（见下）。
+    #
+    # ── 📌 指挥端裁定（146 §3 裁定 4 要求指挥端定，⛔ 执行端不得自行决定）──
+    #   `赎回` / `赎回确认` / `赎回到账` 三者关系（以 2026-09 真实数据为据）：
+    #     9/02 `赎回` ¥493.54  → 9/03 `赎回到账` ¥493.54   （半导体，同额）
+    #     9/02 `赎回` ¥1037.48 → 9/03 `赎回到账` ¥1037.48  （黄金，同额）
+    #     9/10 `赎回` ¥3474.00 → 9/11 `赎回确认` ¥3759.25  （证券，**不同额**）
+    #   ⇒ **`赎回` 是发起腿（真实资金动作）；`赎回确认`/`赎回到账` 是同一笔赎回的完成腿（记账腿）。**
+    #   ⇒ **只按发起腿计减**；完成腿**不再计减**（否则同一笔赎回被扣两次）。
+    #   ⇒ **偏差方向 = fail-closed**：完成腿金额可高于发起腿（证券 +¥285.25），
+    #     取发起腿 ⇒ **回笼被低估 ⇒ 净投入偏高 ⇒ 闸门偏紧**。闸门偏紧是安全方向。
+    #   ⇒ **孤儿完成腿**（当月无对应发起腿，如跨月赎回）⇒ **计减 ＋ 显式声张**，
+    #     ⛔ 不得静默丢弃（丢了就是「只增不减」的老毛病换个位置复发）。
+    #   ⚠️ 与手册 §1.3 ③ 的区别：§1.3 量的是**操作笔数**（记账腿不计「笔」）；
+    #     E4 量的是**资金净投入** ⇒ 两者口径不同，⛔ **不得直接照搬 §1.3 的结论**。
     if tgt and tgt["layer"] == "卫星":
         month_prefix = f"{ops_year:04d}-{ops_month:02d}"
-        net = 0.0
+        _LEG_IN = ("买入", "加仓")                  # 出金腿（+）
+        _LEG_OUT = ("赎回",)                        # 发起腿（−）—— 真实资金动作
+        _LEG_BOOK = ("赎回确认", "赎回到账")         # 完成腿（0）—— 同一笔赎回的确认
+        legs = {"in": [], "out": [], "book": []}
+        no_name, unknown_ops = [], []
         for tx in d.get("transactions", []):
             if not str(tx.get("date", "")).startswith(month_prefix):
                 continue
-            tname = tx.get("name", "")
-            sat_kw = [k for k, v in targets.items()
-                      if v.get("layer") == "卫星" and (k in tname or tname in k)]
-            if not sat_kw:
-                continue
-            op = str(tx.get("op", ""))
+            tname = str(tx.get("name") or "")
+            op = str(tx.get("op") or "")
             try:
                 amt = float(tx.get("amount", 0) or 0)
             except (TypeError, ValueError):
                 amt = 0.0
-            if any(w in op for w in ("买入", "加仓")):
-                net += amt
-            elif any(w in op for w in ("减仓", "清仓")):
-                net -= amt
-        after_net = net + amount
-        if after_net > e4_monthly:
-            checks.append(("⛔ E4 月净投入", f"卫星月净投入 ¥{after_net:,.0f} > ¥{e4_monthly:,.0f}（本月已投入 ¥{net:,.0f} + 拟买 ¥{amount:,.0f}）——超限拦截"))
-        else:
-            checks.append(("✅ E4 月净投入", f"卫星月净投入 ¥{after_net:,.0f} ≤ ¥{e4_monthly:,.0f}（本月已投入 ¥{net:,.0f} + 拟买 ¥{amount:,.0f}）"))
+            # 🔴 缺陷二：空名**不得**进入卫星匹配（`"" in k` 恒真）
+            if not tname:
+                no_name.append((tx.get("date"), op, amt))
+                continue
+            sat_kw = [k for k, v in targets.items()
+                      if v.get("layer") == "卫星" and (k in tname or tname in k)]
+            if not sat_kw:
+                continue
+            # 🔴 顺序即正确性：完成腿**先判**（`赎回确认` 含子串 `赎回`，
+            #    顺序一旦颠倒就会被当成发起腿再扣一次 —— v4.5.1 同族教训）
+            if any(w in op for w in _LEG_BOOK):
+                legs["book"].append((tx.get("date"), sat_kw[0], amt, op))
+            elif any(w in op for w in _LEG_IN):
+                legs["in"].append((tx.get("date"), sat_kw[0], amt, op))
+            elif any(w in op for w in _LEG_OUT):
+                legs["out"].append((tx.get("date"), sat_kw[0], amt, op))
+            else:
+                unknown_ops.append((tx.get("date"), sat_kw[0], op, amt))
 
+        # 孤儿完成腿：当月该标的**没有发起腿** ⇒ 计减＋声张（跨月赎回的合理情形）
+        _out_funds = {f for _d, f, _a, _o in legs["out"]}
+        orphans = [b for b in legs["book"] if b[1] not in _out_funds]
+        # 已配对的完成腿：仅作信息展示（⛔ 不参与计算）
+        paired = [b for b in legs["book"] if b[1] in _out_funds]
+
+        net_in = sum(a for _d, _f, a, _o in legs["in"])
+        net_out = sum(a for _d, _f, a, _o in legs["out"]) + sum(a for _d, _f, a, _o in orphans)
+        net = net_in - net_out
+        after_net = net + amount
+        _detail = (f"本月出金 ¥{net_in:,.2f} − 减仓回笼 ¥{net_out:,.2f}"
+                   f"（拟买 ¥{amount:,.0f}）")
+        if after_net > e4_monthly:
+            checks.append(("⛔ E4 月净投入",
+                           f"卫星月净投入 ¥{after_net:,.2f} > ¥{e4_monthly:,.0f}（{_detail}）——超限拦截"))
+        else:
+            checks.append(("✅ E4 月净投入",
+                           f"卫星月净投入 ¥{after_net:,.2f} ≤ ¥{e4_monthly:,.0f}（{_detail}）"))
+        # 明细（让「净投入」这个数**可复算** —— 修复前只报一个总数，无从对账）
+        if legs["in"] or legs["out"]:
+            _rows = "；".join(f"{d} {f} ¥{a:,.2f}({o})" for d, f, a, o in legs["in"] + legs["out"])
+            checks.append(("📋 E4 明细", _rows))
+        if paired:
+            checks.append(("📋 E4 完成腿（记账腿·⛔ 不计减）",
+                           "；".join(f"{d} {f} ¥{a:,.2f}({o})" for d, f, a, o in paired)
+                           + " —— 已由发起腿计减，**避免同笔赎回扣两次**"))
+        # 🔴 三条声张（fail-loud）
+        if orphans:
+            checks.append(("⚠️ E4 孤儿完成腿·已代计减",
+                           "；".join(f"{d} {f} ¥{a:,.2f}({o})" for d, f, a, o in orphans)
+                           + " —— 当月无对应发起腿（跨月赎回？）⇒ **按完成腿代计减**，请人工确认"))
+        if no_name:
+            _amt = sum(a for _d, _o, a in no_name)
+            checks.append(("⚠️ E4 无名记录·**已排除**",
+                           f"{len(no_name)} 条 `name` 为空的记录（合计 ¥{_amt:,.2f}，op="
+                           f"{'、'.join(sorted({o for _d, o, _a in no_name}))}）"
+                           f" —— **无法判定归属，已排除**。修复前 `\"\" in k` 恒真会全部计入"
+                           f"（虚增 ¥4,000），⛔ 请补齐 `name` 后重跑"))
+        if unknown_ops:
+            checks.append(("⚠️ E4 未识别 op·**未计入**",
+                           "；".join(f"{d} {f} {o!r} ¥{a:,.2f}" for d, f, o, a in unknown_ops)
+                           + " —— 闭集外 op，**净投入结论不可信**，请先归类"))
     # 5) 大额分批（提案 #B）
     if amount >= big_amt or is_loan:
         checks.append(("⚠️ 大额/贷款分批", f"¥{amount:,.0f} ≥ ¥{big_amt:,.0f} 或贷款资金——必须 334 分批（分 3 批、间隔≥3 交易日），禁止一次性"))

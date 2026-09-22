@@ -56,8 +56,23 @@ class TestLoadThresholds(unittest.TestCase):
 
     def test_contract_overrides_builtin(self):
         # 契约里的数值应覆盖内置；targets 做合并（内置品种保留）
+        #
+        # 🔴 v4.5.17 订正：本夹具原用 **内部键名** `e1_sat_single_limit`。
+        #    旧实现为此写了一条**反向查表兜底**（`next((kk for kk,vv in _KEY_MAP.items() if vv==k))`），
+        #    于是**同一个阈值在契约里有两个合法键名**（内部名 / 契约名）—— 正是
+        #    「两层键名表并存且无绑定」那一族（E4 事故的同一套结构）。
+        #    ⇒ 该兜底已随重构删除，契约**只有一套键名**（`extract_rule_contract` 写什么就认什么）。
+        #    ⇒ 夹具改用**真契约键名**，并新增断言把夹具键名绑死到注册表上
+        #      （否则夹具会再次静默漂移成「测了个不存在的键」—— 那时本测试**依然会绿**，
+        #       因为断言值恰好等于内置默认 → 同 J14「弱断言掩盖真实缺口」）。
         tmp = Path(tempfile.gettempdir()) / "_ptc_contract.json"
-        payload = {"thresholds": {"e1_sat_single_limit": 9999.0,
+        _CK = "e1_sat_position_cap"        # 真契约键名（内部名为 e1_sat_single_limit）
+        import rule_keys as _rk
+        self.assertIn(_CK, _rk.SCALAR_KEYS,
+                      f"夹具用的契约键 {_CK!r} 不在注册表内 ⇒ 夹具已漂移，本次断言是空转")
+        self.assertNotIn(_CK, _rk.SCALAR_KEYS[_CK].get("internal") or "",
+                         "契约键与内部键必须**不同名**（同名则本测试证明不了翻译层在工作）")
+        payload = {"thresholds": {_CK: 9999.0,
                                   "targets": {"测试品种": {"target": 1, "layer": "卫星", "reach": "x"}}}}
         tmp.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
         try:
@@ -69,6 +84,40 @@ class TestLoadThresholds(unittest.TestCase):
             self.assertIn("创新药", th["targets"])      # 内置品种保留
         finally:
             tmp.unlink(missing_ok=True)
+
+    def test_key_name_drift_is_loud(self):
+        """🔴 v4.5.17：契约**非空**却一个数值键都没认出 ⇒ 必须**声张**。
+
+        与 `test_fallback_when_contract_missing` 是**两种不同情形**，必须长得不一样：
+          契约不存在 → 回退内置（正常降级，只 print 一句）
+          契约存在但键名不匹配 → **键名漂移**（病），须进 `_warns`
+        """
+        tmp = Path(tempfile.gettempdir()) / "_ptc_drift.json"
+        # 键名全部不匹配（模拟契约由旧版本/手工生成）
+        tmp.write_text(json.dumps(
+            {"rules": {"e1_sat_single_limit": 9999.0, "e4_sat_monthly_net": 8888.0}},
+            ensure_ascii=False), encoding="utf-8")
+        try:
+            paths.RULE_CONTRACT_PATH = tmp
+            th = ptc.load_thresholds()
+            self.assertTrue(any("键名整体不匹配" in w for w in th["_warns"]),
+                            f"漂移未被声张；_warns={th['_warns']}")
+            # 🔴 反向：漂移时**全部**取值必须落到 builtin，⛔ 契约坏值一个都不得生效
+            self.assertEqual(th["e1_sat_single_limit"], ptc.BUILTIN_THRESHOLDS["e1_sat_single_limit"])
+            self.assertEqual(th["e4_sat_monthly_net"], ptc.BUILTIN_THRESHOLDS["e4_sat_monthly_net"])
+        finally:
+            tmp.unlink(missing_ok=True)
+
+    def test_drift_guard_is_quiet_on_real_contract(self):
+        """🔴 **反向断言**：真契约**不得**触发漂移告警
+        （否则那是一条**永远亮着**的告警 —— 报告标准 v2.1 判例：会被学会忽略）。"""
+        th = ptc.load_thresholds()
+        self.assertEqual(th["_source"], "contract")
+        self.assertFalse(any("键名整体不匹配" in w for w in th["_warns"]),
+                         f"真契约误报漂移：{th['_warns']}")
+        self.assertEqual(sum(1 for v in th["_sources"].values()
+                             if v.get("tier") == "contract") > 0, True,
+                         "真契约必须有键走 tier=contract（否则「未误报」是空集假象）")
 
 
 class TestFindTarget(unittest.TestCase):

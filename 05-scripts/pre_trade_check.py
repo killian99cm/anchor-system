@@ -35,11 +35,18 @@ v1.1 变更（系统优化审计剩余项 C5）：
   8. 🆕 watchlist 右侧确认（v4.5.0，须配 --watchlist）—— ① A2 不成立 ② 收盘 ≥ MA5。
      判据订正见手册 §4.4（原「连续 2 天飘红」判据已作废，归属 A2）。级别 `E`，
      条件成立后 T+1 日 14:30 前须出显式裁定。
+  9. 🆕 节前闸门（v4.5.20）—— 手册 §4.5。**连续休市 ≥5 个自然日**的假期前**最后一个交易日**，
+     **禁开新卫星仓／禁加仓**。`X` 执行级，零裁量、不复议、不顺延。
+     🔴 判据源 ＝ `trading_calendar` **实算**：`(next_trading_day(d) − d).days − 1 ≥ 5`。
+     ⚠️ **本项读「提交时刻」（`date.today()` / `--asof`），⛔ 不读数据日期** —— 这与
+     `board_history_record`「按数据自身交易日归档」**方向相反**，故**强制打印两个日期**，
+     一旦被搞混当场可见。日历不可用 ⇒ **fail-closed**（⛔ 不得按星期几心算）。
 """
 import io
 import json
 import os
 import sys
+from datetime import date
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -223,6 +230,51 @@ def _arg_float(flag):
         return None
     try:
         return float(sys.argv[i + 1])
+    except ValueError:
+        return None
+
+
+def holiday_closure(asof, min_days):
+    """§4.5 节前闸门**核心判据（纯函数）**。
+
+    返回 dict：`{"trading": bool, "next_td": date|None, "closure_days": int|None,
+                "hit": bool, "naive_days": int|None}`
+
+    🔴 **为什么必须提成纯函数**（v4.5.7 K2）：内联在 `main()` 里的逻辑**无法被断言** ——
+    只能靠人眼读代码确认，而「读代码确认」在本仓已被证明抓不到同类缺陷
+    （`_ib_placehold` 初版漏一行、套件抓不到，只有独立探针能抓）。
+    ⇒ 判据提出来，`test_pre_trade_check.py` 才能**正面断言「怎么写是对的」＋ 反向断言
+    「原来那种写法确实会错」**。⛔ 本函数**不读时钟、不读文件** —— `asof` 与 `min_days`
+    一律由调用方显式传入（这正是它能被断言的前提）。
+
+    `naive_days` ＝ **少减 1 的写法**（`(next_td − d).days`）。它**故意被算出来**，
+    唯一用途是让测试能确定性地证明「那个 `−1` 是承重的，不是装饰」。
+    """
+    import trading_calendar as tc
+    if not tc.is_trading_day(asof):
+        return {"trading": False, "next_td": None, "closure_days": None,
+                "hit": False, "naive_days": None}
+    nxt = tc.next_trading_day(asof)
+    gap = (nxt - asof).days
+    closure = gap - 1          # 中间那些**完整休市**的自然日
+    return {"trading": True, "next_td": nxt, "closure_days": closure,
+            "hit": closure >= int(min_days), "naive_days": gap}
+
+
+def _arg_date(flag):
+    """读 `--flag YYYY-MM-DD` 形式的日期参数；不存在或非法返回 None。
+
+    v4.5.20：节前闸门（§4.5）需要「**提交时刻**」这一概念，而它**不是**数据日期。
+    `--asof` 存在的唯一目的是**让闸门可被测试与回溯**（⛔ 不是给人日常用的后门）——
+    常规运行一律取 `date.today()`，且**所用日期必须打印出来**（见校验项 9）。
+    """
+    if flag not in sys.argv:
+        return None
+    i = sys.argv.index(flag)
+    if i + 1 >= len(sys.argv):
+        return None
+    try:
+        return date.fromisoformat(sys.argv[i + 1])
     except ValueError:
         return None
 
@@ -482,6 +534,55 @@ def main():
         checks.append(("⏳ E 级闭环义务",
                        "本线为 `E` 评估级（附录E · F1）——条件成立后须于 **T+1 日 14:30 前**出"
                        "**显式裁定**（执行／顺延／撤销），顺延 ≤1 次，**沉默即违规**（F3/F4）"))
+
+    # 9) 节前闸门（手册 §4.5，v3.14 新增；v4.5.20 首次进契约与门禁）
+    #
+    # 🔴 本项读的是「**提交时刻**」，⛔ **不是数据日期** —— 这是**故意的**，
+    #   且与 `gen_watchlist_status` / `board_history_record` 那条教训**方向相反**：
+    #     · 那里用 `now` 是 bug（应按**数据自身交易日**归档，v4.5.7 L2 反向断言钉死）；
+    #     · 这里用 `now` 是**语义本身**（闸门问的是「**现在提交，撞不撞长假**」）。
+    #   ⚠️ **正因为两个方向相反、长相一样，误用风险更高** ⇒ 强制把「所用日期」印出来，
+    #      并同时印出「数据日期」，让二者一旦被搞混就**当场可见**（v2.1 判例：静默即失效）。
+    gate_days = int(th["holiday_gate_min_closure"])
+    _asof_override = _arg_date("--asof")
+    _asof = _asof_override or date.today()
+    _tag_src = (f"提交时刻 {_asof}{'（--asof 覆盖）' if _asof_override else ''}"
+                f"｜数据日期 {d.get('update_date', '?')}")
+    try:
+        # 🔴 判据**全部**来自纯函数 `holiday_closure()` —— 本处只负责渲染与分层，
+        #    ⛔ 不再就地算 `(next_td − d).days − 1`（算在渲染里＝算不进测试里）。
+        g = holiday_closure(_asof, gate_days)
+    except ImportError:
+        checks.append(("⛔ 节前闸门·未校验",
+                       "`trading_calendar` 不可导入 ⇒ 日历无法实算 ⇒ fail-closed 拦截。"
+                       "⛔ 不得按星期几心算近似（会把 9/25 中秋当成交易日）"))
+    except Exception as e:                       # noqa: BLE001 —— CalendarUnavailable 等一律 fail-closed
+        checks.append(("⛔ 节前闸门·未校验",
+                       f"{type(e).__name__}: {e} ⇒ fail-closed 拦截。⛔ 不得静默跳过本项"))
+    else:
+        if not g["trading"]:
+            checks.append(("➖ 节前闸门", f"**不适用** —— {_asof} 非交易日（{_tag_src}）"))
+        elif not g["hit"]:
+            checks.append(("✅ 节前闸门",
+                           f"下一交易日 {g['next_td']}（连续休市 **{g['closure_days']}** 天 "
+                           f"< {gate_days}）—— 非长假前最后交易日（{_tag_src}）"))
+        else:
+            _layer = tgt["layer"] if tgt else None
+            _hit_head = (f"下一交易日 {g['next_td']}（连续休市 **{g['closure_days']}** 天 "
+                         f"≥ {gate_days}）＝**长假前最后交易日**")
+            if _layer is None:
+                checks.append(("⛔ 节前闸门·层别未知",
+                               f"{_hit_head}；而「{keyword}」**不在 targets 品种表内** ⇒ "
+                               f"层别未知 ⇒ **按 fail-closed 拦截**（⛔ 不等于「已通过」，"
+                               f"表外标的本就是约束最弱路径）。{_tag_src}"))
+            elif _layer != "卫星":
+                checks.append(("✅ 节前闸门·本层不适用",
+                               f"{_hit_head}，但目标是**{_layer}层** ⇒ §4.5 只禁卫星层"
+                               f"新建/加仓。{_tag_src}"))
+            else:
+                checks.append(("⛔ 节前闸门",
+                               f"{_hit_head} ⇒ **禁开新卫星仓／禁加仓**（`X` 执行级，"
+                               f"零裁量、不复议、不顺延）。⛔ 今日不可下单。{_tag_src}"))
 
     for tag, msg in checks:
         print(f"  {tag}: {msg}")

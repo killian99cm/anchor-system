@@ -248,6 +248,18 @@ SCALAR_KEYS = {
         anchor_required=False, manual="§4.4",
         desc="watchlist 试探上限"),
 
+    # ── §4.5 节前闸门（v3.14 新增 · 2026-09-23 · 收紧）──────────────────────
+    #   ⚠️ 本键的**判据不是「值」而是「阈值」**：连续休市自然日数由 `trading_calendar`
+    #      实算（`(next_trading_day(d) - d).days - 1`），本键只回答「**多少天才算长假**」。
+    #   🔴 `anchor_required=True`：手册 §4.5 里「≥5 个自然日」这句话如果被改写/删除，
+    #      抽取必须**落 builtin + 落 warns**，⛔ 绝不允许正文别处的一个数字顶替定义
+    #      （E4 事故 `¥1` 的正面防线）。
+    "holiday_gate_min_closure": dict(
+        internal="holiday_gate_min_closure", builtin=5, lo=3, hi=20, conv="int",
+        patterns=[(_LS + r"\*{0,2}本闸门适用于[^\n]{0,30}?≥\s*([0-9]+)\s*个自然日", True)],
+        anchor_required=True, manual="§4.5 节前闸门",
+        desc="节前闸门适用的最小连续休市自然日数（≥ 此值即禁开新卫星仓）"),
+
 }
 
 #: 存在性规则 / 文本型规则（不是「取值」，是「这条契约还在不在」）

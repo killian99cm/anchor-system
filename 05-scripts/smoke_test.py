@@ -109,39 +109,17 @@ def contains_token(text, token):
     return bool(compact_token and compact_token in compact_text)
 
 
-def private_tokens_from_data(data, embed):
-    tokens = set()
-    for h in data.get('holdings_summary', []):
-        name = str(h.get('name', '')).strip()
-        if name:
-            tokens.add(name)
-        code = str(h.get('code', '')).strip()
-        if code:
-            tokens.add(code)
-    for s in data.get('stock_holdings', []):
-        name = str(s.get('name', '')).strip()
-        if name:
-            tokens.add(name)
-        code = str(s.get('code', '')).strip()
-        if code:
-            tokens.add(code)
-    for key in ('total_assets', 'fund_mv', 'stock_mv', 'cash_mv'):
-        val = embed.get(key, data.get(key))
-        if isinstance(val, (int, float)):
-            tokens.add(str(int(round(val))))
-    for key in ('bedrock_mv', 'core_mv', 'sat_mv', 'cash_mv'):
-        val = embed.get(key)
-        if isinstance(val, (int, float)):
-            tokens.add(str(int(round(val))))
-    hc = embed.get('holding_counts', {}) if isinstance(embed, dict) else {}
-    active_label = str(hc.get('active_label', '')).strip()
-    if active_label:
-        tokens.add(active_label)
-    # v4.4.0 修复：不再把 "N只基金/N只股票" 拆成独立细 token——它是通用计数短语，
-    # 公开示例页用示例数据渲染自身 active_label（如 "8只基金+1项现金"）时与真实基金数
-    # 同为 N 即必然误报。完整 active_label + 各持仓名/code 已足够防泄漏；写死风险由
-    # 完整标签命中覆盖（真实标签带分组间隔，与示例标签不同串）。
-    return sorted(tokens, key=len, reverse=True)
+def private_tokens_guard():
+    """114/#C1-19：私有标记 token 集 —— **单一真源 ＝ gen_anchor_pro**（v4.5.4 修复版实现）。
+
+    ⛔ 不得在本文件另建第二套 token 派生（历史缺陷 #C1-19：本文件旧内联实现有两个误报源——
+    ① 用**页面 embed** 的金额派生 token，示例页金额为 0 ⇒ 产生退化 token `'0'` ⇒ 恒命中；
+    ② 把 active_label 计入 token，示例页用示例数据渲染同名计数 ⇒ 必然误报。
+    gen 侧实现只从**本地真实持仓**派生（数值仅取**非零**值、含名字/代码），且带
+    CSS 长度单位豁免（v4.5.4）——升级为同一实现即为「单一真源」，两个误报源随之消失。）
+    """
+    import gen_anchor_pro as gap
+    return gap.private_tokens_from_local_portfolio(), gap.contains_sensitive_token
 
 
 def main():
@@ -346,8 +324,8 @@ def main():
             check("公开页 var D 数据块解析", False, str(exc))
         public_script_ok, public_script_detail = check_inline_script_syntax(PUBLIC_HTML_PATH)
         check("公开页内嵌脚本语法正确", public_script_ok, public_script_detail)
-        private_tokens = private_tokens_from_data(data, embed)
-        check("公开页无私有标记", not any(contains_token(public_html, token) for token in private_tokens), "检测到私有持仓或基准标记")
+        private_tokens, contains = private_tokens_guard()
+        check("公开页无私有标记", not any(contains(public_html, token) for token in private_tokens), "检测到私有持仓或基准标记")
         check("公开页现金名称脱敏", '余额宝' not in public_html, "现金名称仍暴露为余额宝")
         check("公开页使用示例资产", public_embed.get('total_assets', -1) == public_data.get('total_assets', -2),
               f"(page={public_embed.get('total_assets')} vs example={public_data.get('total_assets')})")
@@ -395,7 +373,7 @@ def main():
         check("示例首页使用示例资产", example_embed.get('total_assets', -1) == public_data.get('total_assets', -2))
         check("示例首页含动态合同", '"holding_counts"' in example_html and '"layers"' in example_html)
         check("示例首页含新视觉结构", 'ANCHOR COMMAND CENTER' in example_html and 'Portfolio map' in example_html and 'Sample performance' in example_html)
-        check("示例首页无私有标记", not any(contains_token(example_html, token) for token in private_tokens), "检测到私有持仓或基准标记")
+        check("示例首页无私有标记", not any(contains(example_html, token) for token in private_tokens), "检测到私有持仓或基准标记")
 
     # 7. 运行核心测试
     print("\n[7] 核心计算测试 test_calculations.py")

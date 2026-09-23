@@ -208,6 +208,16 @@ def accuracy_report(decisions=None) -> dict:
     reviewed = [d for d in decisions if d["outcome"] and _is_active(d)]
     total = len(decisions)
 
+    # ── 违规计数（B3 闭环断点补载体 · 2026-09-23）─────────────────────────
+    # §2.4：累计 3 次违规 → 体系升级「人工复核模式」。此前单次违规有标记（tags 含「违规」），
+    # 但**累计计数无载体**（靠人记）。口径：tags 任一含「违规」字样（如 #54「执行违规」）；
+    # 只统计有效决策（_is_active，与被取代记录隔离）。
+    cur_period = datetime.now().strftime("%Y-%m")
+    violations = [d for d in decisions
+                  if _is_active(d) and any("违规" in str(t) for t in (d.get("tags") or []))]
+    violations_month = [d for d in violations
+                        if str(d.get("date", "")).replace("/", "-").startswith(cur_period)]
+
     # 总览
     correct = sum(1 for d in reviewed if d["outcome"] == "correct")
     wrong = sum(1 for d in reviewed if d["outcome"] == "wrong")
@@ -275,6 +285,10 @@ def accuracy_report(decisions=None) -> dict:
         "avg_win_pct": round(avg_win, 2) if avg_win is not None else None,
         "avg_loss_pct": round(avg_loss, 2) if avg_loss is not None else None,
         "pnl_ratio": round(pnl_ratio, 2) if pnl_ratio is not None else None,
+        # B3（2026-09-23）：违规累计载体——§2.4「累计 3 次 → 人工复核模式」不再靠人记
+        "violations_month": len(violations_month),
+        "violations_total": len(violations),
+        "violation_ids": [d.get("id") for d in violations],
         # v4.4.16：口径可见性——盈亏比的分母/分子只来自 realized，其余必须显式报出被排除多少
         "pnl_basis_counts": basis_counts,
         "pnl_ratio_sample": {"wins": len(wins), "losses": len(losses), "min_n": MIN_N},
@@ -754,6 +768,11 @@ def main() -> int:
             return 1
         review_decision(args[0], args[1], args[2] if len(args) > 2 else "",
                         args[3] if len(args) > 3 else "", basis=basis)
+        # B1（闭环断点补载体 · 2026-09-23）：判定产出后的**提炼提示**——
+        # 「已判定」≠「教训已入库」；教训提炼是进化环第③步，此前无载体（靠人记）。
+        print("💡 闭环提示（B1）：若本判定含**可复用教训**（异常判定/反面案例/好操作）——"
+              "请提炼一条写入账本 `07-memory/project-investment-lessons.md`（教训库），"
+              "并在提案台账按需立项（进化环③→④）")
         return 0
 
     if "--report" in sys.argv:
@@ -780,6 +799,12 @@ def main() -> int:
             print(f"   追高型买入: {rep['chase_count']} 条（{rep['chase_pct']:.1f}%｜目标 ≤20%）")
         if rep["stop_loss_execution_pct"] is not None:
             print(f"   止损执行率: {rep['stop_loss_executed']}/{rep['stop_loss_triggers']}（{rep['stop_loss_execution_pct']:.1f}%｜目标 100%）")
+        # B3（2026-09-23 补载体）：违规累计——§2.4「累计 3 次 → 人工复核模式」不再靠人记
+        _v_m, _v_t = rep["violations_month"], rep["violations_total"]
+        _vs = f"｜明细 {rep['violation_ids']}" if rep["violation_ids"] else ""
+        print(f"   违规计数: 本月 {_v_m} ／ 累计 {_v_t}（口径＝tags 含「违规」｜§2.4 累计 ≥3 ⇒ 升「人工复核模式」）{_vs}")
+        if _v_t >= 3:
+            print("   🔴 §2.4 触发：累计违规 ≥3 —— 体系应升级为「人工复核模式」（所有买入需人工确认），请裁决")
         if rep["by_type"]:
             print("   按类型:")
             for t, b in rep["by_type"].items():

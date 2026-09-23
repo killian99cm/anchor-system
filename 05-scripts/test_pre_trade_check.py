@@ -375,10 +375,14 @@ class TestHolidayGateEndToEnd(unittest.TestCase):
         （那里该用**数据自身交易日**，用 `now` 是 bug）。两个方向**语义相反、长相一样**
         ⇒ 必须有一条断言把「这里用的是哪一个」钉死，否则后人按上一处教训来改**必错**。
 
-        构造：数据日期固定为 2026-09-22（`portfolio_data.json` 现值）。
+        构造：数据日期 ＝ `portfolio_data.json` **现值**（本用例不固定它，见下行注）。
           · 提交时刻 ＝ 2026-09-30（长假前）⇒ **⛔ 拦**
-          · 提交时刻 ＝ 2026-09-22（同一数据日期）⇒ **不拦**
+          · 提交时刻 ＝ 2026-09-22（普通交易日）⇒ **不拦**
         两者结论必须不同 —— 相同则说明闸门读的是数据日期（实现方向反了）。
+
+        🔴 2026-09-23 修复（假红）：原实现把「数据日期 2026-09-22」**硬编码**进断言，
+            ⇒ 每次收盘入库（update_date 前进一天）本用例必红，**长相与代码回归完全一样**
+            （同族：单 144「活源失败与代码回归不可区分」）。现改为**从数据源读取**。
         """
         rc_eve, out_eve = self._run(["创新药", "300", "--asof", "2026-09-30"])
         rc_day, out_day = self._run(["创新药", "300", "--asof", "2026-09-22"])
@@ -386,7 +390,11 @@ class TestHolidayGateEndToEnd(unittest.TestCase):
         self.assertNotIn("⛔ 节前闸门:", out_day)
         self.assertEqual(rc_eve, 1)
         # 同一个数据日期必须被打印出来（否则「读了哪一个」在报告上无从分辨）
-        self.assertIn("数据日期 2026-09-22", out_eve)
+        # ⛔ 不得硬编码日期；每次都从真源读（读不到即用例失败，不静默放过）
+        with open(paths.DATA_PATH, encoding="utf-8") as f:
+            live_date = json.load(f).get("update_date")
+        self.assertTrue(live_date, f"portfolio_data.json 缺 update_date：{paths.DATA_PATH}")
+        self.assertIn(f"数据日期 {live_date}", out_eve)
 
 
 if __name__ == "__main__":

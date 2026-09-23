@@ -6,6 +6,45 @@
 
 ---
 
+## v4.5.21 — 2026-09-23（Qoder 交付批次：归档迁移 ＋ 规则体系吸收档案 ＋ 9 单交付 ＋ 生产 132/133 收口）
+
+> **性质**：**运维与工程交付**（⛔ 非规则层变更——未改任何规则文本/阈值/契约值；资金动作＝零）。
+> **执行**：Qoder（用户直接指派，接替 Claude 的持续工作）。各单完整证据见 `Anchor-Software/_handoff/outbox/`。
+
+### ① 运维：Claude 对话归档迁出 C 盘（C 盘减压）
+- `paths.py` 新增 `ARCHIVE_BASE`（默认 `D:\C盘瘦身搬家文件`，env `ANCHOR_ARCHIVE_BASE` 可覆盖）；`ARCHIVE_DIR` 随之迁移。
+- 5.9GB 归档 + 桌面游离备份统一外移：**C 盘 2.0GB → 9.07GB 可用**；计划任务无感跟随（不带 `--out`，读 paths.py）；实测增量归档正常（46 日期目录完整）。
+- 桌面归档区：`D:\C盘瘦身搬家文件\Desktop-Backups\`（含 README 清单）。
+
+### ② 新增：Anchor 规则体系吸收档案
+- `00-system/2026-09-23-Anchor规则体系吸收档案.md`（**只读索引**：规则总清单/三条版本轴脉络/四方映射/判据源速查/**11 条存疑清单**）——⚠️ 00-system 不入 git，文件仅本地。
+
+### ③ 任务单 9 单交付（体系脚本侧重 6 单 + 软件侧 2 单 + 关单 1 单）
+| 单 | 内容 | 关键回归 |
+|---|---|---|
+| 144 | 测试层三态（活源断=SKIPPED 带原因，不再假红；I8c 执行计数；smoke 三态分列） | test_rule_gates 177 项 0 失败 |
+| 142 | watchlist A2 判据缓存回退（三态 live/cache/None；缓存字节未变） | W 系列 7 项 |
+| 145 | E 级触发线到期载体（`decision_log --trigger-lines`，挂 sync_all；只报不裁定） | 29 项全过 |
+| 135 | 指数代码名称一致性校验（`index_registry.json` + `data_pipeline --verify-codes` + `--check` 量级护栏节） | 187 文件无新 🔴 |
+| 141 | 止盈回测口径契约化（档位唯一源=契约，四守卫，零硬编码回退） | 反向断言证非硬编码 |
+| 143 | 输出层两处静默错值（南向 currency→HKD/万港元；hub 卡片去三处硬编码） | 新增 2 测试文件全过 |
+| 139 | C2 盈亏比冻结执行落地（软件侧：能算/能拦/能显示） | app pytest 866 passed |
+| 140 | 数据源降级四态（rate_limited vs unavailable；判据缺失显式） | app pytest 881 passed |
+| 146 | E4 闸门三重缺陷 → 验收核实 **关单**（A1–A10 全过） | 实跑 E4=¥1,500 正常比较 |
+
+### ④ 生产：133 摘妙想 key（用户配额池回归）＋ 132 补全
+- **133 已执行**（19:03 CST 窗口）：生产注释 `MX_APIKEY` → 重建 backend。妙想归零 ✓ 指数 8/8 real 腾讯源无 demo ✓ 回滚演练 2 秒 ✓ RestartCount=0 ✓；**先决证据**：生产连续 8 日打满 300/日预算（占用户 500 池 60%）⇒ 保持摘 key。板块级资金变「待核验」（如实）。
+- **132 补全**：`deploy/ops/backend_crash_watch.sh`（独立崩溃告警，cron */5，**E2E 实证** PushPlus code200＋邮件×2）；`restart_receipt.sh` 部署实跑 one-shot-success（并修复 downtime 天文数字缺陷）；生产验证 alembic=head `b3c5d7e8f0a2`。
+- 遗留：根因张力（outbox vs inbox 证据）交指挥端复核定案。
+
+### 影响文件
+`05-scripts/paths.py`、`test_rule_gates.py`、`smoke_test.py`、`gen_watchlist_status.py`、`decision_log.py`、`test_decision_log.py`、`data_pipeline.py`、`index_registry.json`(新)、`stop_profit_backtest.py`、`fetch_public.py`、`gen_daily_hub.py`、`gen_intraday_auto.py`、`test_southbound_intraday.py`、`test_southbound_currency.py`(新)、`test_index_registry.py`(新)、`test_gen_daily_hub.py`(新)；`05-scripts/sync_all.py`（接线 1 行，gitignored）；软件仓库 139/140 全部改动 + `deploy/ops/backend_crash_watch.sh`(新)/`restart_receipt.sh`。
+
+### 验证
+`version_check.py` 三处一致（本版）；各单回归/反向断言证据见 outbox；生产 133/132 证据见 `outbox/133_*`、`outbox/132_补全-*`。
+
+---
+
 ## v4.5.20 — 2026-09-23
 
 > **吸收外部圆桌评审（2026-09-22 六席 AI 评审「体系约束是否合理」）—— 落 A 档收紧项 ＋ 修 3 条手册侧缺陷 ＋ 立 5 条待裁决。性质：规则层收紧（新增一条闸门 ＋ 两条元规则）＋ 定义层订正，⛔ 无任何既有阈值被放宽。资金动作＝零。**

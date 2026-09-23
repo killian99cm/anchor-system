@@ -133,16 +133,37 @@ def close_class_of(market_or_class):
 # ============================================================
 # 需求 A（#138）· 健康矩阵
 # ============================================================
-GRADES = ("real", "degraded", "unavailable")
+GRADES = ("real", "degraded", "rate_limited", "unavailable")
+
+
+def grade_for_failure(prev: dict | None) -> str:
+    """inbox/140 R1：失败态判据——**只看历史是否成功过**（⛔ 不看错误类型/错误文案）。
+
+    历史成功证据：`prev.last_ok` 非空，或 `attempted_sources` 中存在 `ok=true` 的记录。
+    有 → `rate_limited`（端点存在，本次限流/间歇失败——判不触发＋留痕，不修源）；
+    无 → `unavailable`（结构性无源——走替代口径，不重复尝试）。
+    """
+    if not prev:
+        return "unavailable"
+    if prev.get("last_ok"):
+        return "rate_limited"
+    for a in (prev.get("attempted_sources") or []):
+        if isinstance(a, dict) and a.get("ok"):
+            return "rate_limited"
+    return "unavailable"
 
 
 class HealthMatrix:
     """机器可读的源健康记录。每次源尝试都留痕 —— 这是排查「为什么又没取到」的唯一依据。
 
-    grade 三态（A-1）：
-      real        = 原始口径可用
-      degraded    = 用了替代口径（必须带 substitute.used/kind/known_bias）
-      unavailable = 无数据
+    grade 四态（inbox/140 R1 裁定 · 2026-09-23 由三态扩为四态）：
+      real         = 原始口径可用
+      degraded     = 用了替代口径（必须带 substitute.used/kind/known_bias）
+      rate_limited = **端点确认存在，本次因限流/间歇失败取不到** ⇒ 判不触发＋留痕；
+                     ⛔ **不修源**（限流是待尊重的事实），下次再试
+      unavailable  = **结构性无源**（该源从未成功过，源本身不提供该字段）
+    判据（141 R1）：失败态**只看历史是否成功过**（`grade_for_failure()`）——
+    ⛔ 不得靠错误类型猜测（RemoteDisconnected 也可能是网络故障）。
     """
 
     def __init__(self):
@@ -275,7 +296,9 @@ class HealthMatrix:
             "probe_time": probe_time or self._reset_at,
             "spec": "Anchor-Software/_handoff/inbox/138_*.md 需求A；本文件由脚本自动写，不得手工维护",
             "grade_meaning": {g: d for g, d in zip(
-                GRADES, ("原始口径可用", "用了替代口径（须读 substitute）", "无数据"))},
+                GRADES, ("原始口径可用", "用了替代口径（须读 substitute）",
+                         "限流性取不到（端点存在、本次失败——判不触发＋留痕；⛔ 不修源，下次再试）",
+                         "结构性无源（从未成功过）"))},
             "close_rules": CLOSE_RULES,
             "targets": self.targets,
         }
@@ -466,14 +489,21 @@ def main():
             index_chain(secid, tencent_code=opt("--tencent"), sina_symbol=opt("--sina"),
                         ths_code=opt("--ths"), mx_query=opt("--mx")),
             matrix=m)
-        m.finalize(target, "real" if ok else "unavailable")
+        _prev = m.targets.get(target)
+        _grade = "real" if ok else grade_for_failure(_prev)    # 140 R1：失败态按历史成功判四态
+        m.finalize(target, _grade)
         m.reading(target, (payload or {}).get("price"), close_confirmed=True, source="probe")
         m.write()
         print(f"— 兜底链探测：{target}（secid={secid}）— 共 {len(chain)} 跳")
         for n, (name, result, good) in enumerate(chain, 1):
             print(f"  {n}. {'✅' if good else '❌'} {name}: {result}")
-        print(f"  → grade = {'real' if ok else 'unavailable'}"
-              f"{'（全跳失败——不得静默替代，须显式标 unavailable）' if not ok else ''}")
+        if ok:
+            print("  → grade = real")
+        elif _grade == "rate_limited":
+            print("  → grade = rate_limited（全跳失败，但**历史上成功过** ⇒ 端点存在、本次限流/间歇"
+                  "——判不触发＋留痕；⛔ 不修源，下次再试）")
+        else:
+            print("  → grade = unavailable（全跳失败且**从未成功过** ⇒ 结构性无源；⛔ 不重复尝试）")
         print(json.dumps(payload, ensure_ascii=False, indent=2) if payload else "  (全败)")
         return 0
 
@@ -525,7 +555,7 @@ def main():
         print(f"生成于 {d.get('generated')} ｜ 标的数 {len(d.get('targets', {}))}")
         for k, v in d.get("targets", {}).items():
             grade = v.get("grade") or "?"
-            mark = {"real": "✅", "degraded": "🟡", "unavailable": "🔴"}.get(grade, "❓")
+            mark = {"real": "✅", "degraded": "🟡", "rate_limited": "🟠", "unavailable": "🔴"}.get(grade, "❓")
             print(f"  {mark} {k}  grade={grade}  尝试源={len(v.get('attempted_sources', []))}")
             if v.get("substitute"):
                 print(f"      替代: {v['substitute'].get('used')}（{v['substitute'].get('kind')}）"

@@ -441,6 +441,7 @@ check("I4 板块查不到 ⇒ 判定为不可判（不得当作『未命中』�
 _IB_ITEMS = ("I5", "I5b", "I6", "I7", "I8")
 _IB_DONE: set = set()
 _IB_SKIP = None
+_IB_EXECUTED = 0          # 🔴 144 验收③：真执行计数（源可达时须 ≥ len(_IB_ITEMS)）
 
 
 def _ib(name, cond, detail=""):
@@ -449,14 +450,23 @@ def _ib(name, cond, detail=""):
     ⛔ 判据**只看「取到几行」，完全不看内容对错** —— 这正是 144 验收②成立的理由：
        空 ⇒ 不知道（skip）；非空 ⇒ 内容对不对**由断言说了算**（该 FAIL 就 FAIL）。
     """
+    global _IB_EXECUTED
     _IB_DONE.add(name.split(" ")[0])
-    return skip(name, _IB_SKIP) if _IB_SKIP else check(name, cond, detail)
+    if _IB_SKIP:
+        return skip(name, _IB_SKIP)
+    _IB_EXECUTED += 1     # 144 验收③：真走 check（而不是被 skip 绕过）才计数
+    return check(name, cond, detail)
 
 
 try:
     _old_only_t2 = fp.sector_movers(top=500, pz=500)      # 旧实现：单宇宙 + 单页
     _old_names = {r["name"] for r in (_old_only_t2.get("gainers") or []) + (_old_only_t2.get("losers") or [])}
     _IB_SKIP = _ib_skip_reason(_old_names)
+    # 🔴 144 R3：源状态**无论可达与否都必须可见**（静默 skip 与静默通过同险，v4.5.4）——
+    #    本行是「本次判定所依据的源状态」的显式留痕，skip 与否都不能省。
+    print(f"[§I-b] 活源状态：`sector_movers(top=500, pz=500)` 取到 {len(_old_names)} 个板块名 ⇒ "
+          + ("**可达**，I5–I8 断言照常执行" if not _IB_SKIP else
+             "**不可达（0 行）** ⇒ I5–I8 记为**无法判定**（⛔ 不等于通过：本次未覆盖）"))
 
     # 🔴 **探针订正（2026-09-21）**：必须**严格**匹配 `s in n`，⛔ 不得双向子串。
     #    原写法 `any(s in n or n in s)` 的 `n in s` 方向会把**行业板块「电池」**
@@ -519,6 +529,18 @@ check("I8b §I-b **双向**占位完备：① 计划内五项全发出 ② 无�
       "（活源通/断/中途异常三态都不许从分母里消失；新项漏登记同样在此变红）",
       not _missing and not _extra,
       f"未发 {_missing} / 计划外 {_extra}；实发 {sorted(_IB_DONE)}")
+
+# 🔴 144 验收③（计数）：**源可达时 I5–I8 断言必须"真执行"（计数 ≥5）** ——
+#    防的是 skip 机制的第一风险：**断言被整条绕过，而输出仍然显绿**
+#    （「skip 把断言悄悄吃掉」与「占位未登记」同族：读代码看不出，只有计数能钉住）。
+#    源不可达时本项**随 §I-b 一并无法判定**（⛔ 不得报绿 —— 那正是「未覆盖被读成合格」）。
+if _IB_SKIP:
+    skip("I8c 🔴 144 验收③·断言执行计数 ≥5（源可达时 I5–I8 **真执行**，防「引入 skip 后断言永不执行」）",
+         f"源不可达 ⇒ 断言未执行（真执行计数 {_IB_EXECUTED}），本项无法判定")
+else:
+    check("I8c 🔴 144 验收③·断言执行计数 ≥5（源可达时 I5–I8 **真执行**，防「引入 skip 后断言永不执行」）",
+          _IB_EXECUTED >= len(_IB_ITEMS),
+          f"真执行 {_IB_EXECUTED} / 计划 {len(_IB_ITEMS)}")
 
 # ---- I-c 🔴 MA5 口径歧义：两解必须是**可分辨的不同值** ----
 _klt = [{"date": f"2026-09-{10+i:02d}", "close": c}
@@ -1480,6 +1502,139 @@ check("N36 漂移试验后契约路径**已还原**（后续断言仍读真契�
       paths.RULE_CONTRACT_PATH == _orig_rc,
       f"{paths.RULE_CONTRACT_PATH}")
 shutil.rmtree(_N_TMP, ignore_errors=True)
+
+# ══════════════════════════════════════════════════════════════════
+print("\n########## W. A2 判据缓存回退（inbox/142：活源空时不得降级为『判不了』）##########")
+# 夹具取 9/21 实况形态：当日 ∈ (0,2%)、前日 > 0 ⇒ 四条全「连续 2 日飘红」⇒ 应判「⛔ 禁买」
+_W_TODAY = {                       # 缓存当日档形状：{code: {name, chg_pct, board_type}}
+    "BK0968": {"name": "固态电池", "chg_pct": 0.75, "board_type": "概念板块"},
+    "BK0892": {"name": "人形机器人", "chg_pct": 1.36, "board_type": "概念板块"},
+    "BK0800": {"name": "智能驾驶", "chg_pct": 1.22, "board_type": "概念板块"},
+    "BK0478": {"name": "有色金属", "chg_pct": 0.96, "board_type": "行业板块"},
+}
+_W_PREV = {c: {**v, "chg_pct": v["chg_pct"] + 0.8} for c, v in _W_TODAY.items()}
+_W_ITEMS = [{"sector": "固态电池", "etf_code": "159755"},
+            {"sector": "人形机器人", "etf_code": "562500"},
+            {"sector": "智能驾驶", "etf_code": "159889"},
+            {"sector": "有色金属", "etf_code": "512400"}]
+_W_CONTRACT = {"rules": {"a2_red_day_pct": 2.0, "watchlist_confirm_ma_period": 5,
+                         "watchlist_confirm_ma_includes_today": True,
+                         "a2_prev_day_cache": "board_pct_history.json"}}
+_W_NOW = datetime(2026, 9, 23, 16, 0)
+_W_KL = [{"date": f"2026-09-{10 + i:02d}", "close": c}
+         for i, c in enumerate([1.0, 1.0, 1.0, 1.0, 1.0, 1.20])]
+_W_LIVE = {                        # 活源形状（与 board_movers_all() 同构）；与缓存同一份数值
+    "by_name": {v["name"]: {"code": c, **v} for c, v in _W_TODAY.items()},
+    "rows": [{"code": c, **v} for c, v in _W_TODAY.items()],
+    "universes": {"概念板块": {"total": 3, "fetched": 3, "complete": True},
+                  "行业板块": {"total": 1, "fetched": 1, "complete": True}},
+    "complete": True, "total_all": 4, "ts": "live-fixture",
+}
+_W_DAY_FN = (lambda d: (dict(_W_TODAY) if d == "2026-09-21" else
+                        dict(_W_PREV) if d == "2026-09-18" else None))
+_ORIG_W = {n: getattr(fp, n) for n in
+           ("board_movers_all", "ref_last_trading_day", "prev_trading_day",
+            "board_history_day", "board_history_gaps", "daily_kline",
+            "board_history_record")}
+
+
+def _w_apply(live, day_fn):
+    fp.board_movers_all = lambda: live
+    fp.ref_last_trading_day = lambda: ("2026-09-21", [{"date": "2026-09-21"}])
+    fp.prev_trading_day = lambda kl, d: "2026-09-18"
+    fp.board_history_day = day_fn
+    fp.board_history_gaps = lambda kl=None, upto=None: {"checked": False, "reason": "夹具（W）"}
+    fp.daily_kline = lambda code, n=30: list(_W_KL)
+
+
+_w_tmp = tempfile.mkdtemp(prefix="anchor_w142_")
+_w_cache_path = Path(_w_tmp) / "board_pct_history.json"
+try:
+    # ---- W1 正向：活源空 ＋ 缓存有当日值 ⇒ 明确 A2 判定（非「仅部分可判」）----
+    _w_apply({}, _W_DAY_FN)
+    _st_cache = gws.build_status({"watchlist": _W_ITEMS}, _W_CONTRACT, _W_NOW,
+                                 record_history=False)
+    _v_cache = [e["verdict"] for e in _st_cache["entries"]]
+    check("W1 🔴 142 验收①·活源空+缓存有当日值 ⇒ 四条均为**明确 A2 判定**（夹具下＝⛔ A2 禁买），"
+          "⛔ 不得降级为「🟡 A2 仅部分可判」",
+          _v_cache == ["⛔ A2 禁买"] * 4, f"实得 {_v_cache}")
+
+    # ---- W2 反向（本单最重要）：修复前写法（只调活源且返空、无回退）⇒ 必须降级 ----
+    #    把「空的活源结果」直接喂给 evaluate_entry ＝ 复现修复前路径。
+    #    ⛔ 修复后**永久保留**：一旦有人删掉回退，本断言立刻变红（＝缺陷复现）。
+    _old_verdicts = {gws.evaluate_entry(it, _W_CONTRACT, {}, _W_NOW,
+                                        prev_day=_W_PREV, prev_date="2026-09-18")["verdict"]
+                     for it in _W_ITEMS}
+    check("W2 🔴 142 验收②（反向）·修复前写法（活源空、无回退）在同一夹具下**确实降级**"
+          "⇒「🟡 A2 仅部分可判」",
+          _old_verdicts == {"🟡 A2 仅部分可判"}, f"实得 {_old_verdicts}")
+
+    # ---- W3 幂等：同数据，活源通／断两路径 verdict 逐字相等（R4）----
+    _w_apply(_W_LIVE, _W_DAY_FN)
+    _st_live = gws.build_status({"watchlist": _W_ITEMS}, _W_CONTRACT, _W_NOW,
+                                record_history=False)
+    _v_live = [e["verdict"] for e in _st_live["entries"]]
+    check("W3 🔴 142 验收③·幂等：活源通／断两路径 verdict **逐字相等**（仅来源字段不同）"
+          "—— 证明回退不是装饰",
+          _v_live == _v_cache, f"live={_v_live}／cache={_v_cache}")
+
+    # ---- W4 来源可见（双向）：回退路径含「回退」标记＋原因；活源路径不含 ----
+    _c_reason = "".join(e["reason"] for e in _st_cache["entries"])
+    _l_reason = "".join(e["reason"] for e in _st_live["entries"])
+    check("W4 🔴 142 验收④·来源可见（双向）：回退路径含「回退」标记＋原因；活源路径不含；"
+          "board_source 字段三态可辨（cache/live）",
+          ("回退" in _c_reason) and ("回退" not in _l_reason)
+          and _st_cache["board_source"]["source"] == "cache"
+          and _st_live["board_source"]["source"] == "live"
+          and all(e["board_source"] == "cache" for e in _st_cache["entries"])
+          and all(e["board_source"] == "live" for e in _st_live["entries"]),
+          f"cache含标记={'回退' in _c_reason}／live含标记={'回退' in _l_reason}")
+
+    # ---- W5 两源皆空 ⇒ 仍 fail-closed，且报文与「回退成功」可区分 ----
+    _w_apply({}, lambda d: None)
+    _st_none = gws.build_status({"watchlist": _W_ITEMS}, _W_CONTRACT, _W_NOW,
+                                record_history=False)
+    _v_none = [e["verdict"] for e in _st_none["entries"]]
+    check("W5 🔴 142 验收⑤·两源皆空 ⇒ 仍 fail-closed（「🟡 A2 仅部分可判」），"
+          "报文含「两源皆空」、与回退成功路径可区分（后者无此句）",
+          _v_none == ["🟡 A2 仅部分可判"] * 4
+          and all(e["board_source"] is None for e in _st_none["entries"])
+          and all("两源皆空" in e["reason"] for e in _st_none["entries"])
+          and "两源皆空" not in _c_reason,
+          f"实得 {set(_v_none)} src={_st_none['entries'][0]['board_source']}")
+
+    # ---- W6 缓存不被回退污染（R3/验收⑥）：真 record 走 env 隔离文件 ----
+    #    ⛔ 核心：record 收到的必须是**活源结果（空）**、不是回退值 ——
+    #    否则一次失败即把缓存固化成它自己的来源（自我循环）。
+    _w_cache_path.write_text(json.dumps(
+        {"schema": 1, "days": {"2026-09-21": _W_TODAY, "2026-09-18": _W_PREV}},
+        ensure_ascii=False), encoding="utf-8")
+    _w_before = _w_cache_path.read_bytes()
+    _w_seen = []
+    fp.board_history_record = (lambda ab, td, now=None:
+                               (_w_seen.append(ab), _ORIG_W["board_history_record"](ab, td, now))[1])
+    os.environ["ANCHOR_BOARD_HISTORY"] = str(_w_cache_path)
+    fp.board_history_day = _ORIG_W["board_history_day"]      # 真实读 env 隔离文件
+    try:
+        _st_w6 = gws.build_status({"watchlist": _W_ITEMS}, _W_CONTRACT, _W_NOW,
+                                  record_history=True)
+        _w_after = _w_cache_path.read_bytes()
+        _w_first = _w_seen[0] if _w_seen else None
+        check("W6 🔴 142 验收⑥·回退路径下缓存文件**字节未变**，且 record 首参为**活源结果**"
+              "（空表）—— 回退值不得写回缓存",
+              _w_after == _w_before and len(_w_seen) > 0
+              and not (_w_first or {}).get("by_name") and not (_w_first or {}).get("rows"),
+              f"字节{('未变' if _w_after == _w_before else '**变了**')}；"
+              f"record 调用 {len(_w_seen)} 次，首参={_w_first}")
+        check("W6b 回退路径读**真缓存文件**（非夹具函数）仍给出明确 A2 判定 ⇒ ⛔ A2 禁买",
+              [e["verdict"] for e in _st_w6["entries"]] == ["⛔ A2 禁买"] * 4,
+              f"实得 {[e['verdict'] for e in _st_w6['entries']]}")
+    finally:
+        os.environ.pop("ANCHOR_BOARD_HISTORY", None)
+finally:
+    for _n, _v in _ORIG_W.items():
+        setattr(fp, _n, _v)
+    shutil.rmtree(_w_tmp, ignore_errors=True)
 
 # ══════════════════════════════════════════════════════════════════
 _fail = [n for n, ok, _ in _results if not ok]

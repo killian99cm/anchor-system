@@ -25,7 +25,7 @@ PUBLIC_DATA_PATH = paths.DASHBOARD_DIR / "portfolio_data_example.json"
 PUBLIC_HTML_PATH = ANCHOR / "08-website" / "anchor-pro.html"
 EXAMPLE_HTML_PATH = paths.DASHBOARD_DIR / "portfolio_analysis_example.html"
 
-PASS, FAIL = 0, 0
+PASS, FAIL, SKIP = 0, 0, 0
 
 
 def check(name, cond, detail=""):
@@ -36,6 +36,17 @@ def check(name, cond, detail=""):
     else:
         FAIL += 1
         print(f"  [FAIL] {name} {detail}")
+
+
+def skip(name, detail=""):
+    """🔴 三态的第三态（inbox/144 R1/验收④）：**无法判定 ≠ 通过 ≠ 失败**。
+
+    静默 skip 与静默通过同样危险（v4.5.4）：本态必须**显式、带原因、与 [FAIL] 可分**，
+    且**不得计入 PASS**（「没测到」渲染成「测了且过了」正是 144 要治的病）。
+    """
+    global SKIP
+    SKIP += 1
+    print(f"  [SKIPPED] {name}" + (f" — {detail}" if detail else ""))
 
 
 def file_hash(path):
@@ -395,14 +406,17 @@ def main():
     )
     check("核心测试通过", "ALL TESTS PASSED" in r2.stdout, f"(rc={r2.returncode})")
 
-    # 7-c2. 决策日志统计测试（C2：盈亏比/追高分母/backfilled 过滤/止损执行率）
+    # 7-c2a. 决策日志统计测试（C2：盈亏比/追高分母/backfilled 过滤/止损执行率）
+    #   🔴 145 A7：**两路并取**（unittest 把 OK 写 stderr，本套件自定义 runner 把
+    #      「ALL TESTS PASSED」写 stdout —— 两处都读过才不会再犯「套件绿而门禁红」）。
     print("\n[7-c2a] 决策日志测试 test_decision_log.py")
     r_dl = subprocess.run(
         f'"{PY}" "{SCRIPTS / "test_decision_log.py"}"',
         shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
         timeout=60
     )
-    check("决策日志统计测试通过", "ALL TESTS PASSED" in r_dl.stdout, f"(rc={r_dl.returncode}) {r_dl.stderr[-200:]}")
+    _dl_out = (r_dl.stdout or "") + (r_dl.stderr or "")
+    check("决策日志统计测试通过", "ALL TESTS PASSED" in _dl_out, f"(rc={r_dl.returncode}) {_dl_out[-200:]}")
 
     # 7-c2. 交易前校验测试（C2/C5：契约阈值/fallback/月操作口径）
     print("\n[7-c2b] 交易前校验测试 test_pre_trade_check.py")
@@ -426,14 +440,29 @@ def main():
     # 7-c2d. 规则门禁回归测试（A2 追红日禁买 / watchlist 右侧确认 / 月额度二维口径）
     #   v4.5.0 建 test_rule_gates.py；v4.5.1 接入本处（§124 登记项 ③）。
     #   此前该测试**只能靠人记得手跑** —— 而「靠人记得」正是这一连串缺陷的成因本身。
+    #   🔴 v4.5.20（inbox/144 验收④）：该套件含**全仓唯一**直连行情活源的断言（§I-b），
+    #      活源限流时它不是回归而是「没测到」—— 本步必须**三态**分类：
+    #      红(rc≠0/失败项) → [FAIL]；绿但含「无法判定 N」→ [SKIPPED]（⛔ 不计 PASS）；纯绿 → [PASS]。
     print("\n[7-c2d] 规则门禁回归测试 test_rule_gates.py")
     r_rg = subprocess.run(
         f'"{PY}" "{SCRIPTS / "test_rule_gates.py"}"',
         shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
         timeout=180
     )
-    check("规则门禁回归测试通过", "全绿" in r_rg.stdout and r_rg.returncode == 0,
-          f"(rc={r_rg.returncode}) {r_rg.stdout.strip().splitlines()[-1] if r_rg.stdout.strip() else r_rg.stderr[-200:]}")
+    _rg_out = (r_rg.stdout or "") + (r_rg.stderr or "")
+    _rg_m = re.search(r"无法判定\D*(\d+)", _rg_out)   # 汇总行恒含「无法判定 N」（N=0 时为 0）
+    _rg_last = _rg_out.strip().splitlines()[-1] if _rg_out.strip() else r_rg.stderr[-200:]
+    if r_rg.returncode != 0:
+        check("规则门禁回归测试通过", False, f"(rc={r_rg.returncode}) {_rg_last}")
+    elif _rg_m is None:
+        check("规则门禁回归测试通过", False,
+              f"输出缺三态汇总行（无法判定计数）⇒ 未知态，⛔ 不得按通过处理。(rc=0) {_rg_last}")
+    elif int(_rg_m.group(1)) > 0:
+        skip(f"规则门禁回归测试（{int(_rg_m.group(1))} 项无法判定：直连活源不可达）",
+             "见 test_rule_gates 输出『无法判定项』清单 —— ⛔ 不等于通过，本次未覆盖该节")
+    else:
+        check("规则门禁回归测试通过", "全绿" in _rg_out and r_rg.returncode == 0,
+              f"(rc={r_rg.returncode}) {_rg_last}")
 
     # 7-c2e. 公开页隐私护栏回归测试（v4.5.4）
     #   缘起：total_hold_pnl_est 转派生后取值 1366.36，整数形态 `1366` 撞上 anchor-pro.html
@@ -570,9 +599,13 @@ def main():
     check("全部脚本编译通过", r3.returncode == 0, "(含 gitignored 私有脚本；修复后需重跑 smoke)")
 
     print("\n" + "=" * 60)
-    print(f"结果: {PASS} 通过 / {FAIL} 失败")
+    # 🔴 144 验收④/⑤：SKIP **与 PASS 分列**（⛔ 不得把「无法判定」并进「通过」静默消化）。
+    print(f"结果: {PASS} 通过 / {FAIL} 失败" + (f" / {SKIP} 跳过（无法判定：⛔ 不等于通过）" if SKIP else ""))
     if FAIL == 0:
-        print("SMOKE TEST PASSED — 产物完整，数据一致")
+        if SKIP:
+            print(f"SMOKE TEST PASSED WITH SKIPS — 产物完整；但含 {SKIP} 项 SKIPPED（本次未测到，覆盖未达成，⛔ 不等于通过）")
+        else:
+            print("SMOKE TEST PASSED — 产物完整，数据一致")
     else:
         print(f"SMOKE TEST FAILED — {FAIL} 项异常，请检查")
         sys.exit(1)

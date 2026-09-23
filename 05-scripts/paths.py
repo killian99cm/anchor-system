@@ -51,8 +51,11 @@ SYNC_LOG_PATH = BRIDGE_DIR / "sync_log.md"
 
 # ============ 桌面其它目录 ============
 MX_OUTPUT_DIR = DESKTOP / "mx_output"
-ARCHIVE_DIR = DESKTOP / "Claude对话归档"
 FINANCE_DIR = DESKTOP / "财务"
+
+# ============ 归档区（2026-09-23 迁出 C 盘：C 盘接近满，归档一律放 D 盘） ============
+ARCHIVE_BASE = Path(os.environ.get("ANCHOR_ARCHIVE_BASE", r"D:\C盘瘦身搬家文件"))
+ARCHIVE_DIR = ARCHIVE_BASE / "Claude对话归档"
 
 # ============ 用户级 Claude Code（与桌面无关的用户配置目录，允许 Path.home） ============
 CLAUDE_HOME = Path.home() / ".claude"

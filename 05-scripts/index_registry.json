@@ -1,0 +1,97 @@
+{
+  "_meta": {
+    "purpose": "指数代码→官方名称 的权威登记；报告正文中的指数必须可在此查到（inbox/135）",
+    "verified_at": "2026-09-23",
+    "verified_source": "腾讯 qt.gtimg.cn（东财当日不可达）；本次复核一致 15 条",
+    "rule": "secid 前缀：0.=深市/深证/国证，1.=沪市/中证（注：980017 用 0.）；同一串数字不同前缀指向不同标的，故必须存 secid 而非裸代码",
+    "maintainer": "锚定系统 05-scripts（新增指数请先双源核名再登记）"
+  },
+  "indices": {
+    "399811": {
+      "official_name": "CSSW电子",
+      "secid": "0.399811",
+      "aliases": []
+    },
+    "980017": {
+      "official_name": "国证芯片",
+      "secid": "0.980017",
+      "aliases": [
+        "国证半导体芯片指数"
+      ]
+    },
+    "399975": {
+      "official_name": "证券公司",
+      "secid": "0.399975",
+      "aliases": [
+        "证券公司指数",
+        "证券"
+      ]
+    },
+    "000922": {
+      "official_name": "中证红利",
+      "secid": "1.000922",
+      "aliases": [
+        "中证红利指数"
+      ]
+    },
+    "399812": {
+      "official_name": "养老产业",
+      "secid": "0.399812",
+      "aliases": []
+    },
+    "399394": {
+      "official_name": "国证医药",
+      "secid": "0.399394",
+      "aliases": []
+    },
+    "399618": {
+      "official_name": "深证医药",
+      "secid": "0.399618",
+      "aliases": []
+    },
+    "399441": {
+      "official_name": "生物医药",
+      "secid": "0.399441",
+      "aliases": [
+        "国证生物医药"
+      ]
+    },
+    "399989": {
+      "official_name": "中证医疗",
+      "secid": "0.399989",
+      "aliases": []
+    },
+    "000933": {
+      "official_name": "中证医药",
+      "secid": "1.000933",
+      "aliases": []
+    },
+    "000037": {
+      "official_name": "上证医药",
+      "secid": "1.000037",
+      "aliases": []
+    },
+    "000998": {
+      "official_name": "中证TMT",
+      "secid": "1.000998",
+      "aliases": []
+    },
+    "000819": {
+      "official_name": "有色金属",
+      "secid": "1.000819",
+      "aliases": []
+    },
+    "000012": {
+      "official_name": "国债指数",
+      "secid": "1.000012",
+      "aliases": [
+        "上证国债"
+      ]
+    },
+    "000300": {
+      "official_name": "沪深300",
+      "secid": "1.000300",
+      "aliases": []
+    }
+  }
+}

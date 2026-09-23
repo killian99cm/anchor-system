@@ -175,12 +175,21 @@ def build_signals(processed, data, rep):
     else:
         cards.append(card("🟢", "半导体", "无在途止损项", "portfolio_analysis.html", "打开主看板", "safe"))
 
-    # 创新药（09-01 修复：改为持仓累计盈亏驱动，删除 8/25 陈旧"累计-271.55"文案）
+    # 创新药（2026-09-23 inbox/143-B 完整落地：删除三处硬编码——
+    #   ① 无条件「🔴 新低」（值说反：cumul 改善时仍打「新低」）
+    #   ②「HSSCID 破位延续」（不由 portfolio_data.json 任何字段支撑）
+    #   ③「港股通纳入…事件窗口」（写死日期，早已过期）
+    #   ⛔ R3：严禁加仓的**理由必须与当日真实拦截项一致**；无数据支撑时明写「见当日报告」，
+    #      ⛔ 不编造理由（编造理由比没有理由更糟——本仓判例反复）。
+    #   📌 同一文件 09-01 已修过「硬编码→数据驱动」（半导体/时机A/月操作），本卡是补完。）
     inno_h = next((h for h in data.get("holdings_summary", []) if "创新药" in (h.get("name") or "")), {})
     inno_cumul = inno_h.get("cumul")
-    inno_extra = f" · 整仓累计 {signed(inno_cumul)} 🔴 新低" if inno_cumul is not None else ""
-    inno = (f"HSSCID 破位延续，严禁加仓{inno_extra}；"
-            f"时间止损 30 天窗口已开，明后日不收复 MA5 → 评估减半；9/7 港股通纳入 14 家医药 = 事件窗口")
+    inno_extra = f" · 整仓累计 {signed(inno_cumul)}" if inno_cumul is not None else ""
+    _inno_ops = processed.get("ops_state", {}) or {}
+    _inno_why = (f"{_inno_ops.get('label', '本月')}额度已满"
+                 if _inno_ops.get("is_at_limit") else "原因见当日报告")
+    inno = (f"严禁加仓{inno_extra}（{_inno_why}）；"
+            f"时间止损 30 天窗口已开，明后日不收复 MA5 → 评估减半")
     cards.append(card("🔴", "创新药 严禁加仓", inno, "portfolio_analysis.html", "打开主看板", "action"))
 
     # 时机A（09-01 修复：文案数据驱动，删除"连2天"硬编码）
@@ -237,12 +246,9 @@ def build_dashes(rep):
 
 # 事件日历：固定序列，gen 时按日期过滤（过去自动消失，未来自动显示）
 # 09-01 修复：删除 8/26-8/31 已过期事件（8/31 归因里程碑三目标文案旧口径），更新为 9 月当前事件
+# 09-23（inbox/143 收口）：9/1–9/15 条目均已过期（按 gen 过滤规则不再渲染），照 09-01 先例清除；
+#   ⛔ 新事件登记时**只写真实日期**（本列表即日期驱动，勿在卡片文案里另写死日期）。
 EVENTS = [
-    {"d": "2026-09-01", "t": "黄金收盘审视线", "e": "518880 收盘破 MA20 审视线 9.025 → 9/2 审视减半", "files": [("盘中研究 9/1", "04-reviews/research/2026-09-01-盘中研究报告.md")]},
-    {"d": "2026-09-02", "t": "半导体 DDX 复核（进攻层首笔前提）", "e": "DDX 连正≥2日 → 9 月进攻层首笔可用；否则继续等待", "files": [("盘中研究 9/1", "04-reviews/research/2026-09-01-盘中研究报告.md")]},
-    {"d": "2026-09-04", "t": "决策日志 T+3 复盘 #54 + #55", "e": "#54 证券超E1上限违规（预期跌）+ #55 鹏华压舱石归并（预期涨）双笔到期", "files": [("决策仪表盘", "06-dashboard/decision_dashboard.html")]},
-    {"d": "2026-09-07", "t": "港股通调整纳入 14 家医药", "e": "创新药最大增量窗口（破位后观察是否借事件企稳）", "files": [("盘中研究 9/1", "04-reviews/research/2026-09-01-盘中研究报告.md")]},
-    {"d": "2026-09-15", "t": "FOMC 议息（9/15-16）", "e": "美债长端利率路径关键节点，联动黄金/纳指", "files": [("黄金专题", "04-reviews/special/2026-08-24-黄金走势深度分析.md")]},
 ]
 
 def build_events():

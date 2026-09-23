@@ -19,6 +19,10 @@ Anchor 数据管道规范 v1.0（8/20 确立，最高优先级数据纪律）
                                          🔴 与 --check 的分工：--check 查「映射表内部自洽」，
                                          --coverage 查「该取的资产是否真的有取数定义」——
                                          后者才能发现「债券有定义却从未被取数」这类缺口。
+  python data_pipeline.py --verify-codes <报告|--all> [--refresh]
+                                       → 指数代码—名称一致性校验（inbox/135，2026-09-23）：
+                                         报告表格行 (代码,名称) 对子 ↔ index_registry.json；
+                                         有 🔴（代码-名称不符）⇒ rc=1。--refresh 联机双源复核注册表。
 """
 import json
 import os
@@ -470,6 +474,294 @@ def coverage_check() -> tuple:
 # ============================================================
 # 主入口
 # ============================================================
+# 指数代码—名称一致性校验 ＋ 量级跳变护栏（inbox/135）
+#
+# 事故（2026-09-14）：报告把 `sz399811` 标成「国证芯片」（真名 **CSSW电子**），
+# 数值从 15,812 骤降到 7,127（−55%，量级差 2.2 倍），而 data_pipeline --check /
+# report_time_check / report_time_audit **三层校验全部放行**。
+# 根因：报告里手写的 (代码, 名称) 对子，与机器可读的注册表之间**从未被绑定**。
+# 本块补这条绑定：注册表（index_registry.json）＋ --verify-codes ＋ 量级护栏。
+# ⛔ 只读不改：护栏只**报**，不自动改写任何报告/数据（135 §3）。
+# ⛔ 不把标的校验塞进 report_time_check（职责单一）；这里是**新增独立检查**。
+# ============================================================
+import re as _re
+import urllib.request as _urlreq
+
+INDEX_REGISTRY_PATH = Path(__file__).parent / "index_registry.json"
+_CODE_RE = _re.compile(r"(?<![0-9A-Za-z])(?:s[hz])?([0-9]{6})(?![0-9])")
+_TOKEN_SPLIT_RE = _re.compile(r"[|*`（）()\[\]「」【】\s]+")
+_CJK_RE = _re.compile(r"[\u4e00-\u9fff]")
+
+
+def load_index_registry(path=None):
+    """读 index_registry.json → (doc, None) 或 (None, 原因)。"""
+    p = Path(path) if path else INDEX_REGISTRY_PATH
+    try:
+        doc = json.loads(p.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None, f"注册表 {p.name} 不存在"
+    except Exception as e:                                        # noqa: BLE001
+        return None, f"注册表解析失败: {e}"
+    if not isinstance(doc.get("indices"), dict):
+        return None, f"{p.name} 结构异常（缺 indices 段）"
+    return doc, None
+
+
+_NAME_TOKEN_RE = _re.compile(r"[\u4e00-\u9fffA-Za-z0-9·]{2,}")
+
+
+def _row_cells(raw):
+    s = raw.strip()
+    if s.startswith("|"):
+        s = s[1:]
+    if s.endswith("|"):
+        s = s[:-1]
+    return s.split("|")
+
+
+def extract_code_claims(text):
+    """保守提取「代码 ↔ 附近名称」的主张（135 §2-A2 规则 1，v2 单元格邻近语义）。
+
+    规则（⛔ 宁漏勿错，防把示例清单/正文数字当主张）：
+      ① 只看**表格行**；② 只看**单元格内恰含 1 个代码**的格（多代码格＝示例清单，跳过计数）；
+      ③ 名称候选 = **同格紧邻**代码的 token（间隙 ≤3 字符，容忍 `**`/括号/空格）
+         ＋ **左右相邻格**内的名称 token（当同格无候选时）；
+      ④ 全行无候选 ⇒ 计「无相邻名」，不产出判定。
+    返回 (claims, stat)。claim = {line, code, cands}。
+    """
+    claims = []
+    n_code_cells = n_multi_code = n_no_cand = 0
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        if "|" not in raw:
+            continue
+        cells = _row_cells(raw)
+        for ci, cell in enumerate(cells):
+            codes = _CODE_RE.findall(cell)
+            if not codes:
+                continue
+            n_code_cells += 1
+            if len(codes) > 1:
+                n_multi_code += 1
+                continue
+            code = codes[0]
+            cm = _CODE_RE.search(cell)
+            toks = [(m.group(0), m.start(), m.end()) for m in _NAME_TOKEN_RE.finditer(cell)
+                    if _CJK_RE.search(m.group(0))]      # ⛔ 纯数字/字母 token 不算名称候选
+            before = [t for t in toks if t[2] <= cm.start()]
+            after = [t for t in toks if t[1] >= cm.end()]
+            same = [t[0] for t in (before[-1:] + after[:1])
+                    if cm.start() - t[2] <= 3 and t[1] - cm.end() <= 3]
+            if same:
+                claims.append({"line": lineno, "code": code, "cands": same})
+                continue
+            adj = []
+            for nb in (cells[ci - 1] if ci > 0 else "", cells[ci + 1] if ci + 1 < len(cells) else ""):
+                adj += [m.group(0) for m in _NAME_TOKEN_RE.finditer(nb)
+                        if _CJK_RE.search(m.group(0))]
+            if adj:
+                claims.append({"line": lineno, "code": code, "cands": adj[:4]})
+            else:
+                n_no_cand += 1
+    stat = {"code_cells": n_code_cells, "multi_code_cells": n_multi_code, "no_name": n_no_cand}
+    return claims, stat
+
+
+def verify_codes_in_text(text, registry_indices):
+    """返回 (findings, stat)。判定：
+      ✅ 相邻名 == 官方名或 alias ｜ 🔴 相邻名命中**其它**已登记指数的名（张冠李戴）／
+      🔴 该代码的**己名缺失**但邻名是别的指数名 ｜ 🟡 代码未登记 ／ 🟡 相邻串非注册名（明说未校验）。
+    """
+    claims, stat = extract_code_claims(text)
+    # 全部已登记名（官方+别名）→ token 集合，用于「这名属于谁」反查
+    owner = {}
+    for c, ent in registry_indices.items():
+        for nm in [ent.get("official_name")] + list(ent.get("aliases") or []):
+            if nm:
+                owner[nm] = c
+    findings = []
+    for cl in claims:
+        code, cands = cl["code"], cl["cands"]
+        ent = registry_indices.get(code)
+        own_names = ({ent.get("official_name")} | set(ent.get("aliases") or [])) if ent else set()
+        own_names.discard(None)
+        hit_own = [t for t in cands if t in own_names]
+        hit_other = [t for t in cands if t in owner and owner[t] != code]
+        if ent is None:
+            findings.append({"level": "🟡", "line": cl["line"],
+                             "msg": (f"未登记：{code}（相邻名 {cands[:2]}）—— 若为**指数**请双源核名后"
+                                     f"补进 index_registry.json；若为 ETF/基金代码可忽略或另行登记")})
+        elif hit_own:
+            findings.append({"level": "✅", "line": cl["line"],
+                             "msg": f"{code} {ent['official_name']}"})
+        elif hit_other:
+            findings.append({"level": "🔴", "line": cl["line"],
+                             "msg": (f"代码-名称不符：{code} 相邻名「{'/'.join(hit_other[:2])}」"
+                                     f"属 {owner[hit_other[0]]}，本码官方名「{ent['official_name']}」")})
+        else:
+            findings.append({"level": "🟡", "line": cl["line"],
+                             "msg": (f"相邻串「{'/'.join(cands[:2])}」非注册名 ⇒ **未校验**"
+                                     f"（建议报告改用 `名称(代码)` 或独立单元格写法）")})
+    return findings, stat
+
+
+def refresh_registry(reg_doc):
+    """联机复核注册表（腾讯 qt.gtimg.cn ＋ 东财 f58 尽力双源）。
+
+    一致 ⇒ 更新 `_meta.verified_at`/`verified_source`；任一不符 ⇒ 🔴 且**不更新**；
+    源不可达 ⇒ 🟡 逐条明说（⛔ 不静默通过）。
+    """
+    import datetime as _dt
+    idx = reg_doc["indices"]
+    ok, mism, fail_hard, fail_partial = 0, [], [], []
+    for code, ent in idx.items():
+        secid = ent.get("secid") or ""
+        pfx = "sz" if secid.startswith("0.") else "sh"
+        tx = em = None
+        tx_err = None
+        try:                                                      # 腾讯（GBK）
+            with _urlreq.urlopen(f"http://qt.gtimg.cn/q={pfx}{code}", timeout=8) as r:
+                txt = r.read().decode("gbk", errors="replace")
+            tx = txt.split("~")[1].strip() if "~" in txt else None
+        except Exception as e:                                    # noqa: BLE001
+            tx_err = f"{type(e).__name__}"
+        if secid:                                                 # 东财 f58（尽力）
+            try:
+                with _urlreq.urlopen(
+                        "http://push2delay.eastmoney.com/api/qt/stock/get?"
+                        f"secid={secid}&fields=f58", timeout=8) as r:
+                    em = (((json.loads(r.read().decode("utf-8")) or {}).get("data")) or {}).get("f58")
+            except Exception:                                     # noqa: BLE001
+                pass
+        got = tx or em
+        if not got:
+            fail_hard.append(f"{code}（腾讯 {tx_err or '无名'}；东财不可达）")
+            continue
+        if not em:
+            fail_partial.append(f"{code} 东财不可达（IP 级限流常见）")
+        if tx and em and tx != em:
+            mism.append(f"{code} 源间不一致：腾讯「{tx}」vs 东财「{em}」（⚠️ 先查 secid 前缀）")
+        elif got != ent.get("official_name"):
+            mism.append(f"{code} 注册「{ent.get('official_name')}」≠ 源「{got}」")
+        else:
+            ok += 1
+    print(f"  联机复核：一致 {ok} / 不符 {len(mism)} / 无源可用 {len(fail_hard)}"
+          f" / 东财单源不可达 {len(fail_partial)}（腾讯可用时不阻塞）")
+    for m in mism:
+        print(f"  🔴 {m}")
+    for f_ in fail_hard[:6]:
+        print(f"  🟡 {f_}{'…' if len(fail_hard) > 6 else ''}")
+    if mism:
+        print("  🔴 存在不符 ⇒ 注册表**未更新**（先核对 secid 前缀与源头是否改了指代）")
+        return 1
+    reg_doc.setdefault("_meta", {})["verified_at"] = _dt.date.today().isoformat()
+    src = ("腾讯 qt.gtimg.cn" + ("（东财当日不可达）" if (fail_partial or fail_hard) else " ＋ 东财 f58"))
+    reg_doc["_meta"]["verified_source"] = f"{src}；本次复核一致 {ok} 条"
+    INDEX_REGISTRY_PATH.write_text(json.dumps(reg_doc, ensure_ascii=False, indent=2) + "\n",
+                                   encoding="utf-8")
+    print(f"  ✅ 已更新 verified_at = {reg_doc['_meta']['verified_at']}")
+    return 0
+
+
+def verify_codes(argv):
+    """`--verify-codes <报告> | --all [--refresh]` 主入口。有 🔴 ⇒ rc=1。"""
+    refresh = "--refresh" in argv
+    use_all = "--all" in argv
+    target = None
+    i = argv.index("--verify-codes")
+    for a in argv[i + 1:]:
+        if not a.startswith("--"):
+            target = a
+            break
+    doc, err = load_index_registry()
+    if err:
+        print(f"🔴 {err}")
+        return 1
+    meta = doc.get("_meta") or {}
+    print(f"— 指数代码—名称一致性校验（inbox/135）· 注册表 {INDEX_REGISTRY_PATH.name}"
+          f"（{len(doc['indices'])} 条 · verified_at {meta.get('verified_at')}）—")
+    refresh_rc = refresh_registry(doc) if refresh else 0
+    if use_all:
+        files = sorted(paths.REVIEWS_DIR.rglob("*.md"))
+    elif target:
+        p = Path(target)
+        if not p.exists():
+            alt = paths.REVIEWS_DIR / target
+            p = alt if alt.exists() else p
+        if not p.exists():
+            print(f"🔴 找不到报告文件：{target}")
+            return 1
+        files = [p]
+    else:
+        print("用法: --verify-codes <报告路径> | --verify-codes --all [--refresh]")
+        return 0
+    tot = {"✅": 0, "🟡": 0, "🔴": 0}
+    for f in files:
+        text = f.read_text(encoding="utf-8", errors="replace")
+        findings, stat = verify_codes_in_text(text, doc["indices"])
+        cnt = {"✅": 0, "🟡": 0, "🔴": 0}
+        for fd in findings:
+            cnt[fd["level"]] += 1
+            tot[fd["level"]] += 1
+        try:
+            rel = f.relative_to(ROOT)
+        except ValueError:
+            rel = f
+        extra = (f"；代码格 {stat['code_cells']}（**未校验**：多代码格 {stat['multi_code_cells']}"
+                 f"／无相邻名 {stat['no_name']} —— ⛔ 非「全部覆盖」）")
+        print(f"\n▸ {rel}（✅{cnt['✅']} / 🟡{cnt['🟡']} / 🔴{cnt['🔴']}{extra}）")
+        show = [fd for fd in findings if fd["level"] != "✅"] if use_all else findings
+        for fd in show:
+            print(f"  {fd['level']} L{fd['line']} {fd['msg']}")
+        if use_all and not show:
+            print("  （全部一致）")
+    print(f"\n汇总：✅ {tot['✅']} · 🟡 {tot['🟡']} · 🔴 {tot['🔴']}（扫描 {len(files)} 个文件）")
+    if tot["🔴"] or refresh_rc:
+        print("🔴 存在代码-名称不符 ⇒ rc=1。⛔ 护栏只报不改（不顺手改报告，交指挥端裁决）")
+        return 1
+    print("✅ 无代码-名称不符")
+    return 0
+
+
+def magnitude_guard(closes_by_code, warn=8.0, hard=15.0):
+    """纯函数：{code: (前收, 当收)} → 逐条 {code, prev, cur, pct, level}。
+
+    135 §2-B1：指数几乎不可能单日 |±15%| ⇒ >15% 🔴（专抓「换了标的却以为没换」）；
+    15%>|涨跌|>8% 🟡（可能真实暴跌/暴涨，人工确认）。
+    """
+    rows = []
+    for code, pair in closes_by_code.items():
+        prev, cur = pair
+        if not prev:
+            continue
+        pct = (cur - prev) / prev * 100.0
+        level = "🔴" if abs(pct) > hard else ("🟡" if abs(pct) > warn else "✅")
+        rows.append({"code": code, "prev": prev, "cur": cur, "pct": pct, "level": level})
+    return rows
+
+
+def magnitude_check_live():
+    """从注册表取数（腾讯日K，取**最近两根不同日期**的收盘）→ (closes, fails), None | None, 原因。"""
+    doc, err = load_index_registry()
+    if err:
+        return None, err
+    import fetch_public as fp
+    closes, fails = {}, []
+    for code, ent in doc["indices"].items():
+        secid = ent.get("secid") or ""
+        pfx = "sz" if secid.startswith("0.") else "sh"
+        try:
+            bars = fp.daily_kline(f"{pfx}{code}", n=5) or []
+        except Exception as e:                                    # noqa: BLE001
+            fails.append(f"{code} {type(e).__name__}")
+            continue
+        if len(bars) < 2 or str(bars[-1].get("date")) == str(bars[-2].get("date")):
+            fails.append(f"{code} K线不足两根不同日期（{len(bars)} 根）")
+            continue
+        closes[code] = (float(bars[-2]["close"]), float(bars[-1]["close"]))
+    return (closes, fails), None
+
+
+# ============================================================
 def main() -> int:
     if "--map" in sys.argv:
         for key, val in DATA_PIPELINE_MAP.items():
@@ -533,6 +825,10 @@ def main() -> int:
         print("\n✅ 取数覆盖度通过：活跃持仓与取数定义双向对应，无孤儿。")
         return 0
 
+    if "--verify-codes" in sys.argv:
+        # inbox/135：报告正文 (代码,名称) 对子 ↔ index_registry.json 一致性校验
+        return verify_codes(sys.argv)
+
     if "--check" in sys.argv:
         hard_fail = 0
 
@@ -563,6 +859,28 @@ def main() -> int:
                 hard_fail = 1
             else:
                 print("  ✅ JSON / Excel / HTML / 快照 / 决策复盘 / mx-data 六项就绪")
+
+        # (C) 指数量级跳变护栏（inbox/135 B2：新增一节是**追加**，不动既有两节语义）
+        if "--map-only" not in sys.argv:
+            print("\n— 指数量级跳变护栏（相邻交易日 |涨跌|：>15% 🔴 / >8% 🟡）—")
+            _gres, _gerr = magnitude_check_live()
+            if _gerr:
+                print(f"  🟡 跳过：{_gerr}（⛔ 不静默通过）")
+            else:
+                _closes, _fails = _gres
+                _rows = magnitude_guard(_closes)
+                _flag = [r for r in _rows if r["level"] != "✅"]
+                for r in _flag:
+                    print(f"  {r['level']} 量级异常：{r['code']} {r['prev']:.2f} → "
+                          f"{r['cur']:.2f}（{r['pct']:+.2f}%）—— 指数单日 |±15%| 几乎不可能，"
+                          f"先查「是不是换了标的」")
+                if not _flag and _rows:
+                    print(f"  ✅ {len(_rows)} 个已登记指数相邻交易日无 >8% 跳变")
+                if _fails:
+                    print(f"  🟡 未取得 {len(_fails)} 个：{'；'.join(_fails[:5])}"
+                          f"{'…' if len(_fails) > 5 else ''}（⛔ 不静默通过）")
+                if any(r["level"] == "🔴" for r in _rows):
+                    hard_fail = 1
 
         if hard_fail:
             print("\n🔴 --check 未通过：请先按上述 🔴 项处理（通常先跑 sync_all.py）")

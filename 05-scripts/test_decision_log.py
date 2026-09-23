@@ -6,10 +6,15 @@ Anchor 决策日志统计测试（test_decision_log.py，C2 新增）
       止损执行率、准确率口径。数据全部注入，不依赖真实 decision_log.json。
 运行: python test_decision_log.py
 """
+import contextlib
 import datetime
+import io
+import json
 import os
 import sys
+import tempfile
 import unittest
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -295,6 +300,112 @@ class TestReviewable(unittest.TestCase):
         self.assertFalse(dl.reviewable(d)[0])
         # 且新口径的到期日（09-23）确实晚于今天，不再制造「天天亮着做不掉」的红警
         self.assertGreater(dl.due_date(d), "2026-09-21")
+
+
+class TriggerLineTests(unittest.TestCase):
+    """inbox/145：E 级触发线到期检查（验收 A1–A6）。
+
+    ⛔ 全程**不触碰生产文件**（A6）：文件级一律用 `pf_path` 显式注入临时文件 ——
+       本类**根本不写生产路径**（不靠 try/finally 保隔离，J11 教训）。
+    """
+
+    NOW = datetime.datetime(2026, 9, 23, 10, 0)          # 9/23 上午（9/22 到期 ⇒ 已逾期 1 天）
+
+    def _line(self, **kw):
+        ln = {"id": "S1", "target": "证券ETF", "condition": "PB>1.6 止盈 1/3",
+              "level": "E", "due": "2026-09-22", "verdict": None, "verdict_date": None}
+        ln.update(kw)
+        return ln
+
+    def _capture(self, pf_path):
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            rc = dl.trigger_lines_report(now=self.NOW, pf_path=str(pf_path))
+        self.assertEqual(rc, 0)
+        return buf.getvalue()
+
+    # ---- A1 正向：到期未裁定 ⇒ 显式 🔴 + 「已逾期 N 天」 ----
+    def test_a1_overdue_explicit_red_and_days(self):
+        res = dl.evaluate_trigger_lines([self._line()], self.NOW)
+        self.assertEqual(len(res["overdue"]), 1)
+        self.assertEqual(res["overdue"][0]["_overdue"], 1)
+        text = dl.render_trigger_lines(res, "2026-09-23")
+        self.assertIn("🔴", text)
+        self.assertIn("欠裁定", text)
+        self.assertIn("已逾期 1 天", text)
+
+    # ---- A2 反向：已裁定（含「不执行」）⇒ 不得再报欠裁定；A5：「不执行」⇒ 失效 ----
+    def test_a2_settled_never_reported_overdue_and_a5_invalid(self):
+        for v in ("执行", "顺延", "撤销", "不执行"):
+            res = dl.evaluate_trigger_lines([self._line(verdict=v)], self.NOW)
+            self.assertEqual(res["overdue"], [], f"verdict={v} 仍被报欠裁定")
+            text = dl.render_trigger_lines(res, "2026-09-23")
+            self.assertNotIn("欠裁定", text)
+            self.assertNotIn("🔴", text)
+        res = dl.evaluate_trigger_lines([self._line(verdict="不执行")], self.NOW)
+        text = dl.render_trigger_lines(res, "2026-09-23")
+        self.assertIn("本线失效", text)                    # A5 / F6 第 2 款
+
+    # ---- A3 反向：边界精确到 14:30（14:29 不得报逾期；14:31 必须报）----
+    def test_a3_boundary_exact_1430(self):
+        line = self._line(due="2026-09-23")
+        early = dl.evaluate_trigger_lines([line], datetime.datetime(2026, 9, 23, 14, 29))
+        self.assertEqual(early["overdue"], [])
+        self.assertEqual(len(early["window_open"]), 1)
+        _etxt = dl.render_trigger_lines(early, "2026-09-23")
+        self.assertNotIn("已逾期", _etxt)          # ⛔ 未过 14:30 不得报逾期（说明句「不按逾期报」不算）
+        self.assertNotIn("🔴", _etxt)
+        late = dl.evaluate_trigger_lines([line], datetime.datetime(2026, 9, 23, 14, 31))
+        self.assertEqual(len(late["overdue"]), 1)
+        self.assertEqual(late["overdue"][0]["_overdue"], 0)
+
+    # ---- A4 反向：「字段不存在」≠「空数组无欠」≠「线存在但无裁定」三者输出不同形 ----
+    def test_a4_missing_field_vs_empty_distinct(self):
+        tmp = Path(tempfile.mkdtemp(prefix="anchor_tl145_"))
+        p_missing = tmp / "pf_missing.json"
+        p_missing.write_text(json.dumps({"total_assets": 1}), encoding="utf-8")
+        p_empty = tmp / "pf_empty.json"
+        p_empty.write_text(json.dumps({"trigger_lines": []}), encoding="utf-8")
+        p_open = tmp / "pf_open.json"
+        p_open.write_text(json.dumps({"trigger_lines": [self._line()]}, ensure_ascii=False),
+                          encoding="utf-8")
+        out_missing, out_empty, out_open = (self._capture(p_missing), self._capture(p_empty),
+                                            self._capture(p_open))
+        self.assertIn("不存在", out_missing)
+        self.assertIn("不是「今日无欠」", out_missing)
+        self.assertIn("今日无欠", out_empty)
+        self.assertNotIn("不存在", out_empty)
+        self.assertIn("欠裁定", out_open)
+        self.assertNotEqual(out_missing, out_empty)        # 裁定 3 的直接钉死
+        self.assertNotEqual(out_open, out_empty)
+        self.assertNotEqual(out_open, out_missing)
+
+    # ---- 级别与异常形态（F1：未标级别＝不成立；X 级无裁定义务）----
+    def test_levels_and_malformed(self):
+        res = dl.evaluate_trigger_lines(
+            [self._line(id="X1", level="X"),
+             self._line(id="M1", level=""),
+             self._line(id="M2", due="9/22"),
+             "非对象元素"], self.NOW)
+        self.assertEqual(len(res["x_level"]), 1)
+        self.assertEqual(len(res["malformed"]), 3)
+        self.assertEqual(res["overdue"], [])
+        text = dl.render_trigger_lines(res, "2026-09-23")
+        self.assertIn("X 级线", text)
+        self.assertIn("未标级别", text)
+        self.assertIn("格式错", text)
+
+    # ---- A6：全程不触碰生产文件（跑一次注入路径，生产 portfolio_data.json 字节不变）----
+    def test_a6_no_production_touch(self):
+        prod = dl.paths.DATA_PATH
+        before = prod.read_bytes() if prod.exists() else None
+        tmp = Path(tempfile.mkdtemp(prefix="anchor_tl145b_"))
+        p = tmp / "pf.json"
+        p.write_text(json.dumps({"trigger_lines": [self._line()]}, ensure_ascii=False),
+                     encoding="utf-8")
+        self._capture(p)
+        after = prod.read_bytes() if prod.exists() else None
+        self.assertEqual(before, after, "生产 portfolio_data.json 被改动（A6 违规）")
 
 
 def due_of(d):

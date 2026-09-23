@@ -29,6 +29,7 @@ T+3 复盘规则（8/21 确立 · **2026-09-21 口径订正：自然日 → 交�
   python decision_log.py --report        → 胜率/准确率/盈亏比/追高占比统计
   python decision_log.py --due           → 今日到期/已超期的复盘项（T+3 精确计算）
   python decision_log.py --stopwatch     → 止损倒计时（读取 portfolio_data.json stop_loss_watch，硬Deadline 三态）
+  python decision_log.py --trigger-lines → E 级触发线到期检查（inbox/145；F3：T+1 日 14:30 前须裁定，沉默即违规）
   python decision_log.py --dashboard     → 生成胜率仪表盘 HTML（06-dashboard/decision_dashboard.html）
   python decision_log.py --list          → 列出全部决策（含待复盘）
   python decision_log.py --pending       → 列出待复盘项（T+3 后回填）
@@ -425,6 +426,146 @@ def stopwatch() -> int:
     return 0
 
 
+# ══════════════════════════════════════════════════════════════════
+# E 级触发线到期检查（inbox/145：沉默违规在制度上不可见 ⇒ 加载体）
+#   判据：手册 附录E · F3（T+1 日 14:30 前须出显式裁定，沉默即违规）／F4／F6
+#   ⛔ 只读、只报「欠着」，**不代写裁定、不自动置失效**（裁定权在指挥端；F2/F6）
+#   载体重用 decision_log 家族 ⇒ 由 sync_all 每日调用（145 裁定 1：不进孤岛脚本）
+# ══════════════════════════════════════════════════════════════════
+TL_WINDOW_HHMM = (14, 30)      # F3 裁定窗口钟点：T+1 日 14:30 前
+
+
+def load_trigger_lines(pf_path=None):
+    """读 `portfolio_data.json` 的 `trigger_lines[]`。
+
+    🔴 三态**必须可区分**（145 裁定 3 / 验收 A4）—— 三者输出**不同形**：
+      ① **字段不存在** ⇒ `(None, 原因)`：载体未接入（**≠「今日无欠」**，⛔ 不得当合格）
+      ② 字段为 `[]`   ⇒ `([], None)`：今日无欠
+      ③ 有欠裁定线    ⇒ `([...], None)`：逐条报出
+    字段语义（提议 · 须指挥端确认后落盘，见 outbox/145）：
+      `id / target / condition / level(X|E) / due(YYYY-MM-DD) / verdict / verdict_date`
+      ⛔ 状态**由 verdict 派生**，不设独立 status 字段（防两处真源漂移）。
+    """
+    pf = Path(pf_path) if pf_path else paths.DATA_PATH
+    if not pf.exists():
+        alt = LOG_FILE.parent / "portfolio_data.json"       # 06-dashboard 只读副本
+        pf = alt if alt.exists() else pf
+    if not pf.exists():
+        return None, "portfolio_data.json 未找到（桌面/06-dashboard）"
+    try:
+        data = json.loads(pf.read_text(encoding="utf-8"))
+    except Exception as e:                                    # noqa: BLE001
+        return None, f"portfolio_data.json 解析失败: {e}"
+    if "trigger_lines" not in data:
+        return None, ("字段 `trigger_lines` **不存在**（载体未接入——须指挥端确认字段语义后落盘；"
+                      "⛔ 本行与「今日无欠」**不同**，不得当作合格）")
+    lines = data.get("trigger_lines")
+    if not isinstance(lines, list):
+        return None, f"`trigger_lines` 类型异常（{type(lines).__name__}，应为 list）"
+    return lines, None
+
+
+def evaluate_trigger_lines(lines, now):
+    """纯函数：把线分入五桶 —— overdue / window_open / settled / x_level / malformed。
+
+    只做字段读取与时间比较（**不 I/O、不裁定、不改写**）。级别缺失按 F1 判不成立；
+    `X` 级无裁定义务（F2）单列；`E` 级按 F3 窗口（到期日 14:30）判欠裁定。
+    """
+    overdue, window_open, settled, x_level, malformed = [], [], [], [], []
+    for ln in lines or []:
+        if not isinstance(ln, dict):
+            malformed.append({"id": "?", "why": f"非对象元素（{type(ln).__name__}）"})
+            continue
+        lid = str(ln.get("id") or "（无 id）")
+        verdict = str(ln.get("verdict") or "").strip()
+        if verdict:
+            settled.append({**ln, "id": lid})                 # A2/F6：任何显式裁定都关闭本线
+            continue
+        level = str(ln.get("level") or "").strip()
+        if not level:
+            malformed.append({"id": lid, "why": "未标级别（F1：未标级别＝触发线不成立）"})
+            continue
+        if level == "X":
+            x_level.append({**ln, "id": lid})
+            continue
+        if level != "E":
+            malformed.append({"id": lid, "why": f"级别 `{level}` 无效（F1：二选一 X/E）"})
+            continue
+        due_s = str(ln.get("due") or "").strip()
+        try:
+            d = datetime.strptime(due_s, "%Y-%m-%d")
+        except ValueError:
+            malformed.append({"id": lid, "why": f"到期日缺失或格式错（due={due_s!r}，⛔ 不猜）"})
+            continue
+        cutoff = datetime(d.year, d.month, d.day, *TL_WINDOW_HHMM)
+        if now < cutoff:
+            window_open.append({**ln, "id": lid})             # A3：未过 14:30 不按逾期报
+        else:
+            overdue.append({**ln, "id": lid, "_overdue": (now.date() - d.date()).days})
+    return {"overdue": overdue, "window_open": window_open,
+            "settled": settled, "x_level": x_level, "malformed": malformed}
+
+
+def render_trigger_lines(res, today_s) -> str:
+    """分类结果 → 人读报文（纯函数；145 验收 A1–A4 直接断言本段文本）。"""
+    out = []
+    if res["overdue"]:
+        out.append(f"🔴 E 级触发线**欠裁定 {len(res['overdue'])} 条**（F3：条件达成后 "
+                   f"**T+1 日 14:30 前**须出显式裁定（执行／顺延／撤销），**沉默即违规**）：")
+        for ln in res["overdue"]:
+            n = ln["_overdue"]
+            when = (f"**已逾期 {n} 天**" if n > 0
+                    else "到期**今日**、**已过 14:30 窗口**，今日内须裁定")
+            out.append(f"  ● {ln['id']} {ln.get('target') or ''} ｜ 到期 {ln.get('due')} ｜ {when}")
+            if ln.get("condition"):
+                out.append(f"     条件：{ln['condition']}")
+    if res["window_open"]:
+        out.append(f"⏳ 未到裁定窗口 {len(res['window_open'])} 条"
+                   f"（到期日 14:30 前**不按逾期报**——验收 A3 边界）：")
+        for ln in res["window_open"]:
+            out.append(f"  ● {ln['id']} {ln.get('target') or ''} ｜ 到期 {ln.get('due')}（窗口 14:30 前）")
+    if res["settled"]:
+        out.append(f"✅ 已裁定 {len(res['settled'])} 条（F6：「不执行」＝本线失效，亦为有效裁定）：")
+        for ln in res["settled"]:
+            v = str(ln.get("verdict") or "").strip()
+            tag = "**不执行 ⇒ 本线失效**" if v == "不执行" else v
+            vd = f"（裁定日 {ln.get('verdict_date')}）" if ln.get("verdict_date") else ""
+            out.append(f"  ● {ln['id']} {ln.get('target') or ''} → {tag}{vd}")
+    if res["x_level"]:
+        out.append(f"ℹ️ X 级线 {len(res['x_level'])} 条（F2：达成即执行，**无裁定义务**，不在本检查范围）：")
+        for ln in res["x_level"]:
+            out.append(f"  ● {ln['id']} {ln.get('target') or ''}")
+    if res["malformed"]:
+        out.append(f"⚠️ 数据异常 {len(res['malformed'])} 条（⛔ 不猜、不静默）：")
+        for m in res["malformed"]:
+            out.append(f"  ● {m['id']}：{m['why']}")
+    return "\n".join(out)
+
+
+def trigger_lines_report(now=None, pf_path=None) -> int:
+    """CLI：E 级触发线到期检查（**只读**；只报「欠着」，⛔ 不裁定）。"""
+    now = now or datetime.now()
+    today_s = now.strftime("%Y-%m-%d")
+    lines, err = load_trigger_lines(pf_path)
+    if err:
+        print(f"⛔ trigger_lines 不可判定：{err}")
+        print("   ⛔ 本输出**不是「今日无欠」**（A4：『线不存在』与『线存在但无裁定』必须可区分）"
+              "—— 载体未接入前，E 级裁定义务（F3）**仍无系统信号**")
+        return 0
+    res = evaluate_trigger_lines(lines, now)
+    body = render_trigger_lines(res, today_s)
+    print(f"=== E 级触发线检查（{today_s} {now.strftime('%H:%M')}）===")
+    if body:
+        print(body)
+    if not res["overdue"] and not res["malformed"]:
+        if lines:
+            print(f"✅ 今日无欠裁定（trigger_lines {len(lines)} 条：已裁定 {len(res['settled'])}／"
+                  f"窗口未到 {len(res['window_open'])}／X 级 {len(res['x_level'])}）")
+        else:
+            print("✅ 今日无欠裁定（trigger_lines 为空数组，载体已接入）")
+    return 0
+
+
 def dashboard_html() -> str:
     """生成胜率仪表盘 HTML（Anchor 品牌深色金融终端风格）"""
     rep = accuracy_report()
@@ -659,6 +800,9 @@ def main() -> int:
 
     if "--stopwatch" in sys.argv:
         return stopwatch()
+
+    if "--trigger-lines" in sys.argv:
+        return trigger_lines_report()
 
     if "--due" in sys.argv:
         due = due_list()

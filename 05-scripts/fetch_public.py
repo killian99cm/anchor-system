@@ -835,9 +835,12 @@ def southbound_intraday() -> dict:
     （沪 3047585.83−2737929.90＝309655.94 ✅／深 1645664.69−1540365.87＝105298.82 ✅），
     单位 **万元**，沪+深 ＝ 南向净买入。
 
-    ⚠️ **币种 ＝ 人民币**，依据＝`dayAmtThreshold` 逐位吻合官方人民币额度（见
-    `_KAMT_QUOTA_WAN`）；⛔ 但**与 `southbound()`（datacenter，单位「百万港元」）
-    不得直接对拉** —— **币种不同**（差约 HKD/CNY），**且后者是 T-1 日终值**。
+    ⚠️ **币种 ＝ 港元（HKD，inbox/143 订正）**，依据＝三条独立证据（双源逐位对拉 99.9996／
+    权威媒体逐位命中／原 `dayAmtThreshold` 推理**已证伪**——该字段属 `dayNetAmtIn` 族额度分配，
+    恒定假值，⛔ 不得用作币种论据）；
+    ⛔ **与 `southbound()`（datacenter，单位「百万港元」）不得直接对拉** —— 原因是
+    **单位不同（万元 vs 百万元，差 100×）**，**且后者是 T-1 日终值**（⛔ 不是「币种不同」——
+    两源币种同为港元，原注释误写已订正）。
     📌 **「对不上」在这里不是端点坏了**，这正是要提前写下来的。
 
     ⚠️ **盘中值，`close_confirmed` 恒 False** ⇒ ⛔ **不得作任何触发线判据**
@@ -910,14 +913,25 @@ def southbound_intraday() -> dict:
         "legs_expected": len(_KAMT_LEGS), "legs_found": len(detail),
         "missing_legs": missing,
         "identity_failed": bad_ident,
-        "unit": "万元", "currency": "CNY", "currency_proven": False,
-        "currency_basis": ("dayAmtThreshold 沪/深 4200000＝420 亿、北向 5200000＝520 亿，"
-                           "逐位吻合官方人民币额度"),
+        "unit": "万港元", "currency": "HKD", "currency_proven": False,
+        # 🔴 inbox/143-A：原 `dayAmtThreshold` 推理**已证伪**，现依据三条独立证据（R2 要求写明证伪）：
+        #    ① 双源逐位对拉 kamt T+0 raw ÷ datacenter T-1 raw = 99.9996（两腿各 100.0000）
+        #       ⇒ 两源同量纲，差 100 倍纯属「万元 vs 百万元」单位换算，**与币种无关**；
+        #    ② 权威媒体口径逐位命中（2026-09-21 南向净买入 40.74 亿**港元**＝本函数 407383.37 万）；
+        #    ③ 原推理用 dayAmtThreshold（420 亿）反推人民币 —— 该字段属 `dayNetAmtIn` 族**额度分配**
+        #       （恒为交易日数×420 亿，v4.5.13 已证恒定假值）⇒ **拿恒定假值论证币种，不成立**。
+        "currency_basis": ("三条独立证据 ⇒ 港元（HKD）：① 双源逐位对拉（kamt raw ÷ datacenter raw"
+                           "＝99.9996，两腿各 100.0000）⇒ 同量纲、100× 差异纯属单位换算；"
+                           "② 权威媒体口径逐位命中（40.74 亿港元 ＝ 407383.37 万）；"
+                           "③ 🔴 原 dayAmtThreshold 推理**已证伪/不成立**——该字段属 `dayNetAmtIn` 族"
+                           "额度分配（恒定假值），⛔ 不得用作币种论据"),
         # ⛔ **恒 False**：这是盘中/当日实时值，不是定格收盘值
         "close_confirmed": False,
         "source": "push2delay kamt/get netBuyAmt",
-        "forbidden_use": "⛔ 不得作触发线判据（盘中值）；⛔ 不得与 datacenter T-1 值直接对拉（币种不同）",
-        "note": ("南向 T+0（沪+深），单位万元人民币。"
+        "forbidden_use": ("⛔ 不得作触发线判据（盘中值）；⛔ 不得与 datacenter T-1 值**直接对拉**"
+                          "——原因是**单位不同（万元 vs 百万元，差 100×）**，与币种无关"
+                          "（v4.5.13 ⑥ 单位地雷表；原注释误写为「币种不同」已订正）"),
+        "note": ("南向 T+0（沪+深），单位万港元。"
                  "⛔ 本函数**刻意不读** dayNetAmtIn 族（那是额度分配，恒为交易日数×420 亿）。"),
     }
     _CACHE[key] = res

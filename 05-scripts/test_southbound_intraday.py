@@ -81,14 +81,19 @@ class TestLiveShape(KamtFixture):
         self.assertFalse(r["close_confirmed"])
         self.assertIn("不得作触发线判据", r["forbidden_use"])
 
-    def test_currency_is_declared_unproven(self):
-        """币种＝人民币是**有依据的推断**，必须带 `currency_proven=False` 与依据原文。"""
+    def test_currency_hkd_and_proven_flag_untouched(self):
+        """inbox/143-A 订正（2026-09-23）：币种＝**港元（HKD）**、单位＝**万港元**
+        （依据＝三条独立证据：双源逐位对拉 99.9996／权威媒体逐位命中／原 dayAmtThreshold
+        推理**已证伪**）；`currency_proven` 本单**不动**（R4：是否置 True 由指挥端裁决）。
+        ⛔ 原「币种＝人民币（由 dayAmtThreshold 反推）」断言**随缺陷一并作废**（该反推不成立）。"""
         self.serve(REAL)
         r = fp.southbound_intraday()
-        self.assertEqual(r["currency"], "CNY")
-        self.assertFalse(r["currency_proven"], "⛔ 不得把推断登记成已证")
-        self.assertIn("4200000", r["currency_basis"].replace("420 亿", "4200000")
-                      if "4200000" in r["currency_basis"] else r["currency_basis"])
+        self.assertEqual(r["currency"], "HKD")
+        self.assertEqual(r["unit"], "万港元")
+        self.assertFalse(r["currency_proven"], "⛔ 不得把推断登记成「已证」（R4）")
+        self.assertTrue(("不成立" in r["currency_basis"]) or ("已证伪" in r["currency_basis"]),
+                        "currency_basis 必须写明原推理被证伪（R2）")
+        self.assertIn("dayNetAmtIn", r["currency_basis"], "必须点名被证伪所涉的 dayNetAmtIn 族")
 
 
 class TestReverseAssertions(KamtFixture):

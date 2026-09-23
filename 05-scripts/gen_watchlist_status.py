@@ -103,6 +103,30 @@ def _sector_lookup(sector: str, allboards: dict):
                   f"中无「{sector}」")
 
 
+def _boards_from_cache(day: dict | None, date_str: str | None) -> dict:
+    """把 `board_history_day()` 的某日档重构成 `board_movers_all()` 同形状（inbox/142）。
+
+    🔴 **同源同口径（R2）**：这就是当日 15:05 后由 `board_history_record()` 从活源
+       **原样落盘**的字段（name/chg_pct/board_type 未加工），故回退**不是替代口径**，
+       无需报告标准 v2.3 §二.13 五项登记。
+    ⛔ 不得用 `sector_movers()`、不得用行业板块顶替概念板块、**不得用前一日值顶替当日**。
+    """
+    rows = []
+    for code, v in (day or {}).items():
+        if not isinstance(v, dict):
+            continue
+        rows.append({"code": str(code), "name": v.get("name"),
+                     "chg_pct": v.get("chg_pct"), "board_type": v.get("board_type")})
+    by_name = {r["name"]: r for r in rows if r.get("name")}
+    uni: dict = {}
+    for r in rows:
+        u = uni.setdefault(r.get("board_type") or "?", {"total": 0, "fetched": 0})
+        u["total"] += 1
+        u["fetched"] += 1
+    return {"rows": rows, "by_name": by_name, "universes": uni,
+            "complete": True, "total_all": len(rows), "ts": f"cache:{date_str}"}
+
+
 def _eval_a2(sector: str, allboards: dict, a2_pct: float,
              prev_day: dict | None = None, prev_date: str | None = None):
     """A2 判定。返回 (命中?, 可完全判定?, 说明)。
@@ -158,8 +182,14 @@ def _eval_a2(sector: str, allboards: dict, a2_pct: float,
 
 
 def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
-                   prev_day: dict | None = None, prev_date: str | None = None) -> dict:
-    """对单条 watchlist 按 §4.4 判据求值，返回状态字典（**含失败原因，不掩盖**）。"""
+                   prev_day: dict | None = None, prev_date: str | None = None,
+                   board_source: str | None = None,
+                   board_source_note: str | None = None) -> dict:
+    """对单条 watchlist 按 §4.4 判据求值，返回状态字典（**含失败原因，不掩盖**）。
+
+    `board_source`（inbox/142 R1）：当日板块涨幅实际来源三态 —— `"live"` 活源 /
+    `"cache"` 回退读当日缓存（须标 ⚠️＋原因） / `None` 两源皆空（fail-closed）。
+    """
     sector = str(item.get("sector", ""))
     code_raw = str(item.get("etf_code", ""))
     tx_code, plain = _norm_tencent(code_raw)
@@ -177,6 +207,7 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
         "data_time": now.strftime("%Y-%m-%d %H:%M"), "missing": [],
         "sources": [], "caveats": [], "a2_gap": None,
         "prev_date": prev_date, "ma_includes_today": ma_incl_today,
+        "board_source": board_source, "board_source_note": board_source_note,
     }
 
     # ---- 条件②：标的当日收盘价 ≥ 当日 MA5（判据源 = 标的自身 K 线）----
@@ -254,6 +285,12 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
         out["verdict"] = "🟡 等回踩"
         out["reason"] = (f"A2 不成立（完全判定）；收盘 {out['close']} < MA{ma_n} {out['ma']} "
                          f"⇒ 条件②不成立")
+    # ---- 板块源三态显式可见（inbox/142 R1：**不得静默回退**）----
+    #    静默自愈与静默漂移是同一个病的两面（v4.5.4）⇒ 回退/两源皆空都必须在报文中现身。
+    if board_source == "cache":
+        out["caveats"].append(f"⚠️ 板块涨幅**回退自当日缓存**：{board_source_note}")
+    elif board_source is None and board_source_note:
+        out["caveats"].append(f"⚠️ 板块源**两源皆空**：{board_source_note}")
     if out["caveats"]:
         out["reason"] += "　｜⚠️ " + "；".join(out["caveats"])
     return out
@@ -262,15 +299,36 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
 def build_status(data: dict, contract: dict, now: datetime,
                  record_history: bool = True) -> dict:
     wl = data.get("watchlist", []) or []
+    # ---- 交易日历（v4.5.2，先取：缓存回退需要 ref_date 作当日档键）----
+    # 🔴 交易日历取自**参考指数自身日K的末日**，而不是 `now` 的日期 ——
+    #    否则周末/节假日跑一次就会把上一交易日的收盘值标成今天（日期错标）。
+    ref_date, ref_kl = fp.ref_last_trading_day()
     try:
         allboards = fp.board_movers_all()
     except Exception as exc:  # noqa: BLE001
         allboards = {"_error": str(exc)}
+    _live_allboards = allboards            # R3：落盘**只认活源结果**（回退值不得写回缓存）
+    _live_fail = (allboards.get("_error") or
+                  ("空表" if not allboards else "无有效行"))
 
-    # ---- 交易日历 ＋ 板块涨幅日序列缓存（v4.5.2）----
-    # 🔴 交易日历取自**参考指数自身日K的末日**，而不是 `now` 的日期 ——
-    #    否则周末/节假日跑一次就会把上一交易日的收盘值标成今天（日期错标）。
-    ref_date, ref_kl = fp.ref_last_trading_day()
+    # ---- 🔁 A2 判据缓存回退（inbox/142 R1）----
+    # 🔴 病灶：判 A2（`X` 执行级）时**当日**板块涨幅只读活源 ⇒ 活源限流返空时
+    #    四条 watchlist 全部降级「🟡 A2 仅部分可判」——**而缓存里当日判据完好**。
+    #    ⇒ 活源为空时回退读 `board_history_day(ref_date)`（**同源同口径**，R2）。
+    # 🔴 **不得静默回退**：判定依据必须显式写出实际用的是哪个源（静默自愈与静默漂移
+    #    是同一个病的两面，v4.5.4）。三态：`live` / `cache`（须标 ⚠️＋原因）/ `None`（两源皆空）。
+    board_source, board_source_note = "live", None
+    if not (allboards.get("by_name") or allboards.get("rows")):
+        _cached_today = fp.board_history_day(ref_date) if ref_date else None
+        if _cached_today:
+            allboards = _boards_from_cache(_cached_today, ref_date)
+            board_source = "cache"
+            board_source_note = (f"板块活源本次 {_live_fail} ⇒ A2 当日判据**回退读当日缓存**"
+                                 f"（{ref_date}，{len(_cached_today)} 个板块，同源同口径）")
+        else:
+            board_source = None
+            board_source_note = (f"板块活源本次 {_live_fail}，且当日缓存（{ref_date or '交易日不明'}）"
+                                 f"无该日记录 ⇒ **两源皆空，判不了**（fail-closed）")
     # 🔴 **读取侧护栏** —— 与写入侧 `board_history_record` 那条「按数据自身交易日归档
     #    而非 `now`」同源。此处必须用 `ref_date` 而非 `now`：
     #    `prev_trading_day(kl, t)` 取的是**严格早于 t** 的交易日，而 `ref_kl` 的末条
@@ -283,7 +341,7 @@ def build_status(data: dict, contract: dict, now: datetime,
     #    `ref_date` 缺失（日K 取不到）⇒ **不猜**，一律置 None ⇒ 下游 fail-closed。
     prev_date = fp.prev_trading_day(ref_kl, ref_date) if ref_date else None
     prev_day = fp.board_history_day(prev_date) if prev_date else None
-    record = (fp.board_history_record(allboards, ref_date, now) if record_history
+    record = (fp.board_history_record(_live_allboards, ref_date, now) if record_history
               else {"recorded": False, "reason": "本次未落盘（dry-run / --json）"})
 
     # ---- 缓存缺口自检（v4.5.2）----
@@ -308,7 +366,8 @@ def build_status(data: dict, contract: dict, now: datetime,
             f"🔴 手册声称 A2 前日涨幅取自 `{_declared}`，而代码实际读 `{_actual}`"
             f" —— 判据源**名实不符**，须改契约或改代码（不得两边并存）")
 
-    entries = [evaluate_entry(it, contract, allboards, now, prev_day, prev_date)
+    entries = [evaluate_entry(it, contract, allboards, now, prev_day, prev_date,
+                              board_source=board_source, board_source_note=board_source_note)
                for it in wl]
     uni = allboards.get("universes") or {}
     return {
@@ -316,6 +375,8 @@ def build_status(data: dict, contract: dict, now: datetime,
         "criteria": ("手册 §4.4 v3.12：① A2 不成立 ＋ ② 标的当日收盘价 ≥ 当日 MA5"
                      "（MA5＝**含当日**收盘的 5 日均）"),
         "board_source": {
+            "source": board_source,        # 三态（inbox/142 R1）：live / cache / None（两源皆空）
+            "fallback_note": board_source_note,
             "universes": uni, "complete": bool(allboards.get("complete")),
             "total_all": allboards.get("total_all"),
             "ts": allboards.get("ts"),
@@ -359,7 +420,11 @@ def main() -> int:
     print(f"判据：{status['criteria']}")
     bs = status["board_source"]
     _u = "；".join(f"{k} {v['fetched']}/{v['total']}" for k, v in (bs["universes"] or {}).items())
-    print(f"板块源：{_u or '不可用'}　全量={bs['complete']}　{bs['ts']}")
+    # inbox/142 R1：源三态在**人读输出**上同样必须可见（live / 🔁 回退缓存 / ⛔ 两源皆空）
+    _bs_tag = {"live": "", "cache": "　🔁 **回退缓存**", None: "　⛔ **两源皆空**"}.get(bs.get("source"), "")
+    print(f"板块源：{_u or '不可用'}　全量={bs['complete']}　{bs['ts']}{_bs_tag}")
+    if bs.get("fallback_note"):
+        print(f"　　↳ {bs['fallback_note']}")
     pd = status["prev_day"]
     print(f"前一交易日：{pd['date'] or '不明'} —— {pd['status']}（源 {pd['source'] or '无'}）")
     hr = status["history_record"]

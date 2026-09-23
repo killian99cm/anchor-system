@@ -35,16 +35,21 @@
 - **139 / 140 生产部署验证**：打包 → 备份 `/opt/anchor/app` → 重建 `nginx backend` → `/healthz` 200/healthy；C2 路由存在（未登录 **401**）；部署回执 `one-shot-success`（RestartCount 增量 0）。
 - **132 根因复核定案**（张力解除）：outbox「非甲非乙 ＝ 模型领先迁移链」**成立**，新证据＝迁移文件 `e1f2a3b4c5d6` 经 `git log --follow` 实证**生于 14:51:28（＝恢复时刻）**、崩溃时并不存在；inbox「版本号说已迁移、实际没有」**不成立**（以恢复后状态推断故障时刻状态）。**方法论教训**：观察时刻 ≠ 故障时刻。
 - **145 触发线载体落盘**：`portfolio_data.json`（桌面 ＋ 06-dashboard 双副本）新增 `trigger_lines` —— 4 条 S 线（S1/S2/S4 裁定「不执行」、S3「撤销」，裁定日 2026-09-22）。
+- 🔴 **`sync_all` 第 9.5 步「推送生产数据」失败真因定位并修复**（跨体系热修 · `Anchor-Software/deploy/scripts/push_portfolio_data.sh`）：
+  - **真因（可复现）**：步骤 0 的内联 python 打印 JSON 的 `update_time`，该值含 **`⇒`（U+21D2）** ⇒ Windows 控制台/管道默认 **cp936** ⇒ `UnicodeEncodeError` ⇒ **`set -e` 直接中止脚本** ⇒ **推送从未发生**（生产文件停在 9/21，更早停在 9/18）。
+  - 🔴 **此前诊断被推翻**：旧结论「脚本字面量被 cmd→bash→python 三层转码」**不成立** —— 源文件 `od -c` 正常，**肇事字符在数据值里**（又一处「失败被归因到错误位置」）。
+  - **修复**：两处内联 python 加 `sys.stdout.reconfigure(encoding='utf-8', errors='replace')`（本仓惯例；`sync_all.run()` 以 utf-8 解码子进程输出）。
+  - **E2E 验证（实跑两次）**：全链通过（scp → 备份原子替换 → 容器内回读 `2026-09-22 48243.27` → DONE）；**生产文件 update_date 9/21 → 2026-09-22**（生效）；被替换前的 `.bak` 实测 `update_date=2026-09-21`（证实修复前确实滞后）。
 
 ### ④ 其他
 - 桌面 `基尔霍夫定律_KCL与KVL图解.png`（非 Anchor 内容）→ 归入 `c_learning/`，桌面根不再滞留。
 - `~/CLAUDE.md` 顶部「用户信息」段重写（陈旧模板「初学者/需详细指导」与实际画像不符 ⇒ 改为：规则所有者与最终裁决人／要结果少仪式／**改动分级**：规则类直接改·软件类先立单·**松绑类必须先问**）。
 
 ### 影响文件
-`01-rules/投资规则手册_v3.5_正式版.md`(v3.15)、`01-rules/规则生效期登记表.md`(#C1-15~19)、`00-system/月度归因八步清单.md`(→九步)、`00-system/Anchor使用流程闭环·总纲.md`(§六)、`05-scripts/decision_log.py`、`05-scripts/smoke_test.py`、`05-scripts/gen_weekly_report.py`(非入库)、`portfolio_data.json`×2(trigger_lines)、`CHANGELOG.md`、`~/CLAUDE.md`；`Anchor-Software`：`_handoff/inbox/147_*`(新)、`_handoff/outbox/132_*`(§四定案)、`_handoff/todo.md`。
+`01-rules/投资规则手册_v3.5_正式版.md`(v3.15)、`01-rules/规则生效期登记表.md`(#C1-15~19)、`00-system/月度归因八步清单.md`(→九步)、`00-system/Anchor使用流程闭环·总纲.md`(§六)、`05-scripts/decision_log.py`、`05-scripts/smoke_test.py`、`05-scripts/gen_weekly_report.py`(非入库)、`portfolio_data.json`×2(trigger_lines)、`CHANGELOG.md`、`~/CLAUDE.md`；`Anchor-Software`：`_handoff/inbox/147_*`(新)、`_handoff/outbox/132_*`(§四定案)、`_handoff/todo.md`、`deploy/scripts/push_portfolio_data.sh`(编码热修)。
 
 ### 验证
-`smoke_test.py` **100 通过/0 失败/1 跳过**；`decision_log.py --report` 违规计数实测；`gen_weekly_report.py` 采集自检实跑（抓到断采）；`version_check.py` 三处一致 **v4.5.23**；139/140 生产路由 401 ＋ 回执 one-shot-success。
+`smoke_test.py` **100 通过/0 失败/1 跳过**；`decision_log.py --report` 违规计数实测；`gen_weekly_report.py` 采集自检实跑（抓到断采）；`version_check.py` 三处一致 **v4.5.23**；139/140 生产路由 401 ＋ 回执 one-shot-success；**push_portfolio_data.sh 实跑两次全链通过 ＋ 生产 `update_date` 由 9/21 变 2026-09-22**。
 
 ---
 

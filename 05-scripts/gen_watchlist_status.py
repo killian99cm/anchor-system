@@ -98,6 +98,11 @@ def _sector_lookup(sector: str, allboards: dict):
     for nm, row in by_name.items():             # 退化为子串匹配
         if sector and (sector in nm or nm in sector):
             return row, None
+    # 🔺 mx 档（#C1-20）是**部分覆盖** ⇒ 找不到时 ⛔ 不得写成「该板块不存在」
+    #    （v4.5.2 约束② 要防的正是这个误读：没取到 ≠ 它没有）
+    if str(allboards.get("ts") or "").startswith("mx:"):
+        return None, (f"**mx 覆盖（非全量）**中无「{sector}」—— ⚠️ 这**不等于「该板块"
+                      f"不存在」**（本次仅取被问到的主题）；push2 全量档该日缺失")
     return None, (f"双宇宙板块榜（行业{allboards.get('universes', {}).get('行业板块', {}).get('total', '?')}"
                   f"＋概念{allboards.get('universes', {}).get('概念板块', {}).get('total', '?')}）"
                   f"中无「{sector}」")
@@ -127,8 +132,32 @@ def _boards_from_cache(day: dict | None, date_str: str | None) -> dict:
             "complete": True, "total_all": len(rows), "ts": f"cache:{date_str}"}
 
 
+def _boards_from_mx_cache(day: dict | None, date_str: str | None, meta: dict | None = None) -> dict:
+    """把 `days_mx[date]` 重构成 `board_movers_all()` 同形状（裁决 #C1-20 · 第三级回落）。
+
+    ⚠️ 与 `_boards_from_cache` 有**三处故意不同**（⛔ 不得照抄那一份）：
+      · `complete=False` —— 这是**部分覆盖**（只含被 mx 查询问到的主题），⛔ 不得当全量；
+      · `universes` 用 `mx覆盖(非全量)` 作键 —— 使「找不到该板块」的报错**不会**被读成
+        「该板块不存在」（v4.5.2 约束②要防的正是这个误读）；
+      · 每条 row 带 `"_mx": True` —— 供 `_eval_a2` 施加**容忍带**（口径不同族的代价）。
+    """
+    rows = []
+    for code, v in (day or {}).items():
+        if not isinstance(v, dict):
+            continue
+        rows.append({"code": str(code), "name": v.get("name"),
+                     "chg_pct": v.get("chg_pct"),
+                     "board_type": v.get("board_type") or "mx主题", "_mx": True})
+    by_name = {r["name"]: r for r in rows if r.get("name")}
+    return {"rows": rows, "by_name": by_name,
+            "universes": {"mx覆盖(非全量)": {"total": len(rows), "fetched": len(rows)}},
+            "complete": False, "total_all": len(rows),
+            "ts": f"mx:{date_str}", "mx_meta": meta or {}}
+
+
 def _eval_a2(sector: str, allboards: dict, a2_pct: float,
-             prev_day: dict | None = None, prev_date: str | None = None):
+             prev_day: dict | None = None, prev_date: str | None = None,
+             prev_day_mx: dict | None = None):
     """A2 判定。返回 (命中?, 可完全判定?, 说明)。
 
     A2 命中条件：**板块当日 ≥2%**  或  **连续 2 日飘红**（当日>0 且 前日>0）。
@@ -144,6 +173,12 @@ def _eval_a2(sector: str, allboards: dict, a2_pct: float,
        偏差方向不确定，而 A2 的错向**不对称**——低估即放行本该禁买的）。
        缓存里**没有**该前一交易日 ⇒ 落回「仅部分可判」（fail-closed），
        ⛔ **不得**用「最近一条记录」冒充前一交易日。
+
+    🔴 **第三级回落 · mx 口径（裁决 #C1-20 · 2026-09-23）**：当日值在 `allboards` 里
+       带 `_mx=True`（来自 `days_mx`），或前日值取自 `prev_day_mx` 时，**必须施加
+       `fp.MX_TOL_PP` 容忍带** —— 两口径（mx＝成份区间加权 vs push2 `f3`）在带内可能
+       给出**相反结论** ⇒ 带内一律**判不了**（fail-closed：不授予买入许可）。
+       ⛔ 容忍带只对 **mx 侧的值**生效（push2 值不含此带）。
     """
     row, why = _sector_lookup(sector, allboards)
     if row is None:
@@ -154,41 +189,67 @@ def _eval_a2(sector: str, allboards: dict, a2_pct: float,
     except (TypeError, ValueError):
         return None, False, f"A2 判据板块涨幅非数值（{chg!r}）"
 
-    src = f"{row.get('board_type', '?')}「{row.get('name')}」{chg:+.2f}%"
-    if chg >= a2_pct:
-        return True, True, f"{src} ≥ {a2_pct:.0f}% ⇒ **A2 命中**（分支①）"
-    if chg <= 0:
-        return False, True, (f"{src} ≤ 0 ⇒ 分支①不成立，且**分支②（连续2日飘红）"
+    tol = fp.MX_TOL_PP if row.get("_mx") else 0.0
+    _tol_tag = f"（mx 口径，容忍带 ±{tol}pp）" if tol else ""
+    src = f"{row.get('board_type', '?')}「{row.get('name')}」{chg:+.2f}%{_tol_tag}"
+    if chg >= a2_pct + tol:
+        return True, True, f"{src} ≥ {a2_pct + tol:.2f}% ⇒ **A2 命中**（分支①）"
+    if tol and chg >= a2_pct - tol:
+        return None, False, (
+            f"{src} 落在**分支①阈值临界带**（{a2_pct - tol:.2f}~{a2_pct + tol:.2f}%）"
+            f" ⇒ 两口径可能一命中一不中 ⇒ **判不了**（fail-closed）")
+    if chg <= -tol:
+        _zero_txt = "0" if not tol else "−%.2f%%" % tol
+        return False, True, (f"{src} ≤ {_zero_txt} ⇒ 分支①不成立，且**分支②（连续2日飘红）"
                              f"逻辑上不可能** ⇒ A2 不成立（完全判定）")
-    # ---- 落在 (0, a2_pct)：分支②唯一可能命中的区间，需要前一交易日涨幅 ----
+    if tol and chg <= tol:
+        return None, False, (
+            f"{src} 落在**符号临界带**（±{tol}pp）⇒ 两口径可能一红一绿 ⇒ "
+            f"**判不了**（fail-closed）")
+    # ---- 落在 (tol, a2_pct - tol)：分支②唯一可能命中的区间，需要前一交易日涨幅 ----
     code = str(row.get("code") or "")
     prow = (prev_day or {}).get(code) if code else None
+    ptol = 0.0
+    if not isinstance(prow, dict) and code:
+        prow = (prev_day_mx or {}).get(code)
+        ptol = fp.MX_TOL_PP if isinstance(prow, dict) else 0.0
     pchg = prow.get("chg_pct") if isinstance(prow, dict) else None
     try:
         pchg = float(pchg)
     except (TypeError, ValueError):
         return None, False, (
-            f"{src} ∈ (0, {a2_pct:.0f}%) ⇒ 分支①不成立；分支②需**前一交易日"
+            f"{src} ∈ ({tol:.2f}, {a2_pct - tol:.2f}%) ⇒ 分支①不成立；分支②需**前一交易日"
             f"（{prev_date or '交易日不明'}）板块涨幅**，而日序列缓存"
-            f"（board_pct_history.json）中{'无该日记录' if prev_day is None else '无该板块记录'}"
+            f"（board_pct_history.json 的 days 与 days_mx）中"
+            f"{'无该日记录' if prev_day is None and prev_day_mx is None else '无该板块记录'}"
             f" ⇒ **A2 仅部分可判**（fail-closed：判不了 ⇒ 不授予买入许可）")
-    if pchg > 0:
+    _psrc = f"{pchg:+.2f}%" + (f"（mx 口径，容忍带 ±{ptol}pp）" if ptol else "")
+    if pchg > ptol:
         return True, True, (
-            f"{src} ∈ (0, {a2_pct:.0f}%) 且 前一交易日（{prev_date}）同板块 "
-            f"{pchg:+.2f}% > 0 ⇒ **连续 2 日飘红** ⇒ **A2 命中**（分支②）")
+            f"{src} ∈ ({tol:.2f}, {a2_pct - tol:.2f}%) 且 前一交易日（{prev_date}）同板块 "
+            f"{_psrc} > 0 ⇒ **连续 2 日飘红** ⇒ **A2 命中**（分支②）")
+    if ptol and -ptol <= pchg <= ptol:
+        return None, False, (
+            f"{src} ∈ ({tol:.2f}, {a2_pct - tol:.2f}%) 且 前一交易日（{prev_date}）同板块 "
+            f"{_psrc} 落在**符号临界带** ⇒ 两口径可能一红一绿 ⇒ **判不了**（fail-closed）")
     return False, True, (
-        f"{src} ∈ (0, {a2_pct:.0f}%) 但 前一交易日（{prev_date}）同板块 "
-        f"{pchg:+.2f}% ≤ 0 ⇒ 分支②不成立 ⇒ A2 不成立（完全判定）")
+        f"{src} ∈ ({tol:.2f}, {a2_pct - tol:.2f}%) 但 前一交易日（{prev_date}）同板块 "
+        f"{_psrc} ≤ 0 ⇒ 分支②不成立 ⇒ A2 不成立（完全判定）")
 
 
 def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
                    prev_day: dict | None = None, prev_date: str | None = None,
                    board_source: str | None = None,
-                   board_source_note: str | None = None) -> dict:
+                   board_source_note: str | None = None,
+                   prev_day_mx: dict | None = None) -> dict:
     """对单条 watchlist 按 §4.4 判据求值，返回状态字典（**含失败原因，不掩盖**）。
 
-    `board_source`（inbox/142 R1）：当日板块涨幅实际来源三态 —— `"live"` 活源 /
-    `"cache"` 回退读当日缓存（须标 ⚠️＋原因） / `None` 两源皆空（fail-closed）。
+    `board_source`（inbox/142 R1）：当日板块涨幅实际来源 —— `"live"` 活源 /
+    `"cache"` 回退读当日缓存（须标 ⚠️＋原因） / `"mx"` 回退读 **mx 口径**（裁决 #C1-20，
+    非全量＋须标口径） / `None` 三源皆空（fail-closed）。
+
+    `prev_day_mx`（#C1-20）：前一交易日的 mx 口径快照。**仅当 `prev_day` 里没有该板块时**
+    才使用，且届时其符号判定须带 `fp.MX_TOL_PP` 容忍带（见 `_eval_a2`）。
     """
     sector = str(item.get("sector", ""))
     code_raw = str(item.get("etf_code", ""))
@@ -248,7 +309,8 @@ def evaluate_entry(item: dict, contract: dict, allboards: dict, now: datetime,
             out["sources"].append(f"腾讯日K {tx_code}")
 
     # ---- 条件①：A2 不成立（板块当日 <2% 且 非连续 2 日飘红）----
-    hit, determined, a2_note = _eval_a2(sector, allboards, a2_pct, prev_day, prev_date)
+    hit, determined, a2_note = _eval_a2(sector, allboards, a2_pct, prev_day, prev_date,
+                                        prev_day_mx=prev_day_mx)
     out["a2_hit"] = hit
     out["a2_ok"] = (not hit) if hit is not None else None
     out["a2_determined"] = determined
@@ -326,9 +388,23 @@ def build_status(data: dict, contract: dict, now: datetime,
             board_source_note = (f"板块活源本次 {_live_fail} ⇒ A2 当日判据**回退读当日缓存**"
                                  f"（{ref_date}，{len(_cached_today)} 个板块，同源同口径）")
         else:
-            board_source = None
-            board_source_note = (f"板块活源本次 {_live_fail}，且当日缓存（{ref_date or '交易日不明'}）"
-                                 f"无该日记录 ⇒ **两源皆空，判不了**（fail-closed）")
+            # 🔺 第三级回落：mx 口径（裁决 #C1-20 · 2026-09-23 用户授权）
+            #    只在前两级皆缺时启用；⛔ 不与 days 混排（独立命名空间）；判定带容忍带。
+            _mx_today = fp.board_history_day_mx(ref_date) if ref_date else None
+            if _mx_today:
+                _mx_meta = fp.board_history_meta_mx(ref_date) or {}
+                allboards = _boards_from_mx_cache(_mx_today, ref_date, _mx_meta)
+                board_source = "mx"
+                board_source_note = (
+                    f"板块活源本次 {_live_fail}，且当日缓存（{ref_date}）无该日记录 ⇒ "
+                    f"**回落第三级：mx 口径**（{_mx_meta.get('metric') or '成份区间涨跌幅(流通市值加权平均)'}，"
+                    f"{len(_mx_today)} 个主题，**非全量**）。⚠️ 与 push2 不同指标族 ⇒ "
+                    f"判定施加 ±{fp.MX_TOL_PP}pp **容忍带**，落在带内一律判不了（fail-closed）；"
+                    f"⛔ 该值不写入 days 命名空间、不得当全量用")
+            else:
+                board_source = None
+                board_source_note = (f"板块活源本次 {_live_fail}，且当日缓存（{ref_date or '交易日不明'}）"
+                                     f"无该日记录，mx 回落亦无该日记录 ⇒ **三源皆空，判不了**（fail-closed）")
     # 🔴 **读取侧护栏** —— 与写入侧 `board_history_record` 那条「按数据自身交易日归档
     #    而非 `now`」同源。此处必须用 `ref_date` 而非 `now`：
     #    `prev_trading_day(kl, t)` 取的是**严格早于 t** 的交易日，而 `ref_kl` 的末条
@@ -341,6 +417,8 @@ def build_status(data: dict, contract: dict, now: datetime,
     #    `ref_date` 缺失（日K 取不到）⇒ **不猜**，一律置 None ⇒ 下游 fail-closed。
     prev_date = fp.prev_trading_day(ref_kl, ref_date) if ref_date else None
     prev_day = fp.board_history_day(prev_date) if prev_date else None
+    # 前日的 mx 口径快照（#C1-20）：**只在 prev_day 缺该板块时**被 _eval_a2 采用
+    prev_day_mx = fp.board_history_day_mx(prev_date) if prev_date else None
     record = (fp.board_history_record(_live_allboards, ref_date, now) if record_history
               else {"recorded": False, "reason": "本次未落盘（dry-run / --json）"})
 
@@ -367,7 +445,8 @@ def build_status(data: dict, contract: dict, now: datetime,
             f" —— 判据源**名实不符**，须改契约或改代码（不得两边并存）")
 
     entries = [evaluate_entry(it, contract, allboards, now, prev_day, prev_date,
-                              board_source=board_source, board_source_note=board_source_note)
+                              board_source=board_source, board_source_note=board_source_note,
+                              prev_day_mx=prev_day_mx)
                for it in wl]
     uni = allboards.get("universes") or {}
     return {
@@ -421,7 +500,9 @@ def main() -> int:
     bs = status["board_source"]
     _u = "；".join(f"{k} {v['fetched']}/{v['total']}" for k, v in (bs["universes"] or {}).items())
     # inbox/142 R1：源三态在**人读输出**上同样必须可见（live / 🔁 回退缓存 / ⛔ 两源皆空）
-    _bs_tag = {"live": "", "cache": "　🔁 **回退缓存**", None: "　⛔ **两源皆空**"}.get(bs.get("source"), "")
+    _bs_tag = {"live": "", "cache": "　🔁 **回退缓存**",
+               "mx": "　🔺 **第三级：mx 口径（非全量）**",
+               None: "　⛔ **三源皆空**"}.get(bs.get("source"), "")
     print(f"板块源：{_u or '不可用'}　全量={bs['complete']}　{bs['ts']}{_bs_tag}")
     if bs.get("fallback_note"):
         print(f"　　↳ {bs['fallback_note']}")

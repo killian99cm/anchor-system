@@ -566,6 +566,23 @@ def main():
     check("南向 T+0 换源测试通过", "OK" in _si_out and r_si.returncode == 0,
           f"(rc={r_si.returncode}) {_si_out[-200:]}")
 
+    # 7-c2l. A2 判据 mx 口径回落测试（裁决 #C1-20 · 2026-09-23）
+    #   缘起：东财 push2 全族 IP 限流 ⇒ `days`（push2 全量）当日档会缺，此前只能落回
+    #   「判不了」。裁决允许第三级回落读 mx 口径，但两口径不同指标族 ⇒ 必须①独立命名
+    #   空间（⛔ 不混进 days）②逐日标源 ③**容忍带**（符号/阈值临界带内一律 fail-closed）。
+    #   🔴 接入理由：这里新开的是一条**能影响 `X` 执行级禁买判定**的数据通路 ——
+    #   命名空间混排或容忍带丢失都会**静默放宽**，而失败长相与正常完全一样。
+    #   本测试含两条反向断言（「拿掉回落 ⇒ 回到判不了」「拿掉 _mx 标记 ⇒ 带消失」）。
+    print("\n[7-c2l] A2 mx 口径回落测试 test_a2_mx_fallback.py")
+    r_mx = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_a2_mx_fallback.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    _mx_out = (r_mx.stdout or "") + (r_mx.stderr or "")
+    check("A2 mx 口径回落测试通过", "OK" in _mx_out and r_mx.returncode == 0,
+          f"(rc={r_mx.returncode}) {_mx_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

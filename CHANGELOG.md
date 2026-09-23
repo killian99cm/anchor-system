@@ -6,6 +6,37 @@
 
 ---
 
+## v4.5.26 — 2026-09-23 深夜（裁决 #C1-20 落地：A2 判据新增「mx 口径第三级回落」）
+
+> **性质**：**规则层新增一条受限数据通路**（手册内部版 v3.15 → **v3.16**）＋ 代码/测试落地。**资金动作＝零**。
+> **授权**：用户 2026-09-23 明文「**要**」（同意立此裁决）。
+> **⚠️ 方向声明**：本通路**不加严、也不放宽** —— 三级回落只在前两级皆缺时启用，且对 mx 侧的值施加**容忍带**（带内一律判不了）；A2 级别仍为 **`X` 执行级**。
+
+### ① 问题（实测暴露，非推演）
+东财 `push2`/`push2his`/`push2delay` **全族 ＋ 5 个编号镜像逐个实测全空**（IP 级限流）⇒ `board_pct_history` 的 **`days` 档缺 9/23** ⇒ watchlist 四条 A2 **全部「判不了（fail-closed）」**（v3.12 只认 push2 全量档，⛔ 禁外部替代源）。而全族限流会**反复发生** ⇒「判不了」有**常态化**风险。
+
+### ② 裁决内容（#C1-20 · 四条硬约束，缺一不可）
+| # | 约束 | 落地 |
+|:--:|---|---|
+| ① | **独立命名空间** | mx 值只写 `days_mx` ＋ `days_mx_meta`；⛔ 不混进 `days`（`days` 不变量＝全量）、⛔ 不改写历史档 |
+| ② | **逐日标源** | 记口径名（**成份区间涨跌幅(流通市值加权平均)**，与 push2 `f3` 不同指标族）＋ 源 ＋ 条数（非全量） |
+| ③ | **容忍带（fail-closed）** | **±0.15pp**：符号临界带（\|chg\| ≤ 0.15pp）与分支①阈值临界带（1.85%~2.15%）内**一律判不了**；**前日值**取自 mx 时同样带带；⛔ 带只对 mx 侧值生效 |
+| ④ | **非全量约束** | ⛔ 不得据 mx 推断板块广度；找不到主题时文案须写「**mx 覆盖（非全量）中无 X ≠ X 不存在**」 |
+
+### ③ 实现与验证
+- 代码：`fetch_public`（`MX_TOL_PP` ＋ `board_history_record_mx`／`board_history_day_mx`／`board_history_meta_mx`，原子写、⛔ 永不抛错）｜`gen_watchlist_status`（`_boards_from_mx_cache`／`_eval_a2` 容忍带三分法／`_sector_lookup` 非全量文案／`build_status` 第三级＋人读标签）。
+- 测试：**`test_a2_mx_fallback.py` 10 项**（含**两条反向断言**：拿掉回落 ⇒ 必须回到「判不了」；拿掉 `_mx` 标记 ⇒ 容忍带消失即失败）＋ 接入 `smoke_test` **[7-c2l]**。
+- 🔴 **首次实战**：四主题 mx 值落 `days_mx`（人形机器人 −0.2593／智能驾驶 −0.2641／固态电池 −0.3051／有色金属 −0.8067）⇒ `gen_watchlist_status` **四条全部「A2 不成立（完全判定）」**（此前只能「判不了」）。
+- `sync_all` **16/17 步**（1 步取数缺口）｜`smoke_test` **101 通过 / 0 失败 / 1 跳过**（新增 1 项）｜**契约零漂移**（35 键、`warns: []`、`a2_red_day_pct=2.0`）。
+
+### 影响文件
+`01-rules/投资规则手册_v3.5_正式版.md`（§2.1 补第三级回落四条硬约束 ＋ 版本行 **v3.16**）、`01-rules/规则生效期登记表.md`（**#C1-20**）、`05-scripts/fetch_public.py`、`05-scripts/gen_watchlist_status.py`、`05-scripts/smoke_test.py`、`05-scripts/test_a2_mx_fallback.py`(新)、`06-dashboard/board_pct_history.json`（＋`days_mx`／`days_mx_meta` 键）、`portfolio_data.json`（watchlist `today` 刷新）、`CHANGELOG.md`、`~/CLAUDE.md`。
+
+### 验证
+`report_time_check`（报告未改）｜`data_pipeline --integrity` ✅｜`version_check` 四处一致 **v4.5.26**。
+
+---
+
 ## v4.5.25 — 2026-09-23 深夜（9/23 深度复盘 ＋ 定投口径订正 ＋ mx 六件套注册进 Qoder）
 
 > **性质**：分析交付 ＋ 口径订正 ＋ 环境配置。⛔ 无规则层变更、无阈值改动。

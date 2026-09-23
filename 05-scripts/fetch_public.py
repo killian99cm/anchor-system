@@ -561,6 +561,85 @@ def board_history_day(date_str) -> dict | None:
     return days.get(str(date_str))
 
 
+# ─────────────────────────────────────────────────────────────────────
+# mx 口径回落（裁决 #C1-20 · 2026-09-23 · 用户授权）
+#
+# 🔴 为什么必须**独立命名空间**、不许混进 `days`：
+#    · `days` 的不变量 ＝「**全量**（complete=True）」——「缺板块」会被日后误读成
+#      「该板块不存在」（v4.5.2 约束②原话）。而 mx 查询天然只覆盖**被问到的主题**
+#      ⇒ 混进去即破坏该不变量，且**不可事后分辨**。
+#    · `days_mx` 的不变量 ＝「**逐日标源 ＋ 非全量**」：每日带 `days_mx_meta`（口径名／
+#      取数源／条数），读者必须显式接受这两件事。
+#    · 两口径**不同指标族**（mx＝成份区间涨跌幅(流通市值加权平均) vs push2 `f3`＝板块
+#      指数涨跌幅）⇒ 判定必须施加容忍带（见 `MX_TOL_PP`），落在带内一律**判不了**。
+# ⛔ 不得把 push2 值与 mx 值写进同一命名空间；⛔ 不得用 `days_mx` 冒充 `days` 的全量快照。
+# ─────────────────────────────────────────────────────────────────────
+
+MX_TOL_PP = 0.15   # 容忍带（百分点）：两个口径在此带宽内可能给出**相反结论** ⇒ fail-closed
+
+
+def board_history_record_mx(rows: dict, trade_date, metric: str,
+                            source: str = "mx-data",
+                            fetched_at: str | None = None) -> dict:
+    """把 **mx 口径**的板块涨幅写入 `days_mx[trade_date]`（原子替换；⛔ 永不抛错）。
+
+    `rows`：`{BK码: {"name": ..., "chg_pct": ..., "board_type": ...}}`（或含这些键的 dict 列表）。
+    ⛔ 调用方须保证值确来自 mx-data；本函数**不做口径校验**（无法校验），只做结构落盘。
+    """
+    if not trade_date:
+        return {"recorded": False, "reason": "无交易日（参考指数日K不可用）"}
+    day: dict = {}
+    items = rows.items() if isinstance(rows, dict) else [(str(r.get("code") or ""), r) for r in (rows or [])]
+    for code, r in items:
+        if not isinstance(r, dict) or not str(code):
+            continue
+        if r.get("chg_pct") is None:
+            continue
+        day[str(code)] = {"name": r.get("name"), "chg_pct": r.get("chg_pct"),
+                          "board_type": r.get("board_type") or "mx主题"}
+    if not day:
+        return {"recorded": False, "reason": "无有效行"}
+    hist = board_history_load()
+    days_mx = hist.setdefault("days_mx", {})
+    days_mx[str(trade_date)] = day
+    meta = hist.setdefault("days_mx_meta", {})
+    meta[str(trade_date)] = {"metric": metric, "source": source, "n": len(day),
+                             "fetched_at": fetched_at or datetime.now().strftime("%Y-%m-%d %H:%M")}
+    for k in sorted(days_mx)[:-_BOARD_HISTORY_KEEP_DAYS]:
+        days_mx.pop(k, None)
+        meta.pop(k, None)
+    hist["schema"] = 1
+    hist["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+    path = _board_history_path()
+    tmp = path + ".tmp"
+    try:
+        d = os.path.dirname(path)
+        if d:
+            os.makedirs(d, exist_ok=True)
+        with io.open(tmp, "w", encoding="utf-8") as f:
+            json.dump(hist, f, ensure_ascii=False)
+        os.replace(tmp, path)
+    except Exception as exc:                                       # noqa: BLE001
+        return {"recorded": False, "reason": f"落盘失败：{type(exc).__name__}: {exc}"}
+    return {"recorded": True, "date": str(trade_date), "n": len(day), "path": path}
+
+
+def board_history_day_mx(date_str) -> dict | None:
+    """取某日的 **mx 口径**板块快照（**非全量**，只含被 mx 查询覆盖的主题）。不存在返 `None`。"""
+    if not date_str:
+        return None
+    days = board_history_load().get("days_mx") or {}
+    return days.get(str(date_str))
+
+
+def board_history_meta_mx(date_str) -> dict | None:
+    """取某日 mx 快照的元信息（口径名／源／条数／取数时刻）。不存在返 `None`。"""
+    if not date_str:
+        return None
+    meta = board_history_load().get("days_mx_meta") or {}
+    return meta.get(str(date_str))
+
+
 def board_history_gaps(kline: list | None = None, upto: str | None = None) -> dict:
     """缓存缺口自检（v4.5.2）。
 

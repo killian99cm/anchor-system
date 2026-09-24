@@ -591,6 +591,23 @@ def main():
     check("A2 mx 口径回落测试通过", "OK" in _mx_out and r_mx.returncode == 0,
           f"(rc={r_mx.returncode}) {_mx_out[-200:]}")
 
+    # 7-c2m. 周报生成器命名/落盘目录回归（2026-09-25 · 单 33）
+    #   🔴 接入理由：`gen_weekly_report.py` 原有**三处缺陷**且全部**静默**——
+    #   ① 文件名基准日错（无论 `--week` 传什么都用「今天」⇒ 三周互相覆盖成 W4）；
+    #   ② 落盘到 `04-reviews/` 根而非约定的 `weekly/`；
+    #   ③ 周数公式用「周一在几月」分段 ⇒ **跨月周冲突**（8/31 周与 9/7 周都算 W1）。
+    #   三者都**不报错**，只会让周报**悄悄写错地方/被覆盖**。
+    #   本测试含**反向断言**（不同周产出同名 ⇒ 判红）与**契约测试**（ISO 惯例须逐一复现既有文件名）。
+    print("\n[7-c2m] 周报命名与落盘目录回归 test_gen_weekly_report_naming.py")
+    r_wk = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_gen_weekly_report_naming.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=60
+    )
+    _wk_out = (r_wk.stdout or "") + (r_wk.stderr or "")
+    check("周报命名/目录回归测试通过", "OK" in _wk_out and r_wk.returncode == 0,
+          f"(rc={r_wk.returncode}) {_wk_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

@@ -1543,6 +1543,15 @@ def _w_apply(live, day_fn):
     fp.ref_last_trading_day = lambda: ("2026-09-21", [{"date": "2026-09-21"}])
     fp.prev_trading_day = lambda kl, d: "2026-09-18"
     fp.board_history_day = day_fn
+    # 🔴 mx 档（第三级回落）也必须打桩（2026-09-24 修复）：
+    #   W1–W6 测的是**前两级**（活源 ＋ `days` 全量缓存）的回退行为，⛔ 与 mx 档无关；
+    #   但原实现只桩了 `board_history_day`，`board_history_day_mx` **直读生产缓存**
+    #   ⇒ 一旦生产 `days_mx` 有当日值，W5「两源皆空」的前提就被**生产数据**悄悄破坏
+    #   （2026-09-24 回填 `days_mx` 六日后 W5 当场变红 ＝ 实证）。
+    #   ⛔ 此处不得改用 try/finally 清理生产文件（v4.5.1 教训：硬杀时 finally 不执行）；
+    #   正解＝**打桩**，mx 档本身的行为由 `test_a2_mx_fallback.py` 专测。
+    fp.board_history_day_mx = lambda d: None
+    fp.board_history_meta_mx = lambda d: None
     fp.board_history_gaps = lambda kl=None, upto=None: {"checked": False, "reason": "夹具（W）"}
     fp.daily_kline = lambda code, n=30: list(_W_KL)
 

@@ -86,7 +86,13 @@ class TestNamespaceIsolation(unittest.TestCase):
 
 
 class TestThirdRungAndTolerance(unittest.TestCase):
-    """③ 第三级回落可用 ＋ 容忍带生效 ＋ 反向断言。"""
+    """③ 第三级回落可用 ＋ 容忍带生效 ＋ 反向断言。
+
+    🔴 带值 `fp.MX_TOL_PP` 于 2026-09-24 由 **1.0pp** 取代初版 0.15pp（首次对拉实测：
+       `|Δpp|` max **0.8451**／mean 0.3813，且出现 **1 条判定翻转**＝人形机器人
+       mx −0.2593 判「不成立」而 push2 +0.30 判「命中」）。本类中的临界值**随带宽度
+       重新标定**，⛔ 不得写死数字（写死即失去对带值的约束力）。
+    """
 
     def _today_boards(self, chg):
         _write_cache(days={D22: {BK_RBOT: _row("人形机器人", 0.06)}},
@@ -96,7 +102,8 @@ class TestThirdRungAndTolerance(unittest.TestCase):
 
     def test_rung3_makes_it_judgeable(self):
         """days 缺当日、days_mx 有 ⇒ 用 mx 判定（值远离临界带 ⇒ 完全判定）。"""
-        hit, det, note = gws._eval_a2("人形机器人", self._today_boards(-0.26), A2_PCT,
+        far_neg = -(fp.MX_TOL_PP + 0.5)          # 带外负：跌破符号临界带才有资格「完全判定」
+        hit, det, note = gws._eval_a2("人形机器人", self._today_boards(far_neg), A2_PCT,
                                       prev_day={BK_RBOT: _row("人形机器人", 0.06)},
                                       prev_date=D22)
         self.assertTrue(det, f"应可完全判定：{note}")
@@ -112,13 +119,43 @@ class TestThirdRungAndTolerance(unittest.TestCase):
         self.assertIsNone(hit)
 
     def test_sign_band_is_fail_closed(self):
-        """符号临界带（|chg| ≤ 0.15pp）⇒ 判不了。"""
+        """符号临界带（|chg| ≤ MX_TOL_PP）⇒ 判不了。"""
         hit, det, note = gws._eval_a2("人形机器人", self._today_boards(-0.05), A2_PCT,
                                       prev_day={BK_RBOT: _row("人形机器人", 0.06)},
                                       prev_date=D22)
         self.assertIsNone(hit)
         self.assertFalse(det)
         self.assertIn("符号临界带", note)
+
+    def test_first_duila_measured_value_must_be_undecidable(self):
+        """🔴 **实测值回归**：人形机器人 2026-09-23 mx ＝ **−0.2593** ⇒ 必须「判不了」。
+
+        这是 2026-09-24 对拉实测抓到的**唯一一条判定翻转**：旧带（0.15）下该值判
+        「不成立（完全）」，而同日 push2（+0.30%）判「**命中**」⇒ 旧带**放行了本该禁买的**。
+        ⛔ 本断言是这条缺陷的守门人：带值若被改小到 ≤0.21（＝|−0.2593| 之下），本测试必红。
+        """
+        hit, det, note = gws._eval_a2("人形机器人", self._today_boards(-0.2593), A2_PCT,
+                                      prev_day={BK_RBOT: _row("人形机器人", 0.06)},
+                                      prev_date=D22)
+        self.assertIsNone(hit, f"实测翻转值竟给出结论 ⇒ 容忍带又兜不住了：{note}")
+        self.assertFalse(det)
+
+    def test_reverse_old_band_would_have_granted_it(self):
+        """🔴 反向断言：把带值**改回初版 0.15** ⇒ 同值（−0.2593）必须变回「完全判定不成立」。
+
+        证明「新带是承重的」且「旧带确实会放行」—— 即本类不是摆设。
+        """
+        old = fp.MX_TOL_PP
+        fp.MX_TOL_PP = 0.15
+        try:
+            hit, det, note = gws._eval_a2("人形机器人", self._today_boards(-0.2593), A2_PCT,
+                                          prev_day={BK_RBOT: _row("人形机器人", 0.06)},
+                                          prev_date=D22)
+        finally:
+            fp.MX_TOL_PP = old
+        self.assertTrue(det, f"改回 0.15 竟仍判不了 ⇒ 该测试抓不到回归：{note}")
+        self.assertFalse(hit)
+        self.assertIn("完全判定", note)
 
     def test_reverse_without_mx_flag_band_disappears(self):
         """🔴 反向：同值但**不带** `_mx` 标记（走 push2 档）⇒ 必须给出结论。
@@ -135,53 +172,83 @@ class TestThirdRungAndTolerance(unittest.TestCase):
         self.assertFalse(hit)
 
     def test_branch1_band_is_fail_closed(self):
-        """分支①阈值临界带（1.85~2.15）⇒ 判不了；2.20 ⇒ 命中。"""
-        hit, det, note = gws._eval_a2("人形机器人", self._today_boards(1.95), A2_PCT,
+        """分支①阈值临界带（a2−tol ~ a2+tol）⇒ 判不了；带外高值 ⇒ 命中。"""
+        inside = A2_PCT - fp.MX_TOL_PP + 0.1
+        hit, det, note = gws._eval_a2("人形机器人", self._today_boards(inside), A2_PCT,
                                       prev_day={BK_RBOT: _row("人形机器人", 0.06)},
                                       prev_date=D22)
         self.assertIsNone(hit)
         self.assertFalse(det)
         self.assertIn("分支①阈值临界带", note)
 
-        hit2, det2, _ = gws._eval_a2("人形机器人", self._today_boards(2.20), A2_PCT,
+        outside = A2_PCT + fp.MX_TOL_PP + 0.2
+        hit2, det2, _ = gws._eval_a2("人形机器人", self._today_boards(outside), A2_PCT,
                                      prev_day={BK_RBOT: _row("人形机器人", 0.06)},
                                      prev_date=D22)
         self.assertTrue(det2)
-        self.assertTrue(hit2, "≥ 2.15 应判命中（带外）")
+        self.assertTrue(hit2, "带外高值应判命中")
+
+    def test_mx_branch2_region_is_empty_by_construction(self):
+        """🔴 **带变宽的必然代价（显式钉住，⛔ 别当成 bug）**：当 `MX_TOL_PP ≥ a2_pct/2`
+        时，分支②可用区间 `(tol, a2−tol)` **为空** ⇒ **mx 侧永远给不出「连续 2 日飘红」
+        的判定**（只能「命中（≥a2+tol）」或「不成立（≤−tol）」或「判不了」）。
+
+        这是**正确的**：带的宽度＝已测得的跨口径偏差，偏差比待判的差还要大时，
+        「两日各 +0.5%」与「两日各 −0.5%」本就**不可区分** ⇒ 诚实答案就是判不了（fail-closed）。
+        """
+        if fp.MX_TOL_PP < A2_PCT / 2:
+            self.skipTest(f"带值 {fp.MX_TOL_PP} < a2/2 ⇒ 分支②区间非空，本不变量不适用")
+        edge = A2_PCT - fp.MX_TOL_PP + 0.05      # 落在 (tol, a2−tol) 若该区间非空
+        self.assertLessEqual(fp.MX_TOL_PP, edge, "构造前提被破坏")
+        hit, det, note = gws._eval_a2("人形机器人", self._today_boards(edge), A2_PCT,
+                                      prev_day={BK_RBOT: _row("人形机器人", 1.50)},
+                                      prev_date=D22)
+        self.assertIsNone(hit, note)
+        self.assertFalse(det)
+        self.assertIn("分支①阈值临界带", note)
 
     def test_prev_day_from_mx_also_banded(self):
-        """前日值取自 mx ⇒ 同样带容忍带；带外则正常判定。"""
-        _write_cache(days={},  # 前一日 push2 档缺失
-                     days_mx={D22: {BK_SOLID: _row("固态电池", 0.05)},
-                              D23: {BK_SOLID: _row("固态电池", 0.30)}}, meta={})
-        today_mx = fp.board_history_day_mx(D23)
-        prev_mx = fp.board_history_day_mx(D22)
-        ab = gws._boards_from_mx_cache(today_mx, D23, None)
-        # 前日 +0.05 落在带内 ⇒ 不可判
-        hit, det, note = gws._eval_a2("固态电池", ab, A2_PCT, prev_day=None,
-                                      prev_date=D22, prev_day_mx=prev_mx)
+        """前日值取自 mx ⇒ 同样带容忍带；带外则正常判定。
+
+        （当日值此处走 **push2 档**〔不带带〕—— 因为带变宽后 mx 侧的 `(tol, a2−tol)` 区间
+        为空，分支②只能在「当日 push2 ＋ 前日 mx」这一组合下被真正走到。）
+        """
+        today_push2 = {"rows": [dict(_row("固态电池", 0.30), code=BK_SOLID)],
+                       "by_name": {"固态电池": dict(_row("固态电池", 0.30), code=BK_SOLID)},
+                       "universes": {}, "complete": True, "ts": "test"}
+        # 前日 mx +0.40 落在带内 ⇒ 不可判
+        _write_cache(days={}, days_mx={D22: {BK_SOLID: _row("固态电池", 0.40)}}, meta={})
+        hit, det, note = gws._eval_a2("固态电池", today_push2, A2_PCT, prev_day=None,
+                                      prev_date=D22,
+                                      prev_day_mx=fp.board_history_day_mx(D22))
         self.assertIsNone(hit)
         self.assertFalse(det)
         self.assertIn("临界带", note)
-        # 前日 +0.40（带外正）＋当日 +0.30（带外正）⇒ 分支② 命中
-        _write_cache(days={}, days_mx={D22: {BK_SOLID: _row("固态电池", 0.40)},
-                                       D23: {BK_SOLID: _row("固态电池", 0.30)}}, meta={})
-        ab2 = gws._boards_from_mx_cache(fp.board_history_day_mx(D23), D23, None)
-        hit2, det2, note2 = gws._eval_a2("固态电池", ab2, A2_PCT, prev_day=None,
+        # 前日 mx +1.50（带外正）＋当日 +0.30 ⇒ 分支② 命中
+        _write_cache(days={}, days_mx={D22: {BK_SOLID: _row("固态电池", 1.50)}}, meta={})
+        hit2, det2, note2 = gws._eval_a2("固态电池", today_push2, A2_PCT, prev_day=None,
                                          prev_date=D22,
                                          prev_day_mx=fp.board_history_day_mx(D22))
         self.assertTrue(det2, note2)
-        self.assertTrue(hit2, f"连续两日带外为正 ⇒ 应命中：{note2}")
+        self.assertTrue(hit2, f"前日带外为正、当日为正 ⇒ 应命中：{note2}")
 
     def test_prev_missing_in_both_namespaces(self):
-        """当日 mx 有值、但前日在 days 与 days_mx 都缺 ⇒ 判不了，文案须提到两个命名空间。"""
-        _write_cache(days={}, days_mx={D23: {BK_RBOT: _row("人形机器人", 0.30)}}, meta={})
-        ab = gws._boards_from_mx_cache(fp.board_history_day_mx(D23), D23, None)
-        hit, det, note = gws._eval_a2("人形机器人", ab, A2_PCT, prev_day=None,
+        """前日在 `days` 与 `days_mx` 都缺 ⇒ 判不了，文案须提到两个命名空间。
+
+        ⚠️ 当日值此处走 **push2 档**：带变宽后 mx 侧的 `(tol, a2−tol)` 区间为空
+        ⇒ 「需要前日」这条路径**在 mx 当日值下已不可达**（见
+        `test_mx_branch2_region_is_empty_by_construction`）。本用例改测同一保护意图：
+        **前日两命名空间皆缺时不得放行**，且文案必须点名两个命名空间。
+        """
+        boards = {"rows": [dict(_row("人形机器人", 0.30), code=BK_RBOT)],
+                  "by_name": {"人形机器人": dict(_row("人形机器人", 0.30), code=BK_RBOT)},
+                  "universes": {}, "complete": True, "ts": "push2"}
+        hit, det, note = gws._eval_a2("人形机器人", boards, A2_PCT, prev_day=None,
                                       prev_date=D22, prev_day_mx=None)
         self.assertIsNone(hit)
         self.assertFalse(det)
         self.assertIn("days_mx", note)
+        self.assertIn("days", note)
 
     def test_mx_partial_must_not_read_as_board_missing(self):
         """🔴 mx 档找不到该主题时，⛔ 不得写成「该板块不存在」（部分覆盖 ≠ 不存在）。"""

@@ -17,6 +17,14 @@ from pathlib import Path
 
 import paths
 
+# 🔴 必须最先重设 stdout 编码（2026-09-24 修复）：
+#   本脚本的**失败路径**会打印含 emoji 的 `detail`（如 `validate_integrity` 的 🔴 硬项），
+#   而 Windows 控制台默认 **cp936(GBK)** ⇒ `UnicodeEncodeError` **把「红」变成「崩」**：
+#   真实症状＝一个断言失败时，套件在 `check()` 的 print 处中断，**读者拿到的是 traceback
+#   而不是失败清单**（本次实测：4 项失败被截成 1 段崩溃）。
+#   同族病史：v4.5.23 `sync_all` 9.5 步（JSON 值含 `⇒` 打到 cp936 而崩）—— 同一根因。
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 DESKTOP = paths.DESKTOP
 ANCHOR = paths.ANCHOR
 SCRIPTS = paths.SCRIPTS

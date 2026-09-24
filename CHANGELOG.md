@@ -45,6 +45,32 @@
   **9/4→9/7 的 ¥300.60 降级为「买入款记录时点差异」**（不再是 P&L 缺口）。
 - ⏭️ 用户确认 **9/28–9/30 尚有 3 个交易日** ⇒ **月度归因正式版须待 9/30 收盘后重跑**。
 
+### ⑤ 🆕 网站 / 数据文件 / 表格层**全量核查与更新**（用户「anchor 文件夹里所有数据文件、网站、表格全部更新」）
+
+**普查法**：对全仓 `*.json/*.html/*.xlsx/*.csv` 按 mtime 排序（排除 `.git`／`归档`／`backup`／`mx_data_output`／回测 output），逐一判定「该更新 / 冻结 / 归档」。
+
+| 项 | 判定 | 处置 |
+|---|---|---|
+| `06-dashboard/*`（portfolio_data／两份 HTML／Excel 十表／快照／daily_hub／decision_dashboard） | ✅ **已最新**（`sync_all` 09-24 23:18 生成） | 无需处理 |
+| `08-website/anchor-pro.html`（公开页） | ✅ 已重生成 **23:18** | **防漂移** `git diff --exit-code` **通过**（生成物 == 提交物）＋ **隐私护栏 `test_anchor_pro_privacy.py` 17/17 OK**（含 1 条反向断言）；生成器实报「示例总资产 0」⇒ **确认零真实数据** |
+| `06-dashboard/portfolio_data_example.json` | 🔵 **冻结（设计如此）** | 脱敏示例（`_note` 明写），⛔ 不更新 |
+| `04-reviews/daily/*-数据回填候选.json` | 🔵 当日快照，历史属性 | 不动；**但 9/24 的缺** ⇒ 见下 |
+| **🔴 `04-reviews/daily/2026-09-24-数据回填候选.json`** | **缺失**（`sync_all` 步骤 0.6 报警） | **已补跑 `data_auto_fill.py`（两次）** ⇒ 生成完毕 ＋ `data_source_health.json` 刷新。**并交叉验证了月度归因**：鹏华债 **−0.15%/−15.3**、515180 **−0.21%/−12.0**、通利A **−1.19%/−33.2** —— **与我实算的 −15.27/−12.00/−33.23 分毫不差** |
+| `08-website/diagrams/architecture.html` | 🔴 **陈旧**（页脚 `Anchor v3.6.0` ＋「20 个脚本」） | **已更新**：`规则手册 v3.18 · 系统 v4.5.32`，并**去掉会漂移的硬编码计数**（实测现为 57 个 .py） |
+| `08-website/anchor-pro-v2.html`（09-10，**未跟踪**） | 🗄 已被 `anchor-pro.html` 取代 | **已归档** `08-website/归档/`；`.gitignore` 同步补 `08-website/归档/`（与 `05-scripts/归档/` 同约定） |
+| `08-website/track-record.html`（08-28） | ⚠️ **需用户裁决** | 见 ⑥ |
+| `05-scripts/index_registry.json`（09-23） | ✅ 注册表（含 `_meta` 日期），9/23 已更 | 不动 |
+| `08-website/diagrams/{data-pipeline,decision-loop,pyramid-4layer}.html`、`design-system/DESIGN.md`、`05-scripts/anchor_calculator.html`、`docs/*.html` | 🔵 静态（无日期/版本漂移） | 不动 |
+| `04-reviews/research/*.html`（08-28/31） | 🔵 历史研究报告 | 不动（归档属性）|
+
+### ⑥ 🔴 仍待用户裁决的两项（⛔ 指挥端不擅自动）
+
+1. **`08-website/track-record.html`（公开业绩页）是否重跑回测？**
+   - 现状：回测区间 **2021-09-01 ~ 2026-08-26**（`generated_at 2026-08-26 19:57`），数据源 `09-backtest/output/{full_anchor_summary,takeprofit_summary}.json` ＋ 两张 PNG。
+   - 该区间**硬编码在 `09-backtest/scripts/full_anchor_backtest.py` 的多区间定义**里；延长需：刷新 `09-backtest/data/` → 重跑 `full_anchor_backtest` / `buyhold_benchmark` / `takeprofit_compare_backtest` / `make_full_dashboard` → **改写 HTML 内嵌数字与 PNG**。
+   - ⚠️ **代价**：这会**改动已公开的模拟战绩数字**（且该页被 `README`／`docs/index.md` 链接）⇒ **属对外内容变更，须你点头**。
+2. **3 项「妙想无数据」（与「限频」不同族）**：`data_auto_fill` 两轮实测中，**纳指两只（华泰/天弘）＋中银稳健增利债**始终报 `妙想API无数据`（另 2 项＝限频 code=112，重跑即可）⇒ **疑为 `fetch_registry` 的查询词/代码覆盖问题**，需改注册表。建议**另立小单**（本次只留痕，未改注册表）。
+
 ### ④ 未闭合（⛔ 勿误读）
 1. **月度归因的「真实盈亏」须用户 App 读数确认**（铁律；两候选已列，差额 ¥357.04 已定位到 9/4–9/7）。
 2. **9/30 前须再跑一次月度归因正式版**（9/28–9/30 尚有 3 个交易日）。

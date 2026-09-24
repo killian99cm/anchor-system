@@ -42,6 +42,7 @@ Thumbs.db
 05-scripts/sync_all.py
 05-scripts/transaction_ledger.md
 05-scripts/归档/
+08-website/归档/    # 公开页层的历史版本（同 05-scripts/归档/ 约定：只留本地）
 ANCHOR_体系总览.md
 
 # mx_cache text files

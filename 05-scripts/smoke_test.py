@@ -608,6 +608,21 @@ def main():
     check("周报命名/目录回归测试通过", "OK" in _wk_out and r_wk.returncode == 0,
           f"(rc={r_wk.returncode}) {_wk_out[-200:]}")
 
+    # 7-c2n. F7 例外出口披露回归（2026-09-25 · 单 151 · 裁决 #C1-21 方案 A-2）
+    #   🔴 接入理由：F7 规定「**状态信号**（如**额度用尽**）须自带**可核验出口**，否则不得单独作最终
+    #   拦截」。出口早存于 §2.4，但 §1.3 未引用、**工具未打印** ⇒ 命中 F7 违反形态（**每日复现**）。
+    #   本项**只披露、不放行**（判定仍 ⛔）—— 而「只披露不拦截」的东西**最容易被顺手删掉**，
+    #   故测试含**两条反向断言**（未满额不得打印；**删掉打印行 ⇒ 出口文案消失 ⇒ 证明承重**）。
+    print("\n[7-c2n] F7 例外出口披露回归 test_pre_trade_f7_exit.py")
+    r_f7 = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_pre_trade_f7_exit.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=120
+    )
+    _f7_out = (r_f7.stdout or "") + (r_f7.stderr or "")
+    check("F7 例外出口披露回归通过", "OK" in _f7_out and r_f7.returncode == 0,
+          f"(rc={r_f7.returncode}) {_f7_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

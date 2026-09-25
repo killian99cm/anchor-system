@@ -6,6 +6,77 @@
 
 ---
 
+## v4.5.37 — 2026-09-25（单 156 修坏锚点 ＋ **153 #3 补完 P1 最后一块** ＋ 154§2/155#4 收尾 ＋ 立单 157/158）
+
+> **背景**：用户「**全部去做，直至全部完成**」。本批把上一轮的**三处「待裁决/待办」全部做掉或转成可执行件**。⛔ 零阈值/零规则/零资金动作。
+
+### ① 单 156 · 修 `104` 三处坏锚点（148 校验器首跑抓到的）
+
+三处（`:166`／`:439`／`:462`）由 `103 §2.6`（**该节不存在**）改引 **`103 §2.2`**（被引内容实测在 `:230–235` ＋ 验收 4/5）；
+⛔ 未删引用、未改 103、未重写 104 其余内容；⇒ `check_ticket_anchors.py` **`❌ 未通过 0`** 且 **`--strict` 亦 exit 0**；
+工具内 `KNOWN_BAD` **已撤空**（注释保留改造说明）。
+
+### ② 🔴 单 153 #3 · **B1 硬截止 ACTION 可达**（P1 最后一块，此前标「阻塞须裁决」）
+
+- **病灶**：`buffer_used` **跨天无处存放** ⇒ 每次 `generate_signals` 都从 0 重算 ⇒ `check_stop_loss` 的
+  `total_used >= max_deadline_days(3)` **永不可达** ⇒「**触发后第 4 交易日 14:30 无条件止损**」只剩纸面。
+- **修法三件**：🆕 `app/core/trading_calendar.py`（**离线交易日历**，与 `05-scripts/trading_calendar.py` 同源）
+  ＋ 🆕 `stop_loss_watch_state` 表（`last_advanced_on` 作**幂等锚**）＋ `advance_stop_loss_watch()`（在构建
+  `persistent_state` **之前**推进）。
+- 🔴 **必须用交易日**：按自然日推进会让人在**周五触发、周一**就凑满 3 格并**误触发无条件止损**。
+- **正反成对 8 项**（含 🔴 反向承重：**关掉推进 ⇒ 永不 ACTION** ＝ 修复前的真实状态）＋ 冻结期**时钟暂停**守 083 契约
+  ＋ 迁移可逆（CLI ＋ sqlite）。**实跑 947 passed / 0 failed**。
+- ⚠️ **未按 #3 字面**（「冻结期 ⇒ buffer 非 0」，与 083「时钟暂停」契约**不可能同时为真**）⇒ 改按**其目的**落实，
+  理由与依据写在交付件 §二（**可覆写**）。
+- 🟢 顺带修 `test_user_id_indexes_155` 一处**写死了会变的前提**（`downgrade -1` 隐含「head 就是 155」，
+  head 被新 revision 顶掉后误判为「索引没撤净」）⇒ 改显式回退到 155 的 `down_revision`，**断言强度不变**。
+- 🔴 **自曝一次行尾符事故（已修）**：用 `io.open(..., newline='
+')` 改 `app/models/__init__.py`，
+  把该文件**整文件 CRLF→LF**（`git diff` 一度 152 行 churn）⇒ 已按 HEAD **字节级重建**（保留原 75 CRLF/5 LF 混合），
+  仅留 **+2 行**真实改动。📌 **改本仓文件必须逐文件核 `git diff --stat`，⛔ 不看行数就提交**。
+
+### ③ 154 §2 / 155 #4 的**收尾件**（两项遗留）
+
+- 🟢 **`probe_ai` 的 mock 路径改记 `degraded`**（原来记 `success` ⇒ 健康页把**演示模式**显示为 `real`，
+  与 153 #8 的 `probe_market`-demo **完全同族**）；顺带**订正模块 docstring**（154-2 之后它已成**陈旧断言**：
+  写「registry 不产生 degraded」，而实际有两条路径会产）。
+- ✅ **同族核验完成**：`probe_kline/em/mx/em_his/snapshot/pipeline/tdx_*` **逐个读过** ⇒ 均为「真拿到数据才记 success」，**至此收口**。
+- 🟢 **`deploy/scripts/*.sh` 3 处端点改 env 可覆盖**（`${ANCHOR_PROD_TARGET:-…}`／`${ANCHOR_PROD_URL:-…}`）；
+  ⚠️ 默认值**就地保留**（shell 无法 import Python —— 9.5 步的教训；硬调 `prod_env.py` 会给每日数据推送引入新失败点）。
+- 🔴 **门禁补定向检查** `sh_defaults_ok()`：`deploy/scripts/` 整个在白名单里 ⇒ **白名单必须配定向断言**，
+  否则它就是「这类文件再也无人管」的**静默豁免**；夹具**反向实证**（裸写被抓 / env 形式不报）。
+- **实跑 948 → 949 passed / 0 failed**。
+
+### ④ 🆕 立单两件 ＋ 🔴 一项**实测发现**（`track-record` 的阻塞真相）
+
+- **157**：报告正文与前端展示层的**四态透出**（154-2 §5 原文即「建议另立单」）。
+- **158**：回测数据源刷新路径 ＋ `track-record.html` 窗口更新 —— ⛔ **须用户裁决**（改动已公开战绩数字）。
+  🔴 **本批实测新发现（原以为「跑一下就行」）**：① 腾讯 `fqkline` **单次恒回 640 根**（**显式日期区间亦然**）
+  ⇒ **取不到 2021 起的全窗口**；② **两源复权档位不同**（重叠日抽查 3 点有 **2 点不一致**：
+  `2026-08-20` 旧 **1.15** / 新 **1.151**；`2025-01-02` 旧 **0.59** / 新 **0.585**）
+  ⇒ **拼接＝断层、会静默改变历史收益**。⇒ 今天**无法「只延窗口」**，须在 **A 换源重跑（历史数字全变）／
+  B 找回原源 westock／C 搁置但页面须显式标注窗口止期** 中裁决。⛔ **本次未改 `track-record.html` 一个字符**。
+
+### ⑤ 本批对本仓的**教训登记**（供下次复用）
+
+1. **测试隔离要连「进程外产物」一起隔离** —— 上一批我的 149 测试污染了生产 `data_source_health.json`（已修）；
+2. **白名单必须配定向断言** —— 否则它从「豁免」变成「无人管」（本批 155 #4 的实证）；
+3. **写文件的每一处都要核行尾** —— 本批又踩一次（`models/__init__.py`），已字节级修复；
+4. **「测试写死了会变的前提」是一类独立缺陷** —— 本批修了 155 的 `downgrade -1` 一处。
+
+### 影响文件（本批）
+
+| 仓库／文件 | 改动 |
+|---|---|
+| `Anchor-Software` `app/core/trading_calendar.py` · `models/stop_loss_watch.py` · `repositories/stop_loss_watch_repo.py` · `alembic/versions/a8b1c4d7e2f9_*` | **新增**（153 #3） |
+| `Anchor-Software` `app/services/signal_service.py` | `advance_stop_loss_watch()` ＋ 读路径改持久值 |
+| `Anchor-Software` `app/services/data_source_health.py` | `probe_ai` mock → degraded ＋ docstring 订正 |
+| `Anchor-Software` `deploy/scripts/{apply_audit_ops,push_portfolio_data}.sh` · `scripts/prod_endpoint_check.py` | 端点 env 化 ／ 门禁补 `sh_defaults_ok()` |
+| `Anchor-Software` `_handoff/{inbox/104,156,157,158, todo.md, outbox/*}` | 修坏锚点 ／ 交付件 ／ 立单 |
+| `Anchor` `scripts/check_ticket_anchors.py` | `KNOWN_BAD` 撤空 |
+
+---
+
 ## v4.5.36 — 2026-09-25（单 149：债基**不可估**口径 ＋ 单 150：DDX**降级可见化** ＋ 修一处 stale 红测试）
 
 > **背景**：用户「**所有内容全部去做**」续批收尾项。交付 `Anchor-Software/_handoff/inbox/149` ＋ `150`。

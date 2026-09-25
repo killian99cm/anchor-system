@@ -623,6 +623,23 @@ def main():
     check("F7 例外出口披露回归通过", "OK" in _f7_out and r_f7.returncode == 0,
           f"(rc={r_f7.returncode}) {_f7_out[-200:]}")
 
+    # 7-c2o. 月额度超限自动打标 + 月归因披露回归（2026-09-25 · 单 152 · 裁决 #C1-21 方案 A-3）
+    #   🔴 接入理由：12 个月买入维**超限 11 个月**、9 月买入 5 笔，而违规留痕 **0 笔** ——
+    #   病灶不是「上限太小」，是「**超了也没事**」（命中报告标准 v2.1 判例）。
+    #   本项**只打标不拦截**（拦截仍在 pre_trade_check）—— 而「只留痕不拦截」的东西
+    #   **最容易被顺手删掉**，故测试含**两条反向断言**（未满额/非买入不得打标；
+    #   **删掉打标行 ⇒ tag 消失 ⇒ 证明承重**）＋**不溯及既往**双保险（生效日前＋补录）
+    #   ＋只读扫描真实 decision_log 防追溯污染（A-3 红线）。
+    print("\n[7-c2o] 月额度超限自动打标回归 test_monthly_quota_tag.py")
+    r_qt = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_monthly_quota_tag.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=120
+    )
+    _qt_out = (r_qt.stdout or "") + (r_qt.stderr or "")
+    check("月额度超限自动打标回归通过", "OK" in _qt_out and r_qt.returncode == 0,
+          f"(rc={r_qt.returncode}) {_qt_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

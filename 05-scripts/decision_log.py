@@ -40,12 +40,13 @@ T+3 复盘规则（8/21 确立 · **2026-09-21 口径订正：自然日 → 交�
 import json
 import os
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths  # C1：统一路径真源
 import trading_calendar  # 2026-09-21：T+3 交易日口径的判据源（离线，无网络）
+import data_processor  # 单 152：月额度**唯一计数真源**（⛔ 打标不得自造计数口径）
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -54,6 +55,20 @@ LOG_FILE = Path(__file__).parent.parent / "06-dashboard" / "decision_log.json"
 
 # T+3 的 N（**交易日**，2026-09-21 用户裁决）
 T_PLUS_N_TRADING_DAYS = 3
+
+# ══════════════════════════════════════════════════════════════════
+# 月额度**超限自动打标**（单 152 · 裁决 #C1-21 方案 A-3 · 2026-09-24）
+# ══════════════════════════════════════════════════════════════════
+# 病灶：`买入 ≤2` 这条额度 12 个月里**超限 11 个月**、9 月超限 5 笔，而 `decision_log`
+#   的违规留痕 **0 笔** —— 不是「上限太小」，是「**超了也没事**」：买入维满额状态下
+#   发生的买入，系统**不留任何标记**，月度归因也不体现。
+#   ⇒ 命中报告标准 v2.1 判例：「一条永远做不到的强制项会训练出『照抄免责』的习惯」。
+# 处置（A-3）：**留痕 ≠ 拦截** —— 本模块只在「记录时打标」，⛔ **绝不阻止记录写入**
+#   （拦截是 `pre_trade_check` 的职责，两件事不得混）。
+# 🔴 生效日 **2026-09-24**：⛔ **不溯及既往**（A-3 明文）—— 追溯标注历史那 28 笔会
+#   **污染历史准确率读数**。
+QUOTA_TAG = "违规·月额度"
+QUOTA_TAG_SINCE = date(2026, 9, 24)
 
 # `due_list()` 的副产品：*无法计算到期日*的记录（交易日历未覆盖）。
 # 🔴 不用异常中断调用方，但也**绝不静默** —— 调用方必须显式呈现（见 `--due` CLI）。
@@ -74,13 +89,101 @@ def save_log(log: dict) -> None:
     LOG_FILE.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _load_portfolio_data(pf_path=None) -> dict:
+    """读 `portfolio_data.json`（月额度唯一真源）。不可读 ⇒ **返回 None**（调用方必须声张）。
+
+    ⛔ 不得把 `None` 当成「未超限」静默消化 —— 那正是本单要消灭的形态
+    （「做不到的检查」被当成「检查通过」）。"""
+    cands = [Path(pf_path)] if pf_path else [paths.DATA_PATH, LOG_FILE.parent / "portfolio_data.json"]
+    for p in cands:
+        try:
+            if p.exists():
+                return json.loads(p.read_text(encoding="utf-8"))
+        except Exception:                                     # noqa: BLE001
+            continue
+    return None
+
+
+def is_executed_buy(dtype, verdict) -> bool:
+    """本决策是否表示**一笔已执行的买入**（打标的前置条件之一）。
+
+    🔴 判据＝**两信号取或**：
+      ① `type` 属买入类 —— 复用 `data_processor.classify_txn_op()` 的**闭集**
+         （买入/加仓/建仓/补仓），与 `accuracy_report` 的「买入类决策」口径同源；
+      ② `verdict` 含「买入」—— 覆盖 type 落在闭集外、靠判定列表意的记录
+         （实测存在 `type='证券'` ＋ `执行买入`，如 #54）。
+    ⛔ 判定列含「**不买**」者**一律不打标** —— 那是显式的「没有买入」声明
+      （`暂缓不买`，实测 6 条），打了就是**误标**（单 152 验收 2）。"""
+    v = str(verdict or "")
+    if "不买" in v:
+        return False
+    return data_processor.classify_txn_op(dtype) == "buy" or "买入" in v
+
+
+def quota_tag_decision(dtype, verdict, entry_date_s, backfilled=False,
+                       data=None, pf_path=None) -> dict:
+    """判定本笔买入是否发生在**买入维已满**时 ⇒ 是否需要打 `违规·月额度`。
+
+    返回 `{'tag', 'evaluated', 'buys', 'max_buys', 'note'}`（**只读、不拦截、不发通知**）。
+
+    🔴 四条口径（与 outbox/152 交付件、`test_monthly_quota_tag.py` 一一对应）：
+      ① **计数单一真源** ＝ `data_processor.monthly_ops_summary()` —— ⛔ 本函数不自造计数。
+      ② **时点口径「含本笔」** ＝ `buys >= max_buys` ⇒ 本笔即第 `buys+1` 笔
+         ⇒ **第 3 笔起为超限**（与手册 §1.3「买入 ≤2」一致）。
+         ⚠️ 该口径的前提是「留痕在**执行时/执行前**做」。若**先记账后留痕**（交易已在库），
+            库中计数**已含本笔** ⇒ 可能把额度内的第 2 笔判成超限；故输出带
+            「须人工核对」提示，且补录一律不打标（见 ③）。
+      ③ **不溯及既往**：日期 < 生效日（2026-09-24）⛔ 不打标；**补录**（`backfilled`）
+         亦不打标 —— 补录陈述的是**已进账本的旧操作**，同 ② 的「已含本笔」情形。
+      ④ **数据不可读 ⇒ `evaluated=False` 且不打标**，由 `note` **显式声张**
+         （⛔ 不静默当作未超限）。"""
+    out = {"tag": None, "evaluated": False, "buys": None, "max_buys": None, "note": ""}
+    if not is_executed_buy(dtype, verdict):
+        return out
+    try:
+        d = datetime.strptime(str(entry_date_s), "%Y-%m-%d").date()
+    except ValueError:
+        out["note"] = f"⚠️ 月额度打标未评估：日期 {entry_date_s!r} 不可解析（⛔ 不猜）"
+        return out
+    if d < QUOTA_TAG_SINCE:
+        out["note"] = (f"ℹ️ 月额度打标自 {QUOTA_TAG_SINCE} 生效（#C1-21 A-3「不溯及既往」）"
+                       f"⇒ 本笔（{d}）不打标")
+        return out
+    if backfilled:
+        out["note"] = ("ℹ️ 补录记录不打标（对应交易**已在账本中** ⇒「含本笔」口径不成立；"
+                       "与 A-3 不溯及既往同向）")
+        return out
+    data = _load_portfolio_data(pf_path) if data is None else data
+    if data is None:
+        out["note"] = ("⚠️ 月额度**未评估**：portfolio_data 不可读 ⇒ 本笔**未**打标 —— "
+                       "请人工核对 `monthly_ops_summary`（⛔ 不得当作「未超限」）")
+        return out
+    s = data_processor.monthly_ops_summary(data, year=d.year, month=d.month)
+    out["evaluated"] = True
+    out["buys"], out["max_buys"] = s.buys, s.max_buys
+    caveat = ""
+    if s.has_unknown:
+        caveat += f"｜⚠️ 本月含闭集外 op {list(s.unknown_ops)} ⇒ 额度读数**不可信**，须人工核对"
+    if s.has_suspect_dupes:
+        caveat += f"｜⚠️ 疑似双记 {len(s.suspect_dupes)} 组 ⇒ 计数可能虚高，须人工核对"
+    if s.buys >= s.max_buys:
+        out["tag"] = QUOTA_TAG
+        out["note"] = (f"🔴 本月买入维 **{s.buys}/{s.max_buys} 已满** ⇒ 本笔为第 {s.buys + 1} 笔"
+                       f"（**超限**）⇒ 自动打 tag `{QUOTA_TAG}`"
+                       f"（留痕≠拦截：**记录照写**，拦截在 `pre_trade_check`）{caveat}")
+    else:
+        out["note"] = f"买入维 {s.buys}/{s.max_buys} 未满 ⇒ 本笔为第 {s.buys + 1} 笔，未超限{caveat}"
+    return out
+
+
 def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
                  rationale: str = "", expected: str = "", snapshot: dict = None,
-                 entry_date: str = None, tags: list = None) -> str:
+                 entry_date: str = None, tags: list = None, pf_path: str = None) -> str:
     """记录一次决策。verdict: 执行买入/执行卖出/等待未触发/观望不买/持有。
     expected: 预期方向（涨/跌/中性）。snapshot: 数据快照 dict（如 fund_flow_snapshot 输出）。
     entry_date: 补录历史决策时指定 YYYY-MM-DD（默认当天，保证 T+3 复盘精确）。
-    tags: 标签列表（v3.4，如 ["追高"]，--report 统计追高型买入占比）。"""
+    tags: 标签列表（v3.4，如 ["追高"]，--report 统计追高型买入占比）。
+    pf_path: ⛔ 仅测试用注入点 —— 指定月额度判据的 `portfolio_data.json`（默认走 `paths.DATA_PATH`）。"""
     log = load_log()
     now = datetime.now()
     did = str(len(log["decisions"]) + 1)
@@ -112,13 +215,20 @@ def log_decision(dtype: str, fund: str, verdict: str, amount: float = 0,
         "review_date": None,
         "review_note": "",
     }
+    # 🔴 单 152：月额度**超限自动打标**（#C1-21 A-3）。⛔ 无论是否超限，**记录一律照写**
+    #    —— 本处只**追加 tag**，绝不 return/拒绝（拦截是 `pre_trade_check` 的职责）。
+    _q = quota_tag_decision(dtype, verdict, date_str, backfilled=bool(entry_date),
+                            pf_path=pf_path)
+    if _q["tag"]:
+        entry["tags"].append(_q["tag"])
     log["decisions"].append(entry)
     save_json = save_log(log)
     print(f"✅ 已记录决策 #{did} [{dtype}] {fund} → {verdict}（¥{amount:,.0f}）")
     print(f"   预期: {expected or '未填'} | 依据: {rationale[:60]}")
+    if _q["note"]:
+        print(f"   {_q['note']}")
     print(f"   复盘指令: python decision_log.py --review {did} <correct/wrong/neutral> <收益率%> <备注>")
     return did
-
 
 # ── v4.4.16：pnl_pct 口径契约 ────────────────────────────────────────────────
 # 病灶（2026-09-17 实测）：pnl_pct 无口径声明，35 条历史里混装了 3 种语义 ——

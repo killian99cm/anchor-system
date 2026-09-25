@@ -42,7 +42,10 @@ Thumbs.db
 05-scripts/sync_all.py
 05-scripts/transaction_ledger.md
 05-scripts/归档/
-08-website/归档/    # 公开页层的历史版本（同 05-scripts/归档/ 约定：只留本地）
+# 公开页层的历史版本（同 05-scripts/归档/ 约定：只留本地）
+# ⚠️ 2026-09-25 修：原写法把注释写在模式**同一行** ⇒ git 视整行（含 `# …`）为模式
+#    ⇒ **规则从未生效**（`git check-ignore` 实测 NOT IGNORED）。gitignore 无行尾注释语法。
+08-website/归档/
 ANCHOR_体系总览.md
 
 # mx_cache text files

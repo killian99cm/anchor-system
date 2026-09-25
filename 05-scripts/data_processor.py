@@ -768,11 +768,12 @@ class MonthlyOpsSummary:
     `.is_buy_over` / `.is_sell_over`。"""
 
     __slots__ = ('year', 'month', 'buys', 'sells', 'violations', 'unknown_ops',
-                 'superseded_records', 'suspect_dupes', 'max_buys', 'max_sells', 'max_total')
+                 'superseded_records', 'suspect_dupes', 'max_buys', 'max_sells', 'max_total',
+                 'buy_items', 'sell_items')
 
     def __init__(self, year, month, buys, sells, violations=0,
                  unknown_ops=(), superseded_records=0, suspect_dupes=(),
-                 max_buys=2, max_sells=2, max_total=4):
+                 max_buys=2, max_sells=2, max_total=4, buy_items=(), sell_items=()):
         self.year = year
         self.month = month
         self.buys = buys
@@ -784,6 +785,11 @@ class MonthlyOpsSummary:
         self.max_buys = max_buys
         self.max_sells = max_sells
         self.max_total = max_total
+        # 🔴 v4.5.34（单 152）：**计入额度的逐笔名单**（原始记录 dict，文件序）。
+        #    与 `buys`/`sells` 出自**同一循环** ⇒ **零新口径**；供月度归因的逐笔披露
+        #    与「第 N 笔起超限」序号标注（⛔ 调用方不得据此自造计数）。
+        self.buy_items = tuple(buy_items)
+        self.sell_items = tuple(sell_items)
 
     @property
     def total(self):
@@ -913,6 +919,8 @@ def monthly_ops_summary(data, year=None, month=None):
         unknown_ops=sorted(set(unknown)), superseded_records=superseded,
         suspect_dupes=suspect,
         max_buys=max_buys, max_sells=max_sells, max_total=max_total,
+        buy_items=[t for t, k in counted if k == 'buy'],
+        sell_items=[t for t, k in counted if k == 'sell'],
     )
 
 

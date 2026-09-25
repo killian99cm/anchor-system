@@ -12,12 +12,14 @@ Anchor 月度归因辅助器 (P2-2)
 """
 import json
 import os
+import re
 import sys
 from datetime import date
 from pathlib import Path
 
 import paths
-from data_processor import monthly_ops_summary
+from data_processor import monthly_ops_summary, safe_float
+from decision_log import QUOTA_TAG, QUOTA_TAG_SINCE, LOG_FILE as DECISION_LOG_FILE
 
 DATA_PATH = paths.DATA_PATH
 KB_DIR = paths.REVIEWS_DIR
@@ -67,6 +69,84 @@ def classify_txn(t):
     return op or '其他'
 
 
+# ══════════════════════════════════════════════════════════════════
+# 月操作额度 · **超限披露**（单 152 · 裁决 #C1-21 方案 A-3 · 2026-09-24）
+#   病灶：买入维 12 个月超限 11 个月、9 月超限 5 笔，而留痕 0 笔 ⇒ 「超了也没事」。
+#   本段让**超限与「超限未留痕」的差额**每月可见（留痕载体见 decision_log 的自动打标）。
+# ══════════════════════════════════════════════════════════════════
+def _month_day(date_s):
+    """'2026-09-07' / '9/7' → (9, 7)；不可解析 → None（⛔ 不猜）。"""
+    s = str(date_s or '').strip()
+    m = re.match(r'^(\d{4})[\-/](\d{1,2})[\-/](\d{1,2})', s) or re.match(r'^(\d{1,2})/(\d{1,2})', s)
+    if not m:
+        return None
+    g = m.groups()
+    return (int(g[-2]), int(g[-1]))
+
+
+def _txn_sort_key(t):
+    """逐笔披露的**时序**排序键（日期格式混用 '2026-09-07' / '9/7' 实测存在）。
+    不可解析者排到末尾（⛔ 不丢弃、也不猜其日期）。"""
+    md = _month_day(t.get('date'))
+    return (0, md) if md else (1, (0, 0))
+
+
+def _tagged_decisions(year, month) -> list:
+    """本月 `decision_log` 中带 `违规·月额度` tag 的记录（「留痕」列的判据）。"""
+    p = DECISION_LOG_FILE
+    if not p.exists():
+        return []
+    try:
+        ds = json.loads(p.read_text(encoding="utf-8")).get("decisions", [])
+    except Exception:                                         # noqa: BLE001
+        return []
+    return [d for d in ds
+            if str(d.get("date", "")).startswith(f"{year}-{month:02d}")
+            and QUOTA_TAG in (d.get("tags") or [])]
+
+
+def quota_disclosure(data, year, month) -> str:
+    """月操作额度·超限披露段（Markdown）。
+
+    🔴 计数**单一真源** ＝ `data_processor.monthly_ops_summary()`（⛔ 本函数只做排序与序号
+       标注，**不加任何计数口径** —— 单 152 验收 6）。
+    口径「**含本笔**」⇒ 第 `max_buys + 1` 笔起为超限（与手册 §1.3「买入 ≤2」一致）。
+    ⛔ 无超限时**显式**写「本月无超限」—— 不得静默省略整段（验收 3）。"""
+    s = monthly_ops_summary(data, year, month)
+    over = max(s.buys - s.max_buys, 0)
+    tagged = _tagged_decisions(year, month)
+    rows = []
+    for i, t in enumerate(sorted(s.buy_items, key=_txn_sort_key), 1):
+        md = _month_day(t.get('date'))
+        amt = safe_float(t.get('amount'))
+        hit = next((d for d in tagged
+                    if _month_day(d.get('date')) == md
+                    and abs(safe_float(d.get('amount')) - amt) < 0.01), None)
+        mark = f"✅ #{hit['id']}" if hit else ('⛔ 无' if i > s.max_buys else '—')
+        rows.append(
+            f"| {i} | {t.get('date', '')} | {t.get('name') or t.get('fund') or ''} | "
+            f"{t.get('op', '')} | ¥{amt:,.0f} | "
+            f"{'🔴 **超限**' if i > s.max_buys else '额度内'} | {mark} |")
+    table = ("| # | 日期 | 标的 | 操作 | 金额 | 额度 | 留痕 |\n"
+             "|---|---|---|---|---|---|---|\n"
+             + ("\n".join(rows) if rows else "| — | — | — | — | — | — | — |"))
+    head = (f"**本月买入维超限 {over} 笔（上限 {s.max_buys}）**"
+            if over else f"**本月无超限**（买入维 {s.buys}/{s.max_buys}）")
+    tail = "\n".join([
+        f"- 买入事件 **{s.buys}** 笔 / 上限 {s.max_buys}｜卖出事件 {s.sells} 笔 / 上限 {s.max_sells}"
+        f"（口径见手册 §1.3；「含本笔」⇒ 第 {s.max_buys + 1} 笔起为超限）",
+        f"- 留痕：本月 `decision_log` 带 `{QUOTA_TAG}` tag 的记录 **{len(tagged)}** 条"
+        f"（{('、'.join('#' + str(d.get('id')) for d in tagged)) if tagged else '无'}）"
+        f"｜**留痕 {len(tagged)} vs 超限 {over}** —— 差额即「超限未留痕」（本段存在的理由）",
+        "- 🔴 **#C1-21 判例 4**：「**半导体回补继续被锁**」是本件（方案 A）的**已知代价，"
+        "不是遗漏** —— 额度数字未动 ⇒ 超限部分不得据此补仓（**不动作 ≠ 不报告**）。",
+        f"- ℹ️ 超限**自动打标**自 **{QUOTA_TAG_SINCE}** 生效（A-3「**不溯及既往**」）"
+        "⇒ 本表在**该日之前月份**的「⛔ 无留痕」描述的是**当时无此机制**，"
+        "⛔ **不得**据以**追溯认定历史违规**。",
+    ])
+    return f"{head}\n\n{table}\n\n{tail}"
+
+
 def build_report(data, year, month):
     today = date.today()
     txns = month_txns(data, year, month)
@@ -89,6 +169,9 @@ def build_report(data, year, month):
     # 步骤6: 违规检查候选（关键词）
     violations = [t for t in txns if '违规' in str(t.get('note',''))]
     viol_note = f"{len(violations)} 条疑似违规" if violations else "未检测到违规关键词（需人工确认）"
+
+    # 单 152：月操作额度·超限披露（#C1-21 方案 A-3 要求「每月显式报出」）
+    quota_md = quota_disclosure(data, year, month)
 
     # 步骤7-辅助: 规则命中台账（noise/rule_hits.json 自动汇总）
     ledger = load_rule_ledger(f"{year}-{month:02d}")
@@ -163,6 +246,10 @@ def build_report(data, year, month):
 | DDX 负补仓 | 【确认】 |
 | 溢价>3% 建仓 | 【确认】 |
 | 自动扫描 | {viol_note} |
+
+## 六·A 月操作额度 · 超限披露（自动 · 单 152 ／ #C1-21 方案 A-3）
+
+{quota_md}
 
 ## 七、规则命中台账（自动，来自 noise/rule_hits.json）
 

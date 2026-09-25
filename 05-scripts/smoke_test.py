@@ -640,6 +640,28 @@ def main():
     check("月额度超限自动打标回归通过", "OK" in _qt_out and r_qt.returncode == 0,
           f"(rc={r_qt.returncode}) {_qt_out[-200:]}")
 
+    # 7-c2p. 任务单跨单引用校验（2026-09-25 · Anchor-Software 单 148 · 判据源 105 §1.1/§1.2）
+    #   🔴 接入理由：105（跨单锚点重锚）**已失败两轮**，直接原因就是「**没有自动化判据**」——
+    #   两轮修复都是人工逐条核，于是「修好 098 的那一刻 099 就错了」无人发现（31 处坏锚点）。
+    #   105 关单时用的校验器**只存在于临时目录** ⇒ 148 把它**入库 ＋ 接门禁**。
+    #   **⛔ 本步跑的是测试文件而非校验器本身** —— 测试里含**反向断言**（插入坏行号/坏章节 ⇒ 必须红、
+    #   非任务单文件不得误报、登记机制不得变成静默白名单），只跑校验器会把这些**全漏掉**。
+    #   ⚠️ 三态：**仓库/工具不在**（如公开克隆只含 Anchor）⇒ `skip()` 并写明原因，⛔ 不计入 PASS。
+    print("\n[7-c2p] 任务单跨单引用校验回归 check_ticket_anchors_test.py（Anchor-Software 单 148）")
+    _sw_test = DESKTOP / "Anchor-Software" / "scripts" / "check_ticket_anchors_test.py"
+    if not _sw_test.exists():
+        skip("任务单跨单引用校验回归", f"未找到 {_sw_test}（本机无 Anchor-Software ⇒ 无法判定）")
+    else:
+        r_ck = subprocess.run(
+            f'"{PY}" "{_sw_test}"',
+            shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+            timeout=120
+        )
+        _ck_out = (r_ck.stdout or "") + (r_ck.stderr or "")
+        check("任务单跨单引用校验回归通过（含反向断言）",
+              "OK" in _ck_out and r_ck.returncode == 0,
+              f"(rc={r_ck.returncode}) {_ck_out[-300:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

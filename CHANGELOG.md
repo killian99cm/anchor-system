@@ -6,6 +6,46 @@
 
 ---
 
+## v4.5.39 — 2026-09-25 深夜（**生产部署：153 迁移落地 ＋ 后端镜像重建** · 用户明确指示「开始构建并重启后端」）
+
+> **性质**：生产部署（**后端**）。⛔ 未动前端/nginx/compose/`.env` 内容；⛔ 未用 `docker compose down`；⛔ 零规则/零阈值/零资金动作。
+> **交付件**：`Anchor-Software/_handoff/outbox/生产部署-20260925-2245-153迁移与后端重建-交付.md`
+
+### ① 为什么必须**重建镜像**（而不是只跑迁移）
+
+生产容器内 `alembic heads` = `f4a7c2e9b1d6`、`ls alembic/versions | grep a8b1c4d7e2f9` = **0**
+⇒ **153 的迁移文件根本不在运行镜像里** ⇒ ⛔ 无法单独手动 `upgrade`；而 `Dockerfile` CMD 是
+`alembic upgrade head && schema_selfcheck && uvicorn` ⇒ **迁移随容器启动自动应用**（并自带 schema 自检）。
+
+### ② 三类备份（回滚路径齐备）
+
+旧镜像 tag `anchor-backend:bak-20260925-2245`（＝`5ee3dcd7138e`）／源码 `/opt/anchor-app.bak-20260925-2245.tgz`（9.86 MB）／`.env` 副本。
+
+### ③ 执行与**逐项验证**
+
+`config -q` ✔ → `build backend` ✔（新镜像 **`0ad85839b5c3`**）→ `up -d --force-recreate backend` ✔
+⇒ **迁移 `a8b1c4d7e2f9 (head)`** ＋ **新表 `stop_loss_watch_state`（9 列齐）** ＋
+🔴 **`schema selfcheck OK: 40 表一致 (alembic_head=a8b1c4d7e2f9 version=a8b1c4d7e2f9)`** ＋ TZ=**CST** ＋ health **200** ＋ 启动无 error/traceback；
+🔴 **真实代码路径实跑**（容器内）：`build_engine_input` ⇒ 10 持仓、`stop_loss_watch` 条目 **10**（＝**全持仓覆盖**，153 #2）、
+**无 `B1 watch 推进失败` WARNING**、表内 **0 行**（**无触发即不写行** ＝ 语义正确）。
+
+### ④ 🔴 部署中踩到并处置的**两处路径陷阱**（如实记，⛔ 不抹）
+
+1. **包内根写错**：我打成 `backend/…`（应为 `app/backend/…`）⇒ 解到 `/opt/anchor/backend/`，**真源码未更新**
+   —— **被「解包后特征串自检」当场抓到**（grep 计数 0）；误建目录**移至 `/tmp`**（⛔ 未删），改对后重传。
+2. **包内含 `app/backend/.env`**（**本地私密配置，`*.env` 已 gitignore**）⇒ 若落对位置会**覆盖生产 `.env`**（可能直接打挂服务）
+   ⇒ **已排除 `.env*`**，并在解包后**核对生产 `.env` 时间戳未变**（仍 `Aug 30 23:52`）✔。
+📌 **教训**：这与 v4.5.37 记载的「**构建失败仍 up、沿用旧镜像**」同族 —— **部署的每一步都要有可判定的自检**，
+「以为部署了」与「真的部署了」必须长得不一样。
+
+### ⑤ 遗留
+
+- `/tmp/backend.MISPLACED-20260925-2245`（我的误传副本）留服务器 `/tmp`，随系统清理；
+- 镜像 tag 已累积 8 个（磁盘 **80%**）⇒ **建议择机清理，但 ⛔ 不删 `bak-*`/`deploy-*`**（本次未做）；
+- 前端/nginx 未动（本次改动全在后端）。
+
+---
+
 ## v4.5.38 — 2026-09-25（单 158 **track-record 刷新至 2026-09-24** ＋ 153 加固 ＋ **生产窗口实测**）
 
 > **背景**：用户「**全部推送，并优化 1、4**」—— 1＝`track-record` 那条（原标「须你点头」），4＝生产窗口实测。⛔ 零规则/零阈值/零资金动作。

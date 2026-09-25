@@ -171,17 +171,27 @@ class TestDDXHonesty(unittest.TestCase):
                          "全部命中时不得留下失败留痕（假告警会被学会忽略）")
 
     def test_data_null_returns_empty_not_crash(self):
-        """`data:null`（如 rc=100 无此证券）⇒ 返回空 dict，不抛。"""
+        """`data:null`（如 rc=100 无此证券）⇒ **不抛**，且该 secid **必须显式标不可得**。
+
+        🔴 2026-09-25 契约升级（单 150）：原断言 `r == {}`（＝**静默留空**）已**不再成立**——
+        「静默留空」正是 150 要治的形态（读者分不清「无源」与「零值」）。新契约**更强**：
+        该 secid **仍在**返回里，但 `available=False` ＋ 带 `unavailable_reason`。
+        """
         with mock.patch.object(fp, "_http",
                                return_value=(200, json.dumps({"rc": 100, "data": None}))):
             r = fp.ddx(["9.999999"])
-        self.assertEqual(r, {})
+        self.assertEqual(set(r) - {"_attempts"}, {"9.999999"}, "❌ 不可得 secid 被静默丢弃")
+        self.assertFalse(r["9.999999"]["available"])
+        self.assertIn("取数失败", r["9.999999"]["unavailable_reason"])
 
     def test_network_failure_returns_empty_not_crash(self):
-        """网络层失败 ⇒ 返回空 dict，不抛（会崩的取数层比没有更糟）。"""
+        """网络层失败 ⇒ **不抛**（会崩的取数层比没有更糟），且必须显式标不可得（同上）。"""
         with mock.patch.object(fp, "_http", return_value=(-1, "[URLError] boom")):
             r = fp.ddx(["0.980017"])
-        self.assertEqual(r, {})
+        self.assertEqual(set(r) - {"_attempts"}, {"0.980017"})
+        self.assertFalse(r["0.980017"]["available"])
+        self.assertGreaterEqual(r["0.980017"]["sources_tried"], 1,
+                                "❌ 未记录「已试 N 源」⇒ 降级文案写不出真实的 N")
 
 
 class TestDDXContract(unittest.TestCase):

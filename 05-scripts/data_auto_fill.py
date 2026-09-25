@@ -24,6 +24,7 @@ import re
 import sys
 import time
 from datetime import date, datetime
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -32,7 +33,9 @@ import paths
 from daily_advice import mx_query  # 复用妙想 API 查询
 
 JSON_PATH = paths.DATA_PATH
-OUT_DIR = paths.REVIEWS_DIR / "daily"
+# 🔴 输出目录同样支持环境变量覆盖（单 149）—— 供**测试**指向临时目录，
+#    使测试**永不覆盖生产** `04-reviews/daily/{date}-数据回填候选.json`。
+OUT_DIR = Path(os.environ.get("ANCHOR_FILL_OUT_DIR") or (paths.REVIEWS_DIR / "daily"))
 # 🔴 注册表路径支持环境变量覆盖（v4.5.1）—— 供**测试**指向临时副本，
 #    使其**永不写入生产 fetch_registry.json**。
 #    病灶实证：`test_sync_resilience.py` 直接改生产注册表，靠 try/finally 还原；
@@ -132,8 +135,54 @@ def registry_to_specs(entries, suffixes):
                 "close_class": e.get("close_class"),
                 "pipeline_key": e.get("pipeline_key"),
                 "index_secid": e.get("index_secid"),
+                # 🔴 单 149：盘中估值可得性（债基＝False）—— 见 validate_unestimable()
+                "intraday_estimable": e.get("intraday_estimable", True),
+                "unestimable_reason": e.get("unestimable_reason"),
             })
     return specs
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# 单 149：**「不可估（结构性无源）」口径校验** —— 让口径不是装饰
+# ══════════════════════════════════════════════════════════════════════════
+# 病灶：两只债基合计占组合约 45%，**盘中估值无源**（fundgz 全代码失效 / 东财 GSZ:null），
+#   而报告标准要求「持仓项须含 MA5/10/20」⇒ 对债基**只能留空或给错数**。2026-09-24
+#   首次逐笔对账实证：利率债 ETF 代理与债基实际**符号相反**（+0.026%/+0.019% vs −0.153%/−0.097%，
+#   当日误差 −17.76 / −12.55 元，为全部持仓里最大的两项偏差）。
+# ⇒ 立「**不可估**」类（沿用报告标准「结构不可得」**家族语义**，但性质不同：
+#   结构不可得＝**本口径外不适**；不可估＝**该指标在所有口径下都取不到**）。
+# 🔴 本校验的存在理由：**「不可估」一旦可以被代理值顶替，它就从口径退化成了免责句**
+#   （报告标准 v2.1 判例：永远做不到的强制项会训练出「照抄免责」）。故此处**硬拦**：
+#   声明不可估的条目，⛔ **不得携带任何代理字段**（index_secid / proxy / substitute / 代理码）。
+_UNESTIMABLE_PROXY_KEYS = ("index_secid", "proxy", "proxy_secid", "substitute",
+                           "substitute_code", "proxy_etf", "rate_query")
+
+
+def validate_unestimable(entries) -> list:
+    """校验「不可估」条目**未被代理顶替**。→ 问题清单（空＝通过）。
+
+    ⛔ 只报问题、不自动修（口径问题须人判）。调用方（`main()`）**必须**把非空清单
+    **打红并拒绝产出该条目的数值候选** —— 否则「不可估」变成装饰。
+    """
+    problems = []
+    for e in entries or []:
+        if e.get("intraday_estimable", True) is not False:
+            continue
+        key = e.get("key") or e.get("label") or "?"
+        if not str(e.get("unestimable_reason") or "").strip():
+            problems.append(f"{key}: 声明 intraday_estimable=false 却未写 unestimable_reason（⛔ 口径必须写明原因）")
+        for k in _UNESTIMABLE_PROXY_KEYS:
+            v = e.get(k)
+            if k == "rate_query":
+                # rate_query 是**宏观锚**用途，只在声明不可估后**失去估值资格**；
+                # 若同时声明了不可估，则必须显式标注它的真实用途，否则容易被读成「债基估值的替代口径」。
+                if v and not any(w in str(e.get("note") or "") for w in ("宏观", "非估值", "不得")):
+                    problems.append(f"{key}: 不可估条目仍带 `rate_query`（{v}）—— 须在 note 写明「仅供宏观锚、不得用于估值」")
+                continue
+            if v:
+                problems.append(f"{key}: 不可估条目仍带代理字段 `{k}`={v!r} ⇒ ⛔ 会被读成「有值」"
+                                f"（2026-09-24 实证：利率债 ETF 代理与债基实际符号相反）")
+    return problems
 
 
 def load_holdings():
@@ -374,9 +423,18 @@ def fetch_latest_pct(spec: dict, matrix=None, target=None) -> dict:
 def main():
     # ── 注册表优先（#137 A-3）──
     entries, suffixes, reg_warn = load_registry()
+    problems = []
     if entries:
         specs = registry_to_specs(entries, suffixes)
         print(f"[注册表] {REGISTRY_PATH} → {len(specs)} 条取数定义，后缀 {len(suffixes)} 种")
+        # 🔴 单 149：「不可估」口径校验 —— ⛔ 口径一旦可被代理顶替，它就从口径退化成免责句
+        problems = validate_unestimable(entries)
+        if problems:
+            print("\n" + "🔴" * 20)
+            print("🔴 「不可估」口径被违反（单 149 · 报告标准 v2.5 §二.13）—— **本步判红**：")
+            for p in problems:
+                print(f"  ❌ {p}")
+            print("🔴" * 20 + "\n")
     else:
         specs = [dict(s, suffixes=LEGACY_QUERY_SUFFIXES, fetch="always",
                       target_kind=None, close_class=None, per_query_match={}, key=s["label"])
@@ -432,6 +490,39 @@ def main():
                      "close_class": spec.get("close_class"), "close_confirmed": True,
                      "grade": "real", "note": "现金类无行情"}
             results.append(entry)
+            continue
+
+        # ── 单 149：**不可估**条目 —— ⛔ 不发起取数、不产出数值候选 ──
+        #    为什么必须**显式登记**而不是「查了没查到」：后者与「源坏了」长得一样，
+        #    读者会去修源；而本条是**口径**（盘中结构性无源），修不了，也不该用代理顶替。
+        if spec.get("intraday_estimable", True) is False:
+            reason = spec.get("unestimable_reason") or "（未写明原因 ⇒ 见 validate_unestimable）"
+            if matrix:
+                matrix.attempt(label, "unestimable", f"盘中结构性无源，未发起取数：{reason}", ok=False)
+                # ⚠️ 健康矩阵的 `grade` 是**闭集四态**（real/degraded/rate_limited/unavailable，
+                #    #138/#140 契约）⇒ ⛔ 本单**不新增第五态**（那要另裁），改记
+                #    `unavailable` ＋ `extra.unestimable=True` 承载「**结构性**无源」这一区别；
+                #    报告侧的区分由**候选文件**的 `grade=unestimable` 承担（那才是报告读的产物）。
+                matrix.finalize(label, "unavailable", official_name=label,
+                                extra={"target_kind": spec.get("target_kind"),
+                                       "unestimable": True, "unestimable_reason": reason})
+            print(f"{label:<10}{'不可估':>10}{'--':>11}{'--':>12}{'--':>9}  {'n/a':<8}结构性无源")
+            results.append({
+                "key": spec["key"], "label": label,
+                "pipeline_key": spec.get("pipeline_key"),
+                "matched_holding": holding["name"] if holding else "",
+                "matched_segment": holding["segment"] if holding else None,
+                "base_mv": holding["mv"] if holding else 0,
+                "target_kind": spec.get("target_kind"),
+                "close_class": spec.get("close_class"),
+                "close_confirmed": False,
+                "grade": "unestimable",
+                # 🔴 **不带 `pct`** —— 值字段缺席即「无值」，⛔ 不得填 0、不得填代理值
+                "unestimable": True,
+                "unestimable_reason": reason,
+                "note": "盘中估值结构性无源（口径见 fetch_registry.intraday_estimable=false）；"
+                        "收盘后以用户 App 真值为准",
+            })
             continue
 
         # ── 复用当日【已收盘确认】的读数（2026-09-16 深夜补）──
@@ -543,7 +634,10 @@ def main():
         "spec_source": REGISTRY_PATH if entries else "LEGACY_QUERY_SPECS(回退)",
         "note": "数据回填候选——仅供用户确认，未写入 portfolio_data.json（数据铁律：权威以用户确认为准）；"
                 "diff_vs_current=新算估算日盈亏-组合现值，核对后再决定是否回填。"
-                "close_confirmed=False 表示读到的是【盘中读数】，不得作为任何触发线判据（手册附录E·F5）。",
+                "close_confirmed=False 表示读到的是【盘中读数】，不得作为任何触发线判据（手册附录E·F5）。"
+                "grade=unestimable 表示**盘中结构性无源**（如债基）—— ⛔ 该类条目**不带 pct**，"
+                "不得用任何 ETF/指数/收益率代理顶替（单 149；2026-09-24 实证代理与债基实际符号相反）。",
+        "unestimable_problems": problems,
         "failed": failed,
         "skipped": skipped,
         "candidates": results,
@@ -572,6 +666,11 @@ def main():
         print(f"\n[INFO] {len(skipped)} 项按设计跳过：")
         for msg in skipped:
             print(f"  - {msg}")
+    if problems:
+        # 🔴 口径违规 ⇒ 判红（但**已写的候选文件保留**：先让人看见，再谈修）
+        print(f"\n🔴 因「不可估」口径违规判红（{len(problems)} 项）—— 见上方清单与候选文件的"
+              f" `unestimable_problems` 字段。⛔ 修法是**去掉代理字段**，不是放宽校验。")
+        return 3
     print("\n全部标的取数成功。请对照 diff_vs_current 确认后再回填。")
     return 0
 

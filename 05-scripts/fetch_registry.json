@@ -12,7 +12,9 @@
       "underlying_market": "底层市场（cn/hk/us）——用于识别【海外盘中读数】这一方法论限制；null 表示不适用",
       "index_secid": "东财 secid（供 push2delay 直取指数），无则 null",
       "queries": "字符串 或 {q:问法, match:[持仓名关键词]}；match 为空时取条目级 holdings_match",
-      "fetch": "always=每次都取 | when_held=仅当有活跃持仓时取（清仓标的只保留定义，不空跑）"
+      "fetch": "always=每次都取 | when_held=仅当有活跃持仓时取（清仓标的只保留定义，不空跑）",
+      "intraday_estimable": "盘中估值可得性：true=盘中可估；false=**盘中结构性无源**（如债基）⇒ data_auto_fill **不发起取数、不产出数值候选**，只产出带 unestimable_reason 的显式说明（单 149）",
+      "unestimable_reason": "intraday_estimable=false 时必填：为何不可估 ＋ 已实测的代理偏差方向（供日后复核）"
     }
   },
   "default_suffixes": [
@@ -208,7 +210,9 @@
       ],
       "rate_query": "中国10年期国债收益率 最新",
       "fetch": "always",
-      "note": "🔴 本条即 #137 的缘起：此前 DATA_PIPELINE_MAP 有债券定义（占组合约 42%），但取数层 QUERY_SPECS 无对应条目 → 从未发起取数。利率敏感度看【中国10Y国债收益率】（非美债）——见 MACRO_DRIVER_MAP。"
+      "note": "🔴 本条即 #137 的缘起：此前 DATA_PIPELINE_MAP 有债券定义（占组合约 42%），但取数层 QUERY_SPECS 无对应条目 → 从未发起取数。⚠️ `rate_query`（中国10Y国债收益率）**仅供宏观锚**、服务利率敏感度判读 —— 「不得」用于债基估值反推（10Y 只反映利率债，与债基的信用债/中短久期结构不同，正是 2026-09-24 代理方向错的原因）。见 MACRO_DRIVER_MAP。🔴 本条目 **intraday_estimable=false**（盘中结构性无源）—— 见 unestimable_reason。",
+      "intraday_estimable": false,
+      "unestimable_reason": "盘中估值结构性无源：① 天天基金 fundgz 全代码失效、东财移动端 GSZ:null（v2.4 §五已定）；② 🔴 不得用利率债 ETF 代理 —— 2026-09-24 首次逐笔对账实证：国债ETF(511010) +0.026% / 政金债ETF(159650) +0.019%，而两只债基实际 −0.153% / −0.097% ⇒ **代理给出相反符号**（当日误差 −17.76 / −12.55 元，为全部持仓里最大的两项）；③ ⛔ 也不得用中国10Y国债收益率反推（10Y 只反映利率债，与债基的信用债/中短久期结构不同，正是方向错的原因）。⇒ 收盘后以用户 App 真值为准（该链路已成立）。详见 inbox/149 ＋ 07-memory 教训①。"
     },
     {
       "key": "红利",

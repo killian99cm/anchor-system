@@ -662,6 +662,40 @@ def main():
               "OK" in _ck_out and r_ck.returncode == 0,
               f"(rc={r_ck.returncode}) {_ck_out[-300:]}")
 
+    # 7-c2q. 债基「不可估（结构性无源）」口径回归（2026-09-25 · 单 149 · 报告标准 v2.5 §二.13）
+    #   🔴 接入理由：两只债基**合计占组合约 45%**，盘中无源，而**利率债 ETF 代理方向全错**
+    #   （9/24 首次逐笔对账实证：代理 +0.026%/+0.019% vs 债基实际 −0.153%/−0.097%，**符号相反**，
+    #   当日误差为全部持仓里最大两项）。⇒ 立「不可估」类：⛔ 不用代理、⛔ 不留空、**显式写原因**。
+    #   本项含**三条反向断言**（挂代理字段必红 / 缺原因必红 / rate_query 未标用途必红）
+    #   ＋ 一条不误伤断言（黄金/纳指的 ETF 代理**不受影响**）。
+    print("\n[7-c2q] 债基不可估口径回归 test_debt_unestimable.py（单 149）")
+    r_debt = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_debt_unestimable.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=120
+    )
+    _debt_out = (r_debt.stdout or "") + (r_debt.stderr or "")
+    check("债基不可估口径回归通过（含反向断言）",
+          "OK" in _debt_out and r_debt.returncode == 0,
+          f"(rc={r_debt.returncode}) {_debt_out[-200:]}")
+
+    # 7-c2r. DDX 降级可见化回归（2026-09-25 · 单 150）
+    #   🔴 接入理由：DDX **连续 3 次全空**（9/22–9/24），而此前**静默留空** ⇒ 读者分不清
+    #   「无源」与「零值」，也分不清「**A 股体系外**」（真·不可得，⛔ 不要重试）与
+    #   「**取数失败**」（限流，可重试）—— 把两者写成同一句 = 把「有源却没换」误报成「边界」。
+    #   本项含**两条反向断言**（源可用 ⇒ 文案不得含「不可得」＋**执行计数 ≥1** 防空转；
+    #   把文案换成常量 ⇒ 判别力必须消失 ⇒ 证明「两类必须可分辨」不是空转）。
+    print("\n[7-c2r] DDX 降级可见化回归 test_ddx_degradation.py（单 150）")
+    r_ddx = subprocess.run(
+        f'"{PY}" "{SCRIPTS / "test_ddx_degradation.py"}"',
+        shell=True, capture_output=True, text=True, encoding='utf-8', errors='replace',
+        timeout=180
+    )
+    _ddx_out = (r_ddx.stdout or "") + (r_ddx.stderr or "")
+    check("DDX 降级可见化回归通过（含反向断言）",
+          "OK" in _ddx_out and r_ddx.returncode == 0,
+          f"(rc={r_ddx.returncode}) {_ddx_out[-200:]}")
+
     # 7b. 本地全量编译检查（8/17 审计：CI compileall 只覆盖 git 跟踪脚本，
     #      gitignored 私有脚本需本地兜底——曾因 gen_excel_skill.py 语法错误漏网）
     print("\n[7b] 本地脚本全量编译 compileall（含 gitignored 私有脚本）")

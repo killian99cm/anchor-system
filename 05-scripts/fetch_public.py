@@ -177,14 +177,21 @@ def _http(url: str, referer: str, timeout: int, enc: str) -> tuple[int, str]:
     return 200, raw.decode("utf-8", "replace")
 
 
-def _em_json(path: str, params: dict, source: str, timeout: int = 15) -> dict | None:
-    """东财 JSON 取数：**host 轮换 + 退避重试**（push2 被限流时自动落 push2delay）。"""
+def _em_json(path: str, params: dict, source: str, timeout: int = 15,
+             attempts_out: list | None = None) -> dict | None:
+    """东财 JSON 取数：**host 轮换 + 退避重试**（push2 被限流时自动落 push2delay）。
+
+    `attempts_out`（单 150 新增）：把**实际试过的 host**追加进去 —— 供「**不可得（已试 N 源）**」
+    这类降级文案写出**真实的 N**（⛔ 不得写死一个数、也不得静默留空）。
+    """
     qs = urllib.parse.urlencode(params)
     now = time.time()
     hosts = [h for h in _EM_HOSTS if _BANNED.get(h, 0.0) < now] or list(_EM_HOSTS)
 
     for attempt, host in enumerate(hosts + hosts[:1]):         # 至多 3 次
         url = f"https://{host}{path}?{qs}"
+        if attempts_out is not None:
+            attempts_out.append(host)
         if attempt:
             time.sleep(_BACKOFF[min(attempt, len(_BACKOFF)) - 1])
         rc, body = _http(url, "https://quote.eastmoney.com/", timeout, "utf-8")
@@ -1258,10 +1265,11 @@ def ddx(secids: list[str] | str, source: str = "DDX") -> dict:
     if key in _CACHE:
         return _CACHE[key]                                    # type: ignore[return-value]
 
+    attempts: list = []
     data = _em_json("/api/qt/ulist.np/get", {
         "fltt": 2, "invt": 2, "fields": _DDX_FIELDS,
         "secids": ",".join(secids),
-    }, source)
+    }, source, attempts_out=attempts)
 
     out: dict = {}
     for d in (data or {}).get("diff", []) or []:
@@ -1271,15 +1279,54 @@ def ddx(secids: list[str] | str, source: str = "DDX") -> dict:
             item[grp] = {per: _num(d.get(fld)) for per, fld in cols.items()}
         # 以「当日 DDX 是否拿到」作为该标的可得性判据（四周期缺项时仍是部分可用）
         item["available"] = item["ddx"]["d1"] is not None
+        # 🔴 单 150：**不可得的两义必须可分辨**（原来只有 `available=False` 一个布尔 ⇒
+        #    调用方无从判断「该标的是 A 股体系外」还是「这次没取到」，于是两者**必然被写成同一句话**）：
+        item["unavailable_reason"] = "" if item["available"] else (
+            "真·不可得（A 股体系外：港股/美股/外盘不供该字段族）" if d.get("f88") in ("-", None)
+            else "该标的返回了行但当日 DDX 为空")
+        item["sources_tried"] = len(attempts)
         out[code] = item
 
     # 请求成功但某 secid 一个字段都没回 → 记留痕（区分「没这张表」与「表里没值」）
     missing = [s for s in secids if s not in out]
+    for s in missing:
+        out[s] = {"name": None, "available": False, "sources_tried": len(attempts),
+                  "unavailable_reason": "取数失败（端点未返回该 secid —— 可能限流或接口变更）",
+                  "ddx": {p: None for p in _DDX_COLS["ddx"]},
+                  "ddy": {p: None for p in _DDX_COLS["ddy"]}, "ddz": {"d1": None},
+                  "close_confirmed": False}
     if missing:
-        _record(source, f"ddx 缺 {','.join(missing)}", False, "端点未返回该 secid")
-
+        _record(source, f"ddx 缺 {','.join(missing)}", False,
+                f"端点未返回该 secid（已试 {len(attempts)} 源：{','.join(attempts)}）")
+    out["_attempts"] = list(attempts)
     _CACHE[key] = out
     return out
+
+
+def ddx_unavailable_text(result: dict, secids: list | None = None) -> str:
+    """DDX 结果的**降级可见化文案**（单 150 §1.2）。→ 全部可得时返回 `""`。
+
+    ⛔ **不得静默留空**：只要有标的不可得，就必须写出「**不可得（已试 N 源）**」＋
+    **逐个标的的原因** ＋ **两类原因的区分**：
+      - **真·不可得**（A 股体系外：港股/美股/外盘）⇒ 走替代口径五项登记，**⛔ 不要重试**；
+      - **取数失败**（限流/接口变更）⇒ **可重试**，且**必须与上者写得不一样**
+        （把两者写成同一句话 = 把「有源却没换」误报成「边界」—— 报告标准 §二.13 明禁）。
+    ⚠️ 源可用时**必须不含「不可得」三字**（有反向断言钉住）—— 否则它会变成天天出现的装饰句。
+    """
+    ids = secids if secids is not None else [k for k in result if not k.startswith("_")]
+    bad = [(s, result[s]) for s in ids if not (result.get(s) or {}).get("available")]
+    if not bad:
+        return ""
+    n = max([(r or {}).get("sources_tried") or 0 for _, r in bad] +
+            [len(result.get("_attempts") or [])] + [0])
+    outside = [s for s, r in bad if "A 股体系外" in str((r or {}).get("unavailable_reason"))]
+    failed = [s for s, r in bad if s not in outside]
+    parts = [f"**不可得（已试 {n} 源）**"]
+    if outside:
+        parts.append(f"· **A 股体系外**（真·不可得，⛔ 不要重试）：{'、'.join(outside)}")
+    if failed:
+        parts.append(f"· **取数失败**（限流/接口变更，可重试）：{'、'.join(failed)}")
+    return "　".join(parts)
 
 
 # ---------------------------------------------------------------- 资金流日序列

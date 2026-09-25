@@ -78,7 +78,7 @@
 <nav class="nav">
   <div class="nav-inner">
     <a class="brand" href="https://killian99cm.github.io/anchor-system/anchor-pro.html"><span class="brand-mark">⚓</span>Anchor<em>OS</em></a>
-    <span class="version">v4.3.3</span>
+    <span class="version">v4.5.37</span>
     <div class="nav-links">
       <a href="https://killian99cm.github.io/anchor-system/anchor-pro.html">方法</a>
       <a href="https://killian99cm.github.io/anchor-system/track-record.html">战绩</a>
@@ -100,23 +100,23 @@
   <section class="kpi-row">
     <div class="kpi">
       <div class="kpi-label">Simulated trades</div>
-      <div class="kpi-value">93</div>
-      <div class="kpi-desc">5 只 ETF 全周期（2021-09 ~ 2026-08）模拟交易笔数</div>
+      <div class="kpi-value">94</div>
+      <div class="kpi-desc">5 只 ETF 全周期（2021-09 ~ 2026-09）模拟交易笔数</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Best annual return</div>
-      <div class="kpi-value pos">+9.55%</div>
-      <div class="kpi-desc">黄金 ETF 全周期模拟年化收益</div>
+      <div class="kpi-value pos">+8.40%</div>
+      <div class="kpi-desc">纳指 ETF 全周期模拟年化收益</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Total return</div>
-      <div class="kpi-value pos">+44.55%</div>
+      <div class="kpi-value pos">+50.05%</div>
       <div class="kpi-desc">纳指 ETF 全周期模拟总收益</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Drawdown control</div>
-      <div class="kpi-value">-12.4%</div>
-      <div class="kpi-desc">红利 ETF 策略最大回撤 -12.36%，对比买入持有 -22.69%</div>
+      <div class="kpi-value">-12.0%</div>
+      <div class="kpi-desc">红利 ETF 策略最大回撤 -11.97%，对比买入持有 -22.15%</div>
     </div>
   </section>
 
@@ -136,7 +136,8 @@
         <thead><tr><th>标的</th><th>总收益</th><th>年化</th><th>最大回撤</th><th>Sharpe</th><th>胜率</th><th>笔数</th><th>买持收益</th><th>买持回撤</th></tr></thead>
         <tbody id="tb-detail"></tbody>
       </table>
-      <p class="note">* 全部为模拟回测结果（初始资金 100,000），仅用于验证规则体系，不构成投资建议。回测区间 2021-09-01 ~ 2026-08-26。</p>
+      <p class="note" style="max-width:900px;margin:6px auto 0;text-align:left;line-height:1.7">⚠️ <b>稳健性披露（2026-09-25 刷新）</b>：本页为<b>同一回测口径</b>在数据源与窗口刷新后的重跑结果。刷新前后<b>买入持有收益几乎不变</b>（如芯片 ETF 37.88% → 37.48%），但<b>单标的策略收益变化显著</b>（芯片 ETF 3.09% → 31.32%；黄金 ETF 57.03% → 48.37%）⇒ 说明该策略对<b>微小数据差异呈路径敏感</b>（±0.25% 级数据差异即可改变离散触发点：分批建仓/±触发线/止盈档）。⇒ <b>单标的历史数字不构成稳健结论</b>；规则方向的判断以<b>多标的一致方向</b>与<b>两段区间</b>为准。</p>
+<p class="note">* 全部为模拟回测结果（初始资金 100,000），仅用于验证规则体系，不构成投资建议。回测区间 2021-09-01 ~ 2026-09-24（数据源：腾讯前复权日K）。</p>
     </div>
   </section>
 
@@ -144,7 +145,7 @@
     <div class="section-head"><h2>规则实验：止盈档位对比</h2><p>takeprofit_summary.json</p></div>
     <div class="card">
       <h3>旧档 v3.3 vs 新档 v3.4 <span class="badge badge-exp">规则实验 · 非推荐档位</span></h3>
-      <p class="sub">每条规则改动都经回测验证——如纳指新档止盈收益显著下降（+48.48% → +18.68%），据此维持旧档决策</p>
+      <p class="sub">每条规则改动都经回测验证——如纳指新档止盈收益显著下降（+51.95% → +18.44%），据此维持旧档决策</p>
       <table>
         <thead><tr><th>标的</th><th>档位</th><th>总收益</th><th>年化</th><th>最大回撤</th><th>胜率</th><th>笔数</th></tr></thead>
         <tbody id="tb-tp"></tbody>
@@ -167,18 +168,18 @@
 /* 数据源：09-backtest/output/full_anchor_summary.json（full 段）与 takeprofit_summary.json */
 var D = {
   detail: [
-    {n:"芯片ETF",c:"sz159995",tr:3.09,ar:0.62,mdd:-38.75,sh:0.12,wr:58.6,t:29,bh:37.88,bh_mdd:-58.82},
-    {n:"证券ETF",c:"sh512880",tr:10.69,ar:2.08,mdd:-22.56,sh:0.22,wr:68.8,t:16,bh:-3.04,bh_mdd:-39.97},
-    {n:"红利ETF",c:"sh515180",tr:18.81,ar:3.55,mdd:-12.36,sh:0.40,wr:85.7,t:7,bh:33.44,bh_mdd:-22.69},
-    {n:"黄金ETF",c:"sh518880",tr:57.03,ar:9.55,mdd:-21.37,sh:1.10,wr:86.7,t:15,bh:157.30,bh_mdd:-30.47},
-    {n:"纳指ETF",c:"sh513100",tr:44.55,ar:7.74,mdd:-17.08,sh:0.66,wr:69.2,t:26,bh:111.73,bh_mdd:-27.52}
+    {n:"芯片ETF",c:"sz159995",tr:31.32,ar:5.56,mdd:-35.13,sh:0.40,wr:70.0,t:30,bh:37.48,bh_mdd:-58.45},
+    {n:"证券ETF",c:"sh512880",tr:8.77,ar:1.68,mdd:-21.98,sh:0.19,wr:68.8,t:16,bh:-7.05,bh_mdd:-40.28},
+    {n:"红利ETF",c:"sh515180",tr:16.65,ar:3.11,mdd:-11.97,sh:0.37,wr:85.7,t:7,bh:28.98,bh_mdd:-22.15},
+    {n:"黄金ETF",c:"sh518880",tr:48.37,ar:8.16,mdd:-21.41,sh:0.94,wr:80.0,t:15,bh:137.62,bh_mdd:-30.49},
+    {n:"纳指ETF",c:"sh513100",tr:50.05,ar:8.40,mdd:-16.58,sh:0.73,wr:73.1,t:26,bh:122.21,bh_mdd:-27.52}
   ],
   takeprofit: [
-    {n:"芯片ETF",old:"+25.91% / 4.93% / -58.81% / 100% / 3笔",new:"+24.68% / 4.71% / -58.81% / 100% / 4笔"},
-    {n:"证券ETF",old:"+1.99% / 0.41% / -39.98% / 50% / 2笔",new:"+3.81% / 0.78% / -39.98% / 66.7% / 3笔"},
-    {n:"红利ETF",old:"+22.01% / 4.24% / -14.86% / 100% / 3笔",new:"+19.36% / 3.76% / -17.05% / 100% / 4笔"},
-    {n:"黄金ETF",old:"+61.88% / 10.58% / -17.99% / 100% / 3笔",new:"+53.46% / 9.35% / -14.93% / 100% / 4笔"},
-    {n:"纳指ETF",old:"+48.48% / 8.61% / -27.52% / 100% / 3笔",new:"+18.68% / 3.64% / -27.52% / 100% / 4笔"}
+    {n:"芯片ETF",old:"+24.00% / +4.51% / -58.47% / 100% / 3笔",new:"+18.55% / +3.55% / -58.47% / 100% / 4笔"},
+    {n:"证券ETF",old:"-0.78% / -0.16% / -40.28% / 50% / 2笔",new:"+1.63% / +0.33% / -40.28% / 66.7% / 3笔"},
+    {n:"红利ETF",old:"+26.26% / +4.90% / -22.15% / 100% / 3笔",new:"+19.40% / +3.71% / -16.64% / 100% / 4笔"},
+    {n:"黄金ETF",old:"+55.25% / +9.45% / -18.01% / 100% / 3笔",new:"+48.33% / +8.43% / -14.95% / 100% / 4笔"},
+    {n:"纳指ETF",old:"+51.95% / +8.97% / -27.52% / 100% / 3笔",new:"+18.44% / +3.54% / -27.52% / 100% / 4笔"}
   ]
 };
 function fmt(v,p){return (v>0?'+':'')+v.toFixed(p)+'%'}

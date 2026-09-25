@@ -28,7 +28,10 @@ if hasattr(sys.stdout, "reconfigure"):
 
 import pandas as pd
 
-OUT_DIR = os.path.dirname(os.path.abspath(__file__))
+# 🔴 单 158 修：原写  ⇒ 结果落在 **scripts/**，而入库与公开页读的是
+#    **output/**（README「output/ 标准三件套」）⇒ 两侧各一份、公开的那份长期是旧的（本次实测：
+#    output/ 停在 2026-08-28，scripts/ 才是新产物）。统一写 output/。
+OUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "output")
 COMMISSION = 0.0003  # 万三
 SYMBOLS = {
     "sz159995": "芯片ETF华夏(半导体)",
@@ -38,7 +41,7 @@ SYMBOLS = {
     "sh513100": "纳指ETF",
 }
 EVAL_START = "2021-09-01"
-EVAL_END = "2026-08-26"
+EVAL_END = "2026-09-24"   # 单 158：窗口末端延期（K 线档已刷新；⛔ 不改口径）
 INITIAL_CASH = 100000.0
 LOT = 100  # ETF 场内 100 份/手
 

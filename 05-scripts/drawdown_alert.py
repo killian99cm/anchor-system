@@ -53,6 +53,10 @@ def main():
     liabilities = state.get('liabilities_in_cash', 0)
     outflow = state.get('net_outflow_total', 0)
 
+    # 存档 dd_pct 按契约只保留 1 位小数（test_calculations.py:192），直接以 :.2f 打印
+    # 会把 -1.2 显示成 "-1.20%"，暗示不存在的精度。这里用同口径实算精确值供展示。
+    dd_pct_exact = (net_assets - peak) / peak * 100 if peak else dd_pct
+
     if '--json' in sys.argv:
         out = {
             "total": round(total, 2),
@@ -60,7 +64,8 @@ def main():
             "liabilities_in_cash": round(liabilities, 2),
             "net_outflow_total": round(outflow, 2),
             "peak": round(peak, 2),
-            "dd_pct": round(dd_pct, 2),
+            "dd_pct": round(dd_pct, 1),
+            "dd_pct_exact": round(dd_pct_exact, 3),
             "level": level,
             "triggered": [line, action] if line else None,
             "safe_cushion": round(cushion, 2),
@@ -68,7 +73,7 @@ def main():
         }
         print(json.dumps(out, ensure_ascii=False, indent=2))
     else:
-        sign = "+" if dd_pct >= 0 else ""
+        sign = "+" if dd_pct_exact >= 0 else ""
         print("=" * 50)
         print("Anchor 回撤预警")
         print("=" * 50)
@@ -78,7 +83,7 @@ def main():
             _basis += f"，补回净转出 ¥{outflow:,.0f}"
         print(f"  自有净值:   ¥{net_assets:,.0f}（回撤口径，{_basis}）")
         print(f"  基准(peak): ¥{peak:,.0f}  {peak_note}")
-        print(f"  回撤幅度:   {sign}{dd_pct:.2f}%")
+        print(f"  回撤幅度:   {sign}{dd_pct_exact:.3f}%（存档 1dp 口径 {dd_pct:+.1f}%）")
         print("-" * 50)
         if level == "safe":
             print(f"  ✅ 安全区：距 -5% 线还有 ¥{cushion:,.0f}")

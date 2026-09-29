@@ -1251,6 +1251,23 @@ def ddx(secids: list[str] | str, source: str = "DDX") -> dict:
     **`stock/get`（单标的端点）不供**（只回 f57/f58，个股/ETF/指数实测一致）。
     ⇒ **不许因为 `stock/get` 试不出来就写「DDX 无源」** —— 那正是 2026-09-18 修掉的错。
 
+    🔴🔴 **2026-09-29 复查：列表端点已被东财「路径级」拒绝（上一条的结论仍然成立，但当前不可达）**
+        实测（2026-09-29 15:0x，隔离实验）：
+          · `push2.eastmoney.com` 与 `push2delay.eastmoney.com` 的 `*/ulist.np/get`
+            与 `*/clist/get` **均在连接层直接断**（`RemoteDisconnected: Remote end closed
+            connection without response`）；
+          · **与字段无关** —— 只带 f12,f13,f14 也被断；换 clist 同断；
+            加公共 `ut=fa5fd1943c7b386f172d6893dbfba10b` 同断；
+          · **同一主机**的 `kamt/get`、`kamt.rtmin/get` 正常 200 + JSON
+            ⇒ **不是 IP 全封、不是字段被撤、不是「DDX 无源」**，而是**路径级反爬**。
+        ⇒ 调用方纪律：① 本函数返回的 `available=False` **必须按 `unavailable_reason` 分两义**
+        （"取数失败(限流/接口变更)" vs "真·不可得(A 股体系外)"），**⛔ 不得合并写成一句**
+        （2026-09-29 实测：我在报告里把它写成「全部返回 `{}`」，**该表述错误** ——
+        实际返回的是完整记录列表 + 逐条 reason，是**部分可用**）；
+        ② **⛔ 不得以「无 DDX」推断资金方向**；
+        ③ 替代：`mx-data` 主力资金（**已验证可用**，2026-09-29 给出创新药 +10.52 亿转正的关键拐点）；
+        ④ 是否将 DDX 正式降级由 **#C1-27** 裁决。
+
     ✅ 值已双路交叉验证（2026-09-18，6 个标的与 mx-data **逐位一致**），见模块头注。
     ⚠️ `available=False` 有两义，**调用方须分辨**：
          ① **真·不可得**（港股/美股/外盘，DDX 是 A 股体系指标）→ 走替代口径五项登记

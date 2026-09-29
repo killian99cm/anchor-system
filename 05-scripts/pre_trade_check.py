@@ -52,9 +52,13 @@ sys.stdout.reconfigure(encoding="utf-8")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import paths  # C1/C5：统一路径真源
+import data_processor as dp  # #C1-25：门禁留痕审计需 txn_exclusion_reason / classify_txn_op
 from data_processor import current_ops_period, monthly_ops_summary  # C5：月操作单一真源
 
 JSON_PATH = paths.DATA_PATH
+
+# #C1-25（裁决 2026-09-29）：门禁留痕审计读决策日志。⛔ 与 decision_log.py 同址（私有件）
+LOG_FILE = paths.ANCHOR / "06-dashboard" / "decision_log.json"
 
 import rule_keys  # v4.5.17：阈值**单一真源**（键名/正则/默认/区间/护栏全在一处）
 
@@ -279,9 +283,134 @@ def _arg_date(flag):
         return None
 
 
+def audit_gate_trail(year: int, month: int, data=None, log_records=None) -> dict:
+    """🔴 **门禁留痕覆盖审计**（裁决 #C1-25 · 2026-09-29）。
+
+    病灶（#C1-25）：`pre_trade_check` 的买入维硬门禁**早已存在且已带 F7 出口**（立单 151），
+    但 **9/24 通利 ¥150 那笔仍被执行、且当日未进 `decision_log`**（B4 载体缺失）⇒ 事后才发现。
+    ⇒ **缺的不是门禁逻辑，而是「门禁被强制执行」这件事本身**（工具在，但没人强制跑它）。
+
+    本函数把「有没有跑过门禁并留痕」变成**可验证信号**：逐笔列出当月**主动买入类**事件
+    （⛔ 排除记账腿 / 已被取代 / 显式声明非手动），检查 `decision_log` 中是否存在
+    **同日 + 同标的**的记录。**缺失 ⇒ 该笔未留门禁痕迹。**
+
+    🔴 匹配键纪律：**必须 (日期, 标的) 双键**。
+      - 只按日期 ⇒ 同日任意记录都会「覆盖」掉真实缺口（9/28 恰好有「全仓·观望」#69，
+        若按日期放行，那笔真实的 ¥150 加仓缺口会被 #69 掩盖）。
+      - 只按标的 ⇒ 跨月/跨次会被误判为已覆盖。
+      - ⛔ **「全仓」类记录不得充当覆盖**（它不指名标的，无法证明跑过该笔的门禁）。
+
+    返回 ``{'status', 'year', 'month', 'events', 'missing', 'unknown_ops', 'note'}``；
+    `status` 四态：``ok``（全覆盖）／``missing``（有缺口）／``empty``（当月无主动买入）
+    ／``unavailable``（数据不可读 ⇒ **显式声张，⛔ 不得静默当合格**）。
+    """
+    out = {"status": "unavailable", "year": year, "month": month,
+           "events": [], "missing": [], "unknown_ops": [], "note": ""}
+    if data is None:
+        try:
+            data, _ = load_data()
+        except Exception as e:  # noqa: BLE001
+            out["note"] = f"⛔ 档案不可读 ⇒ **门禁留痕无法审计**（{type(e).__name__}: {e}）"
+            return out
+    if log_records is None:
+        try:
+            log_records = json.loads(LOG_FILE.read_text(encoding="utf-8")).get("decisions", [])
+        except Exception as e:  # noqa: BLE001
+            out["note"] = f"⛔ 决策日志不可读 ⇒ **门禁留痕无法审计**（{type(e).__name__}: {e}）"
+            return out
+
+    prefix = f"{year:04d}-{month:02d}-"
+
+    def _covered(d0: str, fund: str) -> str | None:
+        """返回覆盖该笔的 decision_log id；无 ⇒ None。"""
+        for r in log_records:
+            if str(r.get("date", "")) != d0:
+                continue
+            lf = str(r.get("fund") or "").strip()
+            if not lf or lf == "全仓":
+                continue                      # ⛔ 不指名标的者不构成覆盖
+            if lf == fund or (lf and (lf in fund or fund in lf)):
+                return str(r.get("id", "?"))
+        return None
+
+    for t in data.get("transactions", []):
+        d0 = str(t.get("date", ""))
+        if not d0.startswith(prefix):
+            continue
+        why = dp.txn_exclusion_reason(t)
+        if why is not None:
+            continue                          # 记账腿 / 已取代 / 显式声明非手动 ⇒ 无需门禁
+        kind = dp.classify_txn_op(t.get("op"))
+        if kind == "unknown":
+            out["unknown_ops"].append(f"{d0} {t.get('op')}")
+            continue
+        if kind != "buy":
+            continue
+        fund = str(t.get("fund") or "").strip()
+        ev = {"date": d0, "fund": fund or "（未写标的）",
+              "op": t.get("op"), "amount": t.get("amount")}
+        ev["covered_by"] = _covered(d0, fund)
+        ev["covered"] = ev["covered_by"] is not None
+        out["events"].append(ev)
+        if not ev["covered"]:
+            out["missing"].append(ev)
+
+    if not out["events"]:
+        out["status"] = "empty"
+        out["note"] = f"当月（{prefix[:7]}）无主动买入类事件 ⇒ 无门禁留痕需求"
+    elif out["missing"]:
+        out["status"] = "missing"
+        out["note"] = (f"🔴 **{len(out['missing'])}/{len(out['events'])} 笔主动买入无门禁留痕**"
+                       f"（无同日同标的的 decision_log 记录）")
+    else:
+        out["status"] = "ok"
+        out["note"] = f"✅ {len(out['events'])} 笔主动买入全部有门禁留痕"
+    if out["unknown_ops"]:
+        out["note"] += f"；⚠️ 另有 {len(out['unknown_ops'])} 笔未识别 op（口径外，须先归类）"
+    return out
+
+
+def print_gate_audit(year: int | None = None, month: int | None = None) -> int:
+    """`--audit-gate [YYYY-MM]` 的呈现层。退出码：0 全覆盖 / 1 有缺口 / 3 不可判定。"""
+    today = date.today()
+    y, m = (year or today.year), (month or today.month)
+    r = audit_gate_trail(y, m)
+    print("=" * 58)
+    print(f"  门禁留痕覆盖审计（裁决 #C1-25）· {r['year']}-{r['month']:02d}")
+    print("=" * 58)
+    print(f"  状态: {r['status']} —— {r['note']}")
+    for e in r["events"]:
+        mark = "✅" if e["covered"] else "🔴"
+        tag = f"留痕 {e['covered_by']}" if e["covered"] else "**无留痕**"
+        print(f"    {mark} {e['date']} {e['op']} {e['fund']} ¥{e['amount']} → {tag}")
+    for u in r["unknown_ops"]:
+        print(f"    ⚠️ 未识别 op: {u}")
+    if r["status"] == "missing":
+        print(f"  ⇒ 处置：逐笔补 `decision_log` 留痕（⛔ 补录不打额度标，见 152 口径③），"
+              f"并按 §2.4 走 F7 出口三要件")
+        return 1
+    if r["status"] == "unavailable":
+        print("  ⇒ 处置：先修复数据可读性；⛔ 本项**不得**当作合格")
+        return 3
+    return 0
+
+
 def main():
+    if "--audit-gate" in sys.argv:
+        i = sys.argv.index("--audit-gate")
+        y = m = None
+        if i + 1 < len(sys.argv) and "-" in sys.argv[i + 1]:
+            try:
+                yy, mm = sys.argv[i + 1].split("-")[:2]
+                y, m = int(yy), int(mm)
+            except ValueError:
+                print(f"⛔ --audit-gate 日期非法: {sys.argv[i + 1]}（应为 YYYY-MM）")
+                return 3
+        return print_gate_audit(y, m)
+
     if len(sys.argv) < 3:
         print("用法: python pre_trade_check.py <品种关键词> <拟买金额> [--loan]")
+        print("      python pre_trade_check.py --audit-gate [YYYY-MM]   # 门禁留痕覆盖审计（#C1-25）")
         return 2
 
     keyword = sys.argv[1]

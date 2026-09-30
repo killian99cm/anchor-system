@@ -138,6 +138,136 @@ def log_rule(rule: str, outcome: str, amount: float = 0, note: str = "") -> None
     print(f"[规则] {rule} → {outcome}（¥{amount:+,.0f}）{note}")
 
 
+# ============================================================================
+# 🔴 台账派生重建 —— 修复「9 月 0 条」（2026-09-30）
+# ============================================================================
+# 病灶（2026-09-30 排查）：本台账**唯一的写入路径是手工命令** `--log-rule`
+#   （以及 `--log-ddx/--log-signal/--log-swing/--log-timing`），
+#   而 `noise_audit.py` **不在 `sync_all.py` 链路中、也未被任何脚本调用**
+#   ⇒ 记录**全靠人记得跑**。事实：台账最后一条停在 **2026-08-17**，
+#   9 月整月 **0 条** —— 而 9 月实际发生了月额度超限（买入 6/2、卖出 3/2）、
+#   A3 摊平命中 2 次、A2 追红日等多次规则命中。
+#
+# 修法（**不加重手工负担，改为从既有真源派生**）：
+#   系统里这些命中的**检测逻辑早就存在且已在跑**，只是结果散落在各处 ——
+#     · 月额度违规 → `decision_log.json` 的 `tags` 含 `违规·月额度`（单 152 自动打标）
+#     · 止损执行   → `decision_log.json` 中 `type=止损` 且 `verdict` 含「执行」
+#     · A2 追红日  → `portfolio_data.json` watchlist 条目的 `today_meta.a2_hit`
+#   ⇒ 本模块**只做归集**，⛔ 不新造判定、⛔ 不臆造条目。
+#
+# 🔴 幂等键 ＝ **(date, rule, note 前 40 字)**：
+#   只按 `rule` 去重 ⇒ 跨日同类命中会被吞（如 9/14 与 9/28 两笔通利加仓）；
+#   只按 `date` 去重 ⇒ 同日多条不同规则会被吞。故须三键合一（见测试 T3）。
+
+def _paths():
+    """惰性取真源路径（⛔ 不在模块顶部硬编码，便于测试注入）。"""
+    import paths
+    return paths.DATA_PATH, paths.ANCHOR / "06-dashboard" / "decision_log.json"
+
+
+def _quota_tag() -> str:
+    """月额度违规 tag 的**单一真源** ＝ `decision_log.QUOTA_TAG`（⛔ 本模块不得自写字面量）。"""
+    import decision_log
+    return decision_log.QUOTA_TAG
+
+
+# 🔴 tag → 规则名的映射（**按系统实际在用的 tag 词表**，2026-09-30 实测归纳）。
+#    ⛔ 只用 `违规·月额度` 会漏掉 9 月全部命中 —— 因为该 tag 自 2026-09-24 才生效
+#   且**不溯及既往**，而 9/14、9/28 两笔额度违规是**补录**（补录不打标）。
+#    ⇒ 单 152 的自动打标**不能回溯修复 9 月**，故本表按**真实存在的 tag** 归纳。
+TAG_TO_RULE: dict[str, tuple[str, str]] = {
+    "违规·月额度": ("月额度·买入维超限", "missed"),
+    "月额度满": ("月额度（已达上限·据此不买）", "protected"),
+    "超E1上限": ("E1 单只卫星上限超限", "missed"),
+    "超压舱石上限": ("压舱石单只上限超限", "missed"),
+    "超限": ("超限（E1／压舱石等）", "missed"),
+    "执行违规": ("执行违规（纪）", "missed"),
+    "红日": ("A2 追红日（禁买）", "protected"),
+    "B5": ("B5 观察仓破位", "protected"),
+    "破位": ("破位（技术）", "protected"),
+    "清仓": ("清仓", "protected"),
+    "节前": ("§4.5 节前闸门", "protected"),
+    "压舱石闸门": ("§4.2.1 压舱石闸门", "protected"),
+    "止损观察": ("止损观察（未触发）", "neutral"),
+}
+
+
+def derive_rule_hits(year: int, month: int, data: dict | None = None,
+                     log: list | None = None) -> list[dict]:
+    """从既有真源**派生**该月的规则命中（只读，⛔ 不写盘）。
+
+    返回与 `log_rule` 同构的记录列表；`note` 均带 `[派生]` 前缀以区别于手工条目。
+    数据不可读时**返回一条显式声张记录**，⛔ 不得静默当「本月无命中」。
+    """
+    import json as _json
+    dpath, lpath = _paths()
+    pref = f"{year:04d}-{month:02d}-"
+    out: list[dict] = []
+
+    if data is None:
+        try:
+            data = _json.loads(Path(dpath).read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001
+            return [{"date": pref + "01", "rule": "⚠️派生失败", "outcome": "neutral", "amount": 0,
+                     "note": f"[派生] 档案不可读：{type(e).__name__}"}]
+    if log is None:
+        try:
+            log = _json.loads(Path(lpath).read_text(encoding="utf-8")).get("decisions", [])
+        except Exception:  # noqa: BLE001
+            log = []
+
+    for r in log:
+        if not str(r.get("date", "")).startswith(pref):
+            continue
+        tags = list(r.get("tags") or [])
+        # ① 按 tag 映射（同一 tag 只记一条；同日多 tag ⇒ 多行，⛔ 不合并）
+        for tg in tags:
+            if tg in TAG_TO_RULE:
+                rule, outcome = TAG_TO_RULE[tg]
+                out.append({
+                    "date": r["date"], "rule": rule, "outcome": outcome,
+                    "amount": -float(r.get("amount") or 0) if outcome == "missed" else 0.0,
+                    "note": f"[派生·tag:{tg}] #{r.get('id')} {r.get('type')} {r.get('fund')}｜{str(r.get('verdict'))[:30]}",
+                })
+        # ② 止损执行（type 维，非 tag）：即便无 tag 也必须记
+        if str(r.get("type", "")) == "止损" and "执行" in str(r.get("verdict", "")):
+            out.append({
+                "date": r["date"], "rule": f"止损执行（{r.get('fund')}）", "outcome": "protected",
+                "amount": 0.0,
+                "note": f"[派生·type] #{r.get('id')} {r.get('verdict')}｜{str(r.get('rationale'))[:50]}",
+            })
+
+    # ③ A2 追红日（watchlist 条目的 today_meta.a2_hit；⚠️ 该字段只保留最新一天 ⇒ 历史不可回溯）
+    for w in (data.get("watchlist") or []):
+        if not isinstance(w, dict):
+            continue
+        tm = w.get("today_meta") or {}
+        if tm.get("a2_hit") is True:
+            d0 = str(tm.get("computed_at") or "")[:10]
+            if d0.startswith(pref):
+                out.append({"date": d0, "rule": "A2 追红日（watchlist）", "outcome": "protected",
+                            "amount": 0.0,
+                            "note": f"[派生·watchlist] {w.get('sector') or w.get('name')}：{str(tm.get('a2_detail'))[:50]}"})
+    return out
+
+
+def rebuild_rule_hits(year: int, month: int, dry_run: bool = False) -> dict:
+    """把派生结果**幂等合并**进台账（⛔ 不删既有手工条目）。"""
+    existing = load_json(RULE_FILE)
+
+    def key(x):
+        return (str(x.get("date", "")), str(x.get("rule", "")), str(x.get("note", ""))[:40])
+
+    seen = {key(x) for x in existing}
+    added = [r for r in derive_rule_hits(year, month) if key(r) not in seen]
+    if added and not dry_run:
+        existing.extend(added)
+        existing.sort(key=lambda x: str(x.get("date", "")))
+        save_json(RULE_FILE, existing)
+    return {"month": f"{year:04d}-{month:02d}", "existing": len(seen), "added": len(added),
+            "total": len(existing) + (len(added) if dry_run else 0), "records": added}
+
+
 # ---------- 审计分析 ----------
 
 def audit_daily() -> dict:
@@ -341,6 +471,25 @@ def main() -> int:
         amount = sys.argv[idx + 3] if len(sys.argv) > idx + 3 else "0"
         note = sys.argv[idx + 4] if len(sys.argv) > idx + 4 else ""
         log_rule(rule, outcome, amount, note)
+        return 0
+
+    if "--rebuild-hits" in sys.argv:
+        idx = sys.argv.index("--rebuild-hits")
+        arg = sys.argv[idx + 1] if len(sys.argv) > idx + 1 and "-" in sys.argv[idx + 1] else ""
+        if arg:
+            yy, mm = arg.split("-")[:2]
+            y, m = int(yy), int(mm)
+        else:
+            now = datetime.now()
+            y, m = now.year, now.month
+        dry = "--dry-run" in sys.argv
+        r = rebuild_rule_hits(y, m, dry_run=dry)
+        print(f"规则命中台账派生重建 · {r['month']}{'（dry-run）' if dry else ''}")
+        print(f"  既有条目 {r['existing']} ｜ 新增 {r['added']} ｜ 合计 {r['total']}")
+        for x in r["records"]:
+            print(f"    + {x['date']} {x['rule']} → {x['outcome']}｜{x['note'][:70]}")
+        if not r["records"]:
+            print("    （无新增；⛔ 若本月确有命中却为 0，请检查真源是否含对应标记）")
         return 0
 
     if "--weekly" in sys.argv:

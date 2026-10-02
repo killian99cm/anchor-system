@@ -768,11 +768,12 @@ class MonthlyOpsSummary:
     `.is_buy_over` / `.is_sell_over`。"""
 
     __slots__ = ('year', 'month', 'buys', 'sells', 'violations', 'unknown_ops',
-                 'superseded_records', 'suspect_dupes', 'max_buys', 'max_sells', 'max_total',
+                 'superseded_records', 'suspect_dupes', 'suspect_dupes_dca',
+                 'max_buys', 'max_sells', 'max_total',
                  'buy_items', 'sell_items')
 
     def __init__(self, year, month, buys, sells, violations=0,
-                 unknown_ops=(), superseded_records=0, suspect_dupes=(),
+                 unknown_ops=(), superseded_records=0, suspect_dupes=(), suspect_dupes_dca=(),
                  max_buys=2, max_sells=2, max_total=4, buy_items=(), sell_items=()):
         self.year = year
         self.month = month
@@ -782,6 +783,8 @@ class MonthlyOpsSummary:
         self.unknown_ops = tuple(unknown_ops)
         self.superseded_records = superseded_records
         self.suspect_dupes = tuple(suspect_dupes)
+        # 🔴 定投类疑似双记（**独立于额度口径**，2026-10-02 扩 scope）
+        self.suspect_dupes_dca = tuple(suspect_dupes_dca)
         self.max_buys = max_buys
         self.max_sells = max_sells
         self.max_total = max_total
@@ -821,6 +824,10 @@ class MonthlyOpsSummary:
     def has_suspect_dupes(self):
         """存在疑似同一事件的双记记录 ⇒ 额度**可能虚高**，须人工确认。"""
         return bool(self.suspect_dupes)
+
+    @property
+    def has_suspect_dupes_dca(self):
+        return bool(self.suspect_dupes_dca)
 
     # ---- 向后兼容（旧签名 `(count, violation_count)`）----
     def __iter__(self):
@@ -951,10 +958,30 @@ def monthly_ops_summary(data, year=None, month=None):
     ]
     suspect.sort(key=lambda x: (x['date'], x['op']))
 
+    # 🔴 单 159 #3 续：**定投类双记**（2026-10-02 扩 scope）
+    #    病灶：上面的 `counted` **只含计额度的行**，而定投是记账腿 ⇒ **不入 counted**
+    #    ⇒ 9/1 那两条疑似双记（定投，其中一条基金名错别字「纳达克」）**永远不会被检出**。
+    #    ⇒ 本段用**同一套键与同一套归一化**扫定投行，但结果放进**独立字段**
+    #    `suspect_dupes_dca`（⛔ 不并入 `suspect_dupes` —— 后者是 152/月归因消费的**额度口径**，
+    #    混入定投会污染其语义）。
+    _pref = f"{year:04d}-{month:02d}-"
+    _dca_groups = {}
+    for _t in data.get('transactions', []):
+        if str(_t.get('date', '')).startswith(_pref) and _t.get('op') == '定投':
+            _raw = str(_t.get('fund') or _t.get('name') or '')
+            _k = (str(_t.get('date', '')), norm_fund(_raw) or _raw, str(_t.get('amount', '')))
+            _dca_groups.setdefault(_k, []).append(_t)
+    suspect_dca = [
+        {'date': k[0], 'fund': k[1], 'amount': k[2], 'count': len(v),
+         'funds': sorted({str(x.get('fund') or x.get('name') or '') for x in v})}
+        for k, v in _dca_groups.items() if len(v) > 1
+    ]
+    suspect_dca.sort(key=lambda x: (x['date'], x['fund']))
+
     return MonthlyOpsSummary(
         year=year, month=month, buys=buys, sells=sells, violations=violations,
         unknown_ops=sorted(set(unknown)), superseded_records=superseded,
-        suspect_dupes=suspect,
+        suspect_dupes=suspect, suspect_dupes_dca=suspect_dca,
         max_buys=max_buys, max_sells=max_sells, max_total=max_total,
         buy_items=[t for t, k in counted if k == 'buy'],
         sell_items=[t for t, k in counted if k == 'sell'],

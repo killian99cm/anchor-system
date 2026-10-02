@@ -50,10 +50,27 @@ def _fixture(n_buys: int) -> str:
 
     `n_buys=2` ⇒ 买入维恰好**满额**（限额 2）；`n_buys=0` ⇒ 未满。
     ⛔ `transactions` 只含当月**买入**（`定投` 等记账腿不计额度）。
+
+    🔴 **2026-10-02 修复（时钟/口径耦合，与 #13「测试时钟」同型）**：
+        旧写法用 `date.today()` 的月份给夹具买入打日期，**但代码不是按「今天」定期间的** ——
+        `data_processor.current_ops_period()` 优先取 `_meta.ops_year/ops_month`，否则取
+        **`update_date`**（档案数据日期）。⇒ 一旦**今天与档案数据月不同**（如 2026-10-02 假期中
+        而档案停在 9/30），夹具的买入就落到了「下个月」，而代码仍在数上个月 ⇒ `买入 0/2`
+        ⇒ **满额断言莫名其妙地失败**（报错信息里只看到 0/2，看不出是期间错配）。
+        ⇒ 现改为**与代码同源**：按 `update_date` 的月份打日期，并**自证期间一致**。
     """
     tmp = tempfile.mkdtemp(prefix="anchor_151_")
     src = json.load(io.open(paths.DATA_PATH, encoding="utf-8"))   # 只借结构，不借数据
-    ym = date.today().strftime("%Y-%m")
+    # 🔴 期间必须与 `current_ops_period` 的判定同源（⛔ 不用 date.today()）
+    ym = str(src.get("update_date") or date.today().isoformat())[:7]
+    _meta = src.setdefault("_meta", {})
+    if _meta.get("ops_year") and _meta.get("ops_month"):
+        ym = f"{int(_meta['ops_year']):04d}-{int(_meta['ops_month']):02d}"
+    # 自证：夹具期间 == 代码将解析出的期间（防再次漂移）
+    _y, _m, _ = _probe_period(src)
+    assert (int(ym[:4]), int(ym[5:7])) == (_y, _m), (
+        f"❌ 夹具期间 {ym} 与 current_ops_period 解析出的 {_y}-{_m:02d} 不一致 —— "
+        f"夹具日期必须与代码同源（⛔ 不得用 date.today()）")
     src["transactions"] = [
         {"date": f"{ym}-01", "op": "买入", "name": "创新药C", "amount": 100.0}
         for _ in range(n_buys)
@@ -61,6 +78,13 @@ def _fixture(n_buys: int) -> str:
     io.open(os.path.join(tmp, "portfolio_data.json"), "w", encoding="utf-8",
             newline="\n").write(json.dumps(src, ensure_ascii=False))
     return tmp
+
+
+def _probe_period(src: dict):
+    """用**被测代码本身**解析期间（⛔ 不在测试里另写一套判据）。"""
+    import importlib
+    dp = importlib.import_module("data_processor")
+    return dp.current_ops_period(src)
 
 
 def _run(script: str, desktop: str) -> str:

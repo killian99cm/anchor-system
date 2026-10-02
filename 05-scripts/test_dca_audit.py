@@ -105,6 +105,19 @@ rc_bad, out_bad = audit_with(data_path="C:/__no_such_dir__/portfolio_data.json")
 check("T6 🔴 数据不可读 ⇒ rc=3，且写明「不可判定 ≠ 合格」（⛔ 不得静默当无缺口）",
       rc_bad == 3 and "不得当作" in out_bad, f"rc={rc_bad}")
 
+
+# ---------------------------------------------------------------- T7 定投类双记（#3 收官）
+_dupe_rows = FIX_ALL + [
+    {"date": "2026-09-01", "op": "定投", "fund": "华泰柏瑞纳达克100ETF联接(QDII)A", "amount": 5.0}]
+rc_dup, out_dup = audit_with(rows=fixture(_dupe_rows))
+check("T7a 🔴 定投类疑似双记 ⇒ **必须报出**（归一化后同标的、同日同额 ×2）",
+      "疑似双记" in out_dup, "见报文")
+check("T7b 🔴 且并入红灯（rc=1）—— ⛔ 不得只在日志里留一句", rc_dup == 1, f"rc={rc_dup}")
+check("T7c 报文须给出**处置路径**（核 App 流水／删重复行／登记说明）",
+      "核 App 流水" in out_dup, "")
+check("T7d 🔴 承重：**无双记时不得出现「疑似双记」**（⛔ 防恒报）",
+      "疑似双记" not in out_ok, "T4 夹具无双记")
+
 print("\n" + "=" * 46)
 if FAIL:
     print(f"❌ {len(FAIL)} 项失败: {FAIL}")

@@ -430,9 +430,22 @@ def print_dca_audit(year: int | None = None, month: int | None = None) -> int:
         print(f"    🟠 {g['date']} {g['fund']} —— **记录存在但 fund 字段为空** ⇒ 须补字段，⛔ 不是缺记录")
     if r.get("exempt_used"):
         print(f"  （已按 `_meta.dca_exemptions` 豁免 {r['exempt_used']} 项「已证未买」）")
+    # 🔴 单 159 #3 收官：**定投类疑似双记**（同「日/额、归一化后同标的」两条以上）
+    _dupes = r.get("suspect_dupes_dca") or []
+    _batches = [d for d in _dupes if not d.get("_error")]
+    for d in _dupes:
+        if d.get("_error"):
+            print(f"    ⚠️ {d['_error']}（⛔ 不得当作「无双记」）")
+            continue
+        print(f"    🔴 **疑似双记**：{d['date']} {d['fund']} ¥{d['amount']} ×{d['count']}"
+              f"（记法：{d['funds']}）")
     if g := r.get("gaps"):
         print(f"  ⇒ 处置：逐条按 `dca_ledger.py --write {r.get('scope')} --confirm` 补录；")
         print(f"     若实为「未买」⇒ 登记 `_meta.dca_exemptions`（⛔ 豁免须有证据，不得用来掩盖「未查」）")
+        return 1
+    if _batches:
+        print(f"  ⇒ 处置：核 App 流水确认是否**真双记**；若是 ⇒ 删重复行，若非（如跨月补记）⇒ "
+              f"在行内 note 注明并登记 `_meta.dca_exemptions` 同日说明")
         return 1
     if fg:
         # ⛔ 有字段待补时**不得**打「覆盖完整」—— 那是把「待补」美化成了「齐备」

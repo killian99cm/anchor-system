@@ -225,7 +225,18 @@ def scan(year: int, month: int, data: dict | None = None,
                                          if near else ""))})
         matrix.append(row)
 
+    # 🔴 单 159 #3 收官：**定投类疑似双记**（判据真源＝`data_processor.monthly_ops_summary`，
+    #    ⛔ 不另写一套）。放在 `scan()` 内 ⇒ 测试的 `scan` 注入口**自然覆盖**它，
+    #    ⛔ 不必在审计层另调（否则会绕过注入、打到真实档案）。
+    dupes_dca = []
+    try:
+        import data_processor as _dp
+        dupes_dca = [dict(x) for x in _dp.monthly_ops_summary(data, year, month).suspect_dupes_dca]
+    except Exception as e:  # noqa: BLE001
+        dupes_dca = [{"_error": f"定投双记检查失败：{type(e).__name__}"}]
+
     return {"status": "ok" if not gaps else "gaps",
+            "suspect_dupes_dca": dupes_dca,
             "scope": pref[:7], "days": days, "targets": targets, "matrix": matrix,
             "gaps": gaps, "field_gaps": field_gaps,
             # ⛔ 只数**日期键**（形如 `YYYY-MM-DD|标的`）；`_note`/`_registered` 等说明键不计

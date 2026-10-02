@@ -66,10 +66,12 @@ def parse_dca_running(strs: list[str]) -> list[dict]:
 #   实测样本：「华泰柏瑞纳指100ETF联接(QDII)A」／「华泰柏瑞纳达克100ETF联接(QDII)A」（错别字）／
 #   「华泰柏瑞纳斯达克100ETF联接A」／以及 **`fund` 为空** 的行（2026-09-24 两条）。
 #   ⇒ 比对前必须**归一化**，否则会把「记录在、只是写法不同」误报成**假缺口**。
-_FUND_ALIAS = {"纳达克": "纳斯达克", "纳指": "纳斯达克", "纳斯达克100": "纳斯达克"}
+# 🔴 单 159 #3：归一化**下沉到 `data_processor`**（全库单一真源），本模块改为复用
+#    —— ⛔ 不再自持一份，否则两处实现迟早漂移。
+from data_processor import fund_equiv, norm_fund  # noqa: E402,F401
 
 
-def norm_fund(s: object) -> str:
+def _norm_fund_local_unused(s: object) -> str:
     """归一化基金名（去括号内容／别名／字母／空格／ETF／联接），供**比对**用。
 
     ⚠️ 仅供**同一性判定**，⛔ 不用于回写、⛔ 不覆盖原始值（原文必须原样保留）。

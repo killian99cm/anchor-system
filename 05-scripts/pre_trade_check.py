@@ -443,9 +443,14 @@ def print_dca_audit(year: int | None = None, month: int | None = None) -> int:
         print(f"  ⇒ 处置：逐条按 `dca_ledger.py --write {r.get('scope')} --confirm` 补录；")
         print(f"     若实为「未买」⇒ 登记 `_meta.dca_exemptions`（⛔ 豁免须有证据，不得用来掩盖「未查」）")
         return 1
+    # 🔴 已裁定的双记：**仍打印**（标注已裁定），但**不计红灯**（⛔ 裁定 ≠ 隐藏）
+    for d in r.get("suspect_dupes_dca_adjudicated") or []:
+        _ad = d.get("adjudication") or {}
+        print(f"    ⚪ **疑似双记·已裁定**：{d['date']} {d['fund']} ¥{d['amount']} ×{d['count']}"
+              f" ⇒ {_ad.get('裁定', '')}")
     if _batches:
-        print(f"  ⇒ 处置：核 App 流水确认是否**真双记**；若是 ⇒ 删重复行，若非（如跨月补记）⇒ "
-              f"在行内 note 注明并登记 `_meta.dca_exemptions` 同日说明")
+        print(f"  ⇒ 处置：核 App 流水确认是否**真双记**；若是 ⇒ 删重复行；"
+              f"若非（如跨月补记）⇒ 行内 note 注明并登记 `_meta.dca_dupe_adjudications`")
         return 1
     if fg:
         # ⛔ 有字段待补时**不得**打「覆盖完整」—— 那是把「待补」美化成了「齐备」

@@ -118,6 +118,20 @@ check("T7c 报文须给出**处置路径**（核 App 流水／删重复行／登
 check("T7d 🔴 承重：**无双记时不得出现「疑似双记」**（⛔ 防恒报）",
       "疑似双记" not in out_ok, "T4 夹具无双记")
 
+
+# ---------------------------------------------------------------- T8 双记裁定台账
+_ADJ_KEY = "2026-09-01|华泰柏瑞纳斯达克"
+_fix_adj = fixture(_dupe_rows)
+_fix_adj["_meta"] = {"dca_dupe_adjudications": {_ADJ_KEY: {"裁定": "✅ 非双记（测试夹具）"}}}
+rc_adj, out_adj = audit_with(rows=_fix_adj)
+check("T8a 🔴 已裁定 ⇒ **不再计入红灯**（rc=0）", rc_adj == 0, f"rc={rc_adj}")
+check("T8b 🔴 裁定 ≠ 隐藏：已裁定项**仍必须打印**（标注「已裁定」）",
+      "已裁定" in out_adj and "华泰柏瑞纳斯达克" in out_adj, "见报文")
+check("T8c 🔴 承重：把裁定台账去掉 ⇒ 同一夹具必须**回到红灯**（rc=1）⇒ 证明分流承重",
+      rc_dup == 1, f"未裁定版 rc={rc_dup}")
+check("T8d 🔴 反向：裁定**未覆盖**的双记仍须报红（⛔ 防「一裁定全免」）",
+      "疑似双记·已裁定" not in out_dup, "T7 夹具无台账")
+
 print("\n" + "=" * 46)
 if FAIL:
     print(f"❌ {len(FAIL)} 项失败: {FAIL}")

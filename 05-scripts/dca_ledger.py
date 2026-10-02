@@ -235,8 +235,22 @@ def scan(year: int, month: int, data: dict | None = None,
     except Exception as e:  # noqa: BLE001
         dupes_dca = [{"_error": f"定投双记检查失败：{type(e).__name__}"}]
 
+    # 🔴 按 `_meta.dca_dupe_adjudications` 分流：**已裁定**的仍**打印**（标注「已裁定」），
+    #    但**不计入红灯**；⛔ 裁定 ≠ 隐藏 —— 不得用它掩盖未查项。
+    _adj = (data.get("_meta") or {}).get("dca_dupe_adjudications") or {}
+    dupes_adj, dupes_open = [], []
+    for x in dupes_dca:
+        if x.get("_error"):
+            dupes_open.append(x); continue
+        key = f"{x.get('date')}|{x.get('fund')}"
+        if key in _adj:
+            dupes_adj.append(dict(x, adjudication=_adj[key]))
+        else:
+            dupes_open.append(x)
+
     return {"status": "ok" if not gaps else "gaps",
-            "suspect_dupes_dca": dupes_dca,
+            "suspect_dupes_dca": dupes_open,
+            "suspect_dupes_dca_adjudicated": dupes_adj,
             "scope": pref[:7], "days": days, "targets": targets, "matrix": matrix,
             "gaps": gaps, "field_gaps": field_gaps,
             # ⛔ 只数**日期键**（形如 `YYYY-MM-DD|标的`）；`_note`/`_registered` 等说明键不计

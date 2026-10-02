@@ -149,11 +149,18 @@ def trading_days(year: int, month: int, asof: date | None = None) -> list[str]:
     return out
 
 
-def scan(year: int, month: int, data: dict | None = None) -> dict:
-    """扫出「应有定投但无记录」的缺口。只读。"""
+def scan(year: int, month: int, data: dict | None = None,
+         data_path: str | Path | None = None) -> dict:
+    """扫出「应有定投但无记录」的缺口。只读。
+
+    `data_path` 注入口（2026-10-02 加）：初版只能传 `data`，于是**不可读分支无法测试**
+    —— 传 `data=None` 会去读真实档案并**成功**，测试里的「不可读」断言恒假
+    （与「把无法判定当通过」同型）。⇒ 加路径注入口，使不可读分支**可被真的打到**。
+    """
     if data is None:
         try:
-            data = json.loads(Path(paths.DATA_PATH).read_text(encoding="utf-8"))
+            p = Path(data_path) if data_path is not None else Path(paths.DATA_PATH)
+            data = json.loads(p.read_text(encoding="utf-8"))
         except Exception as e:  # noqa: BLE001
             return {"status": "unavailable", "note": f"⚠️ 档案不可读：{type(e).__name__}",
                     "days": [], "targets": [], "gaps": [], "field_gaps": [], "unparsed": []}

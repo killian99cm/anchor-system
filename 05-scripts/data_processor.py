@@ -842,6 +842,35 @@ class MonthlyOpsSummary:
                 + ")")
 
 
+# ============================================================================
+# 🔴 基金名归一化 — **全库单一真源**（单 159 #3 · 2026-10-02）
+# ============================================================================
+# 病灶（实测）：`fund` 字段**写法不统一**，同一只基金至少有四种写法 ——
+#   「华泰柏瑞纳指100ETF联接(QDII)A」／「华泰柏瑞纳**达克**100ETF联接(QDII)A」（错别字）／
+#   「华泰柏瑞纳斯达克100ETF联接A」／以及 **`fund` 为空的记录**。
+# ⇒ 后果两处：① 双记检测键 `(日期, op, fund, 金额)` **因写法不同而不匹配** ⇒ **真阳性漏报**；
+#    ② 覆盖类审计把「记录在、只是写法不同」误报成**假缺口**。
+# ⇒ 归一化**只用于同一性判定**：⛔ 不回写、⛔ 不覆盖原始值、⛔ 不改变对外呈现。
+_FUND_ALIAS = {"纳达克": "纳斯达克", "纳指": "纳斯达克", "纳斯达克100": "纳斯达克"}
+
+
+def norm_fund(s: object) -> str:
+    """基金名归一化（**仅供比对**）：抹平别名/错别字、去括号内容/ETF/联接/基金、去字母数字与空白。"""
+    x = str(s or "")
+    for a, b in _FUND_ALIAS.items():
+        x = x.replace(a, b)
+    x = re.sub(r"[（(][^)）]*[)）]", "", x)
+    x = x.replace("ETF", "").replace("联接", "").replace("基金", "")
+    x = re.sub(r"[A-Za-z0-9\s\-]", "", x)
+    return x
+
+
+def fund_equiv(a: object, b: object) -> bool:
+    """两名是否**指向同一只**（归一化后互相包含）。空值一律 False（⛔ 不猜）。"""
+    na, nb = norm_fund(a), norm_fund(b)
+    return bool(na) and bool(nb) and (na in nb or nb in na)
+
+
 def monthly_ops_summary(data, year=None, month=None):
     """月操作额度统计（**单一真源** · 手册 §1.3 v3.11 二维口径）。
 
@@ -903,11 +932,19 @@ def monthly_ops_summary(data, year=None, month=None):
     #      键相同 ⇒ 仍会被抓出（见 test_monthly_ops 的反向断言）。
     _groups = {}
     for t, _kind in counted:
+        # 🔴 单 159 #3：第 3 位改用 **norm_fund** —— 否则「同基金但写成『纳指』/『纳达克』」
+        #    键不同 ⇒ **真阳性被漏报**。输出里仍保留**原文**（⛔ 不改写记录）。
+        _raw_fund = str(t.get('fund') or t.get('name') or '')
+        # 🔴 **归一化为空时必须回退原文**（2026-10-02，被 test_rule_gates H21/H22 当场抓出）：
+        #    初版直接取 `norm_fund(raw)`，而 `norm_fund` 会剥掉「基金」二字 ⇒
+        #    短名如「X基金」「Y基金」**双双归一为空串** ⇒ **不同基金被并成一组**（假阳性）。
+        #    ⇒ 空结果一律回退**原文**：只有**真的**能归一化出内容时才用它。
         k = (str(t.get('date', '')), str(t.get('op', '')),
-             str(t.get('fund') or t.get('name') or ''), str(t.get('amount', '')))
+             norm_fund(_raw_fund) or _raw_fund, str(t.get('amount', '')))
         _groups.setdefault(k, []).append(t)
     suspect = [
         {'date': k[0], 'op': k[1], 'fund': k[2], 'amount': k[3],
+         'norm_key': k[2],                     # 🔴 归一化后的同组依据（便于人工核对）
          'funds': sorted({str(x.get('fund') or x.get('name') or '') for x in v}),
          'count': len(v)}
         for k, v in _groups.items() if len(v) > 1

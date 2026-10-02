@@ -395,6 +395,53 @@ def print_gate_audit(year: int | None = None, month: int | None = None) -> int:
     return 0
 
 
+def print_dca_audit(year: int | None = None, month: int | None = None) -> int:
+    """`--audit-dca [YYYY-MM]` —— **定投落库覆盖审计**（单 159 #2 · `--audit-gate` 的**姊妹检查**）。
+
+    为什么需要它：`--audit-gate` 审计的是**买入类**事件的门禁留痕；本项审计**定投类**事件的**落库覆盖**。
+    两者互补 —— 2026-10-02 的事实是：**9 月 21 个交易日只有 13 天有定投记录**（缺 8 天），
+    而**当时没有任何检查能发现**（直到人工核查）。根因＝定投记录无自动写入路径。
+
+    ⛔ 本检查**只读**，不写盘；判定委托给 `dca_ledger.scan()`（单一真源，⛔ 不另写一套判据）。
+
+    退出码：**0** 无缺口 ｜ **1** 有缺口（含「字段待补」）｜ **3** 不可判定（数据不可读）
+    """
+    import dca_ledger
+    today = date.today()
+    y, m = (year or today.year), (month or today.month)
+    r = dca_ledger.scan(y, m)
+    print("=" * 60)
+    print(f"  定投落库覆盖审计（单 159 #2）· {r.get('scope')}")
+    print("=" * 60)
+    if r.get("status") == "unavailable":
+        print("  " + str(r.get("note")))
+        print("  ⇒ ⛔ **不得当作「无缺口」**（不可判定 ≠ 合格）")
+        return 3
+    for t_ in r.get("targets", []):
+        flag = "" if t_["fund"] else "  🔴"
+        print(f"    协议：{t_['key']} ≈ ¥{t_['amount']}/天 → 「{t_['fund']}」（{t_['match_how']}）{flag}")
+    for u in r.get("unparsed", []):
+        print(f"    ⚠️ **dca_running 不可解析**：{u} ⇒ ⛔ 会漏检该标的的全部缺口")
+    print(f"  {r.get('note')}")
+    for g in r.get("gaps", []):
+        print(f"    🔴 {g['date']} {g['fund']} 缺记录（协议 ¥{g['amount']}｜证据 {g['evidence']}）")
+    fg = r.get("field_gaps", [])
+    for g in fg:
+        print(f"    🟠 {g['date']} {g['fund']} —— **记录存在但 fund 字段为空** ⇒ 须补字段，⛔ 不是缺记录")
+    if r.get("exempt_used"):
+        print(f"  （已按 `_meta.dca_exemptions` 豁免 {r['exempt_used']} 项「已证未买」）")
+    if g := r.get("gaps"):
+        print(f"  ⇒ 处置：逐条按 `dca_ledger.py --write {r.get('scope')} --confirm` 补录；")
+        print(f"     若实为「未买」⇒ 登记 `_meta.dca_exemptions`（⛔ 豁免须有证据，不得用来掩盖「未查」）")
+        return 1
+    if fg:
+        # ⛔ 有字段待补时**不得**打「覆盖完整」—— 那是把「待补」美化成了「齐备」
+        print(f"  ⇒ 处置：为上述记录**补 `fund` 字段**（金额与协议一致即可判定）")
+        return 1
+    print("  ✅ 全部交易日 × 全部定投标的 **覆盖完整**")
+    return 0
+
+
 def main():
     if "--audit-gate" in sys.argv:
         i = sys.argv.index("--audit-gate")
@@ -408,9 +455,22 @@ def main():
                 return 3
         return print_gate_audit(y, m)
 
+    if "--audit-dca" in sys.argv:
+        i = sys.argv.index("--audit-dca")
+        y = m = None
+        if i + 1 < len(sys.argv) and "-" in sys.argv[i + 1]:
+            try:
+                yy, mm = sys.argv[i + 1].split("-")[:2]
+                y, m = int(yy), int(mm)
+            except ValueError:
+                print(f"⛔ --audit-dca 日期非法: {sys.argv[i + 1]}（应为 YYYY-MM）")
+                return 3
+        return print_dca_audit(y, m)
+
     if len(sys.argv) < 3:
         print("用法: python pre_trade_check.py <品种关键词> <拟买金额> [--loan]")
         print("      python pre_trade_check.py --audit-gate [YYYY-MM]   # 门禁留痕覆盖审计（#C1-25）")
+        print("      python pre_trade_check.py --audit-dca  [YYYY-MM]   # 定投落库覆盖审计（单159 #2）")
         return 2
 
     keyword = sys.argv[1]

@@ -1249,10 +1249,28 @@ _N_CONTRACT = _N_DESK / "AI-Collab" / "rule_contract.json"   # 与 paths 派生�
 
 
 def _n_portfolio(txns):
+    # 🔴 v4.5.47（2026-10-07）：**显式钉住额度期间**。
+    #    `pre_trade_check` 的额度/E4 闸门现在按**执行周期**判（`exec_ops_period`：提交日为
+    #    交易日取其本身，否则 `next_trading_day`），⛔ 不再等于 `update_date` 的数据周期。
+    #    本组夹具的交易都打在 2026-09，若不在假期/跨月日跑，门禁会去数**下个月**⇒ 读数全 0
+    #    （N16/N18/N19 在 2026-10-07 实测正是这么红的：E4 读出 ¥0.00 而非 −1,174）。
+    #    `_meta.ops_year/ops_month` 是 `current_ops_period` 的**最高优先级**，且
+    #    `exec_ops_period` 明文**不越过**它 ⇒ 钉住后本组**与运行日期彻底解耦**。
     _N_PORT.write_text(json.dumps(
         {"update_date": "2026-09-22", "update_time": "2026-09-22 15:05",
-         "total_assets": 48000, "transactions": txns, "holdings_summary": []},
+         "total_assets": 48000, "transactions": txns, "holdings_summary": [],
+         "_meta": {"ops_year": 2026, "ops_month": 9}},
         ensure_ascii=False), encoding="utf-8")
+    # 自证（反向断言）：钉住必须真的挡住执行日校正，否则本组仍是日历炸弹
+    import importlib
+    from datetime import date as _date
+    ptc = importlib.import_module("pre_trade_check")
+    _dy, _dm, _ = dp.current_ops_period(json.loads(_N_PORT.read_text(encoding="utf-8")))
+    _ey, _em, _note = ptc.exec_ops_period(_date.today(), _dy, _dm,
+                                          json.loads(_N_PORT.read_text(encoding="utf-8")))
+    assert (_ey, _em) == (2026, 9), (
+        f"❌ N 组夹具期间未被钉住：exec_ops_period 改成 {_ey}-{_em:02d}（note={_note}）"
+        f" ⇒ E4/额度将读到空月份，N16/N18/N19 的读数断言全部失去意义")
 
 
 def _n_contract(rules):

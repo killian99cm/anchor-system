@@ -283,6 +283,60 @@ def _arg_date(flag):
         return None
 
 
+def exec_ops_period(asof, ops_year, ops_month, data=None):
+    """🔴 **额度闸门的「执行周期」校正**（v4.5.47 · 2026-10-07）。
+
+    病灶：`current_ops_period(data)` 的兜底真源是 **`update_date`＝数据日期**，这对**月度归因**
+    是对的（历史操作按数据所属期归期），但对**交易前门禁**是错的 —— 门禁要回答的是
+    「**这一笔将消耗哪个月的额度**」，答案取决于**执行日**，不是档案里最后一天的数据日期。
+
+    实测触发路径（2026-10-07 23:2x，为 10/8 复市做预案）：档案 `update_date=2026-09-30`
+    ⇒ 门禁报「**9月 买入 6/2 · 卖出 3/2** ⇒ 买入维已满」并拦下**全部**买入；
+    而拟议的这笔在 **10/8** 执行、消耗的是 **10 月**额度（0/2）⇒ **假拦截**。
+    ⚠️ 长假后首个交易日的早盘**必然**踩中（档案要到当日收盘后才更新），
+    与 §4.5 节前闸门「**读提交时刻、⛔ 不读数据日期**」是同一条纪律的另一半。
+
+    校正口径＝**执行交易日**：`asof` 为交易日则取其本身，否则取 `next_trading_day(asof)`
+    （场外 15:00 后／非交易日提交按**次一交易日**净值成交 ⇒ 与 §4.5 同源）。
+
+    ⛔ 四条边界（方向＝**纠正归期**，不是放宽规则）：
+      ① 只在「执行周期**晚于**数据周期」时校正。反向（执行周期更早）＝时钟回拨／回测／
+         档案超前，**保留原判并打印告警**，⛔ 不静默改写。
+      ② `trading_calendar` 不可导入 ⇒ **fail-closed**：退回数据周期并**显式打印**，
+         ⛔ 不得按星期几心算（承 §4.5 判据源纪律）。
+      ③ ⛔ **不改 `current_ops_period` 本身** —— 归因与门禁语义不同，改它会污染月度归因。
+      ④ 🔴 **`_meta.ops_year/ops_month` 的显式覆盖优先级最高，本函数不越过它** ——
+         「显式钉住」是**人为声明的口径**（回测／跨月补记／测试夹具自对齐都靠它），
+         若被派生逻辑改写就失去意义。故 `data` 里存在该覆盖时**原样返回**。
+
+    返回 `(year, month, note)`；`note` 为 None 表示未校正且无覆盖。
+    """
+    meta = (data or {}).get("_meta") or {}
+    if meta.get("ops_year") is not None and meta.get("ops_month") is not None:
+        return (ops_year, ops_month,
+                f"ℹ️ 额度周期＝`_meta.ops_year/ops_month` **显式覆盖** {ops_year}-{ops_month:02d}"
+                f" ⇒ ⛔ 不做执行日校正（显式声明优先于派生）")
+    try:
+        import trading_calendar as tc
+        exec_day = asof if tc.is_trading_day(asof) else tc.next_trading_day(asof)
+    except Exception as exc:                                       # noqa: BLE001
+        return (ops_year, ops_month,
+                f"⚠️ 执行周期**未校正**：`trading_calendar` 不可导入（{type(exc).__name__}）"
+                f" ⇒ 日历无法实算 ⇒ fail-closed 退回数据周期 {ops_year}-{ops_month:02d}"
+                f"（⛔ 未按星期几心算）。若提交日已跨月，本项额度结论**可能偏严**。")
+    ey, em = exec_day.year, exec_day.month
+    if (ey, em) == (ops_year, ops_month):
+        return ops_year, ops_month, None
+    if (ey, em) < (ops_year, ops_month):
+        return (ops_year, ops_month,
+                f"⚠️ 执行周期 {ey}-{em:02d} **早于**数据周期 {ops_year}-{ops_month:02d}"
+                f"（时钟回拨／回测／档案超前）⇒ **不校正**，沿用数据周期（不静默改写）")
+    return (ey, em,
+            f"🔴 额度周期**已校正** {ops_year}-{ops_month:02d} → **{ey}-{em:02d}**"
+            f"：数据日期所属周期 ≠ 执行日所属周期（执行交易日 {exec_day}）。"
+            f"本笔在 {exec_day} 成交、消耗 **{em} 月**额度；数据周期仅作归因口径。")
+
+
 def audit_gate_trail(year: int, month: int, data=None, log_records=None) -> dict:
     """🔴 **门禁留痕覆盖审计**（裁决 #C1-25 · 2026-09-29）。
 
@@ -525,10 +579,18 @@ def main():
     #    🔴 修复前只判 `总数 >= 4`，存在**假阴性路径**：买入 3 笔 + 卖出 0 笔时报「3/4 可执行 1 笔」✅
     #       放行，而买入维早已超限。故本项对**买入**操作同时判「买入维」与「总数」。
     ops_year, ops_month, ops_label = current_ops_period(d)
+    # 🔴 执行周期校正（v4.5.47）：见 `exec_ops_period` 文档。数据周期 ≠ 执行周期时按**执行日**判额度，
+    #    并**强制打印两个周期**（承 §4.5「所用日期必须打印出来」的同一纪律），一旦被搞混当场可见。
+    _asof_q = _arg_date("--asof") or date.today()
+    _ops_year_data, _ops_month_data = ops_year, ops_month
+    ops_year, ops_month, _period_note = exec_ops_period(_asof_q, ops_year, ops_month, d)
+    ops_label = f"{ops_month}月"
     s = monthly_ops_summary(d, year=ops_year, month=ops_month)
     max_buys = int(th.get("monthly_buys_max", 2) or 2)
     ops_bits = f"买入 {s.buys}/{max_buys} · 卖出 {s.sells}/{s.max_sells} · 合计 {s.total}/{max_ops}"
     ops_head = f"（{ops_year}-{ops_month:02d}）"
+    if _period_note:
+        checks.append(("🔴 月操作额度·周期校正", _period_note))
     if s.buys >= max_buys:
         checks.append(("⛔ 月操作额度·买入维",
                        f"{ops_bits} —— 买入维已满{ops_head}，今日不可买入（**总数未满不构成豁免**）"))

@@ -58,19 +58,36 @@ def _fixture(n_buys: int) -> str:
         而档案停在 9/30），夹具的买入就落到了「下个月」，而代码仍在数上个月 ⇒ `买入 0/2`
         ⇒ **满额断言莫名其妙地失败**（报错信息里只看到 0/2，看不出是期间错配）。
         ⇒ 现改为**与代码同源**：按 `update_date` 的月份打日期，并**自证期间一致**。
+
+    🔴 **2026-10-07 再修（v4.5.47 · 额度闸门「执行周期校正」）**：
+        `pre_trade_check` 现在判的是**执行周期**（`exec_ops_period`：提交日为交易日取其本身，
+        否则取 `next_trading_day`），⛔ 不再是 `current_ops_period` 的数据周期 ——
+        因为门禁要回答「这一笔消耗**哪个月**的额度」。⇒ 上面那版「与 `current_ops_period` 同源」
+        的自证**已不足够**：假期中（今天 10/7、档案停在 9/30）夹具把买入打在 9 月，
+        而门禁去数 10 月 ⇒ 满额断言再次莫名失败，且**报错里只看到 0/2**。
+        ⇒ 改为**显式钉住** `_meta.ops_year/ops_month`（`current_ops_period` 的最高优先级，
+        且 `exec_ops_period` 明文**不越过**它）。这样夹具期间**与运行日期彻底解耦**，
+        无论哪天跑都稳定 —— 这才是根治，而不是再追一次「与代码同源」。
     """
     tmp = tempfile.mkdtemp(prefix="anchor_151_")
     src = json.load(io.open(paths.DATA_PATH, encoding="utf-8"))   # 只借结构，不借数据
-    # 🔴 期间必须与 `current_ops_period` 的判定同源（⛔ 不用 date.today()）
+    # 🔴 期间**显式钉住**：不读 date.today()、也不读 update_date（两者都会随运行日漂移）
     ym = str(src.get("update_date") or date.today().isoformat())[:7]
     _meta = src.setdefault("_meta", {})
-    if _meta.get("ops_year") and _meta.get("ops_month"):
-        ym = f"{int(_meta['ops_year']):04d}-{int(_meta['ops_month']):02d}"
+    _meta["ops_year"] = int(ym[:4])
+    _meta["ops_month"] = int(ym[5:7])
     # 自证：夹具期间 == 代码将解析出的期间（防再次漂移）
     _y, _m, _ = _probe_period(src)
     assert (int(ym[:4]), int(ym[5:7])) == (_y, _m), (
         f"❌ 夹具期间 {ym} 与 current_ops_period 解析出的 {_y}-{_m:02d} 不一致 —— "
         f"夹具日期必须与代码同源（⛔ 不得用 date.today()）")
+    # 🔴 自证 2（v4.5.47）：**钉住必须真的挡住执行日校正**，否则本夹具仍是日历炸弹
+    import importlib
+    ptc = importlib.import_module("pre_trade_check")
+    _ey, _em, _note = ptc.exec_ops_period(date.today(), _y, _m, src)
+    assert (_ey, _em) == (_y, _m), (
+        f"❌ `_meta.ops_year/ops_month` 未能钉住期间：exec_ops_period 把它改成了 {_ey}-{_em:02d}"
+        f" ⇒ 显式覆盖优先级被破坏（门禁将读到空月份，满额断言失去意义）。note={_note}")
     src["transactions"] = [
         {"date": f"{ym}-01", "op": "买入", "name": "创新药C", "amount": 100.0}
         for _ in range(n_buys)

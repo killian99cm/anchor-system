@@ -61,26 +61,49 @@ def main() -> int:
 
     # ---- T5 🔴 反向断言：改回旧写法（直接用 current_ops_period 的结果）即失败 ----
     # 证明本次校正**真的改变了额度闸门的结论**，而不是只多打一行字。
-    # 旧写法＝不校正 ⇒ 读 9 月（买入 6/2 已满 ⇒ ⛔ 拦截）；
+    # 旧写法＝不校正 ⇒ 读 9 月（买入 2/2 已满 ⇒ ⛔ 拦截）；
     # 新写法＝校正到 10 月（0/2 ⇒ ✅ 放行）。两者必须**结论相反**。
+    #
+    # 🔴 **2026-10-08 修正（我自己埋的日历炸弹 · 同族第 5 例）**：本组此前**读真实档案**并断言
+    #    「档案数据周期确为 2026-09 且买入维已满」。这在 2026-10-07 晚成立，但 10/8 真值入库后
+    #    档案 update_date 变成 2026-10-08、10 月买入 0/2 ⇒ 前置断言与主断言**双双转红**。
+    #    ⇒ 教训与我昨晚刚写进项目记忆的第 5 条**完全同型**：「夹具期间必须显式钉住，⛔ 不要追
+    #       『与被测代码同源』」—— 我写 T5 时恰恰又去追了真实档案的状态。
+    #    ⇒ 改为**自带合成夹具**（不读真实档案、不读时钟），断言与运行日期彻底解耦。
     import data_processor as dp
-    import paths
-    data = dp.load_data(paths.DATA_PATH) if hasattr(dp, "load_data") else None
-    if data is None:
-        import json
-        data = json.loads(paths.DATA_PATH.read_text(encoding="utf-8"))
-    dy, dm, _ = dp.current_ops_period(data)
-    s_old = dp.monthly_ops_summary(data, year=dy, month=dm)          # 旧写法：数据周期
-    ny, nm, _ = f(date(2026, 10, 8), dy, dm)
-    s_new = dp.monthly_ops_summary(data, year=ny, month=nm)          # 新写法：执行周期
-    check("T5 前置：档案数据周期确为 2026-09 且买入维已满（否则本用例失去意义）",
-          (dy, dm) == (2026, 9) and s_old.buys >= 2, f"实得 {(dy, dm)} buys={s_old.buys}")
+
+    def _fx(n_buys, ym):
+        """合成一份最小档案：把 n_buys 笔「买入」打在 ym（'YYYY-MM'）月内。"""
+        return {
+            "update_date": f"{ym}-28",
+            "update_time": f"{ym}-28 15:05",
+            "total_assets": 1000.0,
+            "holdings_summary": [],
+            "_meta": {},                      # ⛔ 故意**不**钉 ops_year/ops_month
+            "transactions": [
+                {"date": f"{ym}-0{i+1}", "op": "买入", "name": "创新药C", "amount": 100.0}
+                for i in range(n_buys)
+            ],
+        }
+
+    fx = _fx(2, "2026-09")                   # 数据周期＝9 月，且买入维**已满**（2/2）
+    dy, dm, _ = dp.current_ops_period(fx)
+    check("T5 前置：合成夹具的数据周期＝2026-09 且买入维已满（否则本用例失去意义）",
+          (dy, dm) == (2026, 9) and dp.monthly_ops_summary(fx, 2026, 9).buys >= 2,
+          f"实得 {(dy, dm)} buys={dp.monthly_ops_summary(fx, 2026, 9).buys}")
+    s_old = dp.monthly_ops_summary(fx, year=dy, month=dm)          # 旧写法：数据周期
+    ny, nm, _ = f(date(2026, 10, 8), dy, dm, fx)                   # 新写法：执行周期
+    s_new = dp.monthly_ops_summary(fx, year=ny, month=nm)
     check("T5 🔴 旧写法判「买入维已满」⛔ vs 新写法判「有余量」✅ —— 结论必须相反",
           s_old.buys >= 2 and s_new.buys < 2,
           f"9月 buys={s_old.buys} / 10月 buys={s_new.buys}")
     check("T5b 校正不得改动 `current_ops_period` 本身（月度归因口径不受污染）",
-          dp.current_ops_period(data) == (dy, dm, f"{dm}月"),
-          f"实得 {dp.current_ops_period(data)}")
+          dp.current_ops_period(fx) == (dy, dm, f"{dm}月"),
+          f"实得 {dp.current_ops_period(fx)}")
+    # 🔴 T5c：夹具必须真的**没有**钉住期间（否则 T5 测的是「钉住」而不是「校正」）
+    check("T5c 反向守卫：夹具未钉 ops_year/ops_month（否则 T5 退化为 T8 的重复）",
+          not fx["_meta"].get("ops_year") and ny == 2026 and nm == 10,
+          f"_meta={fx['_meta']} 校正结果={(ny, nm)}")
 
     # ---- T6 fail-closed：日历不可导入 ⇒ 退回数据周期 + 显式留痕 ----
     saved = sys.modules.get("trading_calendar", "__absent__")

@@ -74,15 +74,64 @@ def get_master_version():
     return None
 
 
+# 🔴 已核实的**合法跳号**（⛔ 不是「容许缺失」；每条须写明核实依据与日期）
+KNOWN_SKIPS = {
+    # v4.4.15：2026-10-09 核实 —— 该标题在**现行文件**与**近 25 个 commit 的历史版本**中
+    #          均搜不到（grep -c "^## v4.4.15" 全为 0）⇒ 系**从未启用该号**，非被吃掉。
+    "v4.4": [15],
+}
+
+
+def get_changelog_version_numbers():
+    """CHANGELOG 中所有 `## vX.Y.Z` 标题的版本号，按 (major, minor) 分组返回 patch 列表。
+
+    🔴 存在的理由（2026-10-09 建立 · 三次同类失误的机械防线）：
+       用 `Edit` 插入新版本条目时，若 `old_string` **含上一版标题前缀**
+       而 `new_string` 末尾**未补回**，就会**吃掉上一版标题**，只在文件里留下
+       标题的尾巴（以 `：` 或 ` ＋` 开头的一行）⇒ **该版本在 CHANGELOG 中彻底消失**，
+       而本器原有的「三处字符串比对」**完全看不出**（三处都不引用那个旧版本号）。
+       实测三次：**写 v4.5.47 吃掉 46／写 v4.5.48 吃掉 47／写 v4.5.50 吃掉 49**
+       （写 v4.5.49 那次吃掉的是 48，当场发现并补回）。
+       ⇒ 本条把「**同 major.minor 下的 patch 编号必须连续**」变成机械可验的硬门禁。
+    """
+    if not os.path.exists(CHANGELOG):
+        return {}
+    groups = {}
+    with open(CHANGELOG, encoding="utf-8") as f:
+        for line in f:
+            m = re.match(r"^## v(\d+)\.(\d+)\.(\d+)", line)
+            if m:
+                groups.setdefault((int(m.group(1)), int(m.group(2))), set()).add(int(m.group(3)))
+    return groups
+
+
 def main():
     cl = get_changelog_version()
     js = get_json_versions()
     cm = get_master_version()
 
+    # 🔴 编号连续性硬门禁（2026-10-09 新增）：同 major.minor 下 patch 不得跳号
+    gaps = {}
+    for (MAJ, MIN), patches in get_changelog_version_numbers().items():
+        lo, hi = min(patches), max(patches)
+        skip = set(KNOWN_SKIPS.get(f"v{MAJ}.{MIN}", []))
+        miss = [n for n in range(lo, hi + 1)
+                if n not in patches and n not in skip]
+        if miss:
+            gaps[f"v{MAJ}.{MIN}"] = miss
+
     print(f"CHANGELOG 最新: {cl}")
     for p, v in js.items():
         print(f"JSON {os.path.basename(os.path.dirname(p)) or '桌面'}: {v}")
     print(f"主版本文件: {cm}")
+    if gaps:
+        print("\n❌ CHANGELOG 版本编号**有缺口**（疑似标题被 Edit 吃掉）：")
+        for k, v in gaps.items():
+            print(f"  {k}: 缺 {v}")
+        print("  ⇒ 检查对应位置的**孤儿行**（以 '：' 或 ' ＋' 开头、脱离标题的残留），"
+              "把 '## vX.Y.Z — <日期>（<标题前言>' 前缀补回。")
+        print("  📌 成因与修法见 version_check.get_changelog_version_numbers 的 docstring。")
+        return 1
 
     refs = [cl] + list(js.values()) + [cm]
     # 8/31 审计修复：主版本文件缺失时按失败处理（原逻辑过滤 None → 仅比 2 处即宣称「三处一致」假阳性）

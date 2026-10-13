@@ -661,6 +661,30 @@ def board_history_meta_mx(date_str) -> dict | None:
     return meta.get(str(date_str))
 
 
+def board_history_day_partial(date_str) -> dict | None:
+    """取某日的 **push2 口径·部分抢救**板块快照（`days_push2_partial`，**非全量**）。
+
+    🔴 与 `days_mx` 的关键区别：**同指标族**（push2 `f3` 族）—— 值由
+       `ulist.np f3` 或 `push2his kline close 序列自算` 两种方式取得，
+       两者已在 2026-10-09 的 10 个重叠板块上实测**逐位吻合**（|Δ|=0.00pp）
+       ⇒ 读取侧**不施加容忍带**（容忍带只对 mx 口径生效）。
+    ⚠️ 但**非全量**（`days` 的不变量是全量）⇒ 找不到某板块时**不得**读成
+       「该板块不存在」（同 `days_mx` 约束②）。不存在返 `None`。
+    """
+    if not date_str:
+        return None
+    days = board_history_load().get("days_push2_partial") or {}
+    return days.get(str(date_str))
+
+
+def board_history_meta_partial(date_str) -> dict | None:
+    """取某日 push2 部分抢救快照的元信息（源／条数／口径校验）。不存在返 `None`。"""
+    if not date_str:
+        return None
+    meta = board_history_load().get("days_push2_partial_meta") or {}
+    return meta.get(str(date_str))
+
+
 def board_history_gaps(kline: list | None = None, upto: str | None = None) -> dict:
     """缓存缺口自检（v4.5.2）。
 
@@ -720,8 +744,9 @@ def board_history_gap_msg(gaps: dict) -> str:
     if miss:
         shown = "、".join(miss[:5]) + ("…" if len(miss) > 5 else "")
         return (f"🔴 缓存缺口：{shown}（共 {len(miss)} 个交易日未落盘）"
-                f"⇒ **这些日子之后的每个交易日，A2 分支② 的前日判据都判不了**"
-                f"（fail-closed，且**空洞无法回填** —— 东财只给当日板块）")
+                f"⇒ **这些日子之后的每个交易日，A2 分支② 的前日判据对缺口板块判不了**"
+                f"（fail-closed）；关键板块可经 `days_push2_partial` 抢救档判定"
+                f"（2026-10-13 实证：push2his 板块日K 可回填缺口日，口径与 f3 逐位吻合）")
 
     if not gaps.get("n_expected"):
         return (f"⏭ 缓存缺口核查：**无可核区间**（缓存自 {gaps.get('epoch')} 起、"

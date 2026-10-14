@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "strategy": "趋势跟踪版（取消阶梯止盈，改移动止损）",
+    "initial_cash": 100000.0
+  },
+  "summary": [
+    {
+      "total_return_pct": 4.06,
+      "annual_return_pct": 0.79,
+      "max_drawdown_pct": -26.38,
+      "sharpe": 0.13,
+      "symbol": "sz159995",
+      "symbol_name": "芯片ETF",
+      "strategy": "趋势跟踪(无止盈)",
+      "total_trades": 92,
+      "win_rate_pct": 39.1,
+      "buyhold_return_pct": 37.48,
+      "buyhold_mdd_pct": -58.45
+    },
+    {
+      "total_return_pct": 19.74,
+      "annual_return_pct": 3.64,
+      "max_drawdown_pct": -12.99,
+      "sharpe": 0.36,
+      "symbol": "sh512880",
+      "symbol_name": "证券ETF",
+      "strategy": "趋势跟踪(无止盈)",
+      "total_trades": 95,
+      "win_rate_pct": 34.7,
+      "buyhold_return_pct": -7.05,
+      "buyhold_mdd_pct": -40.28
+    },
+    {
+      "total_return_pct": -14.86,
+      "annual_return_pct": -3.15,
+      "max_drawdown_pct": -20.09,
+      "sharpe": -0.46,
+      "symbol": "sh515180",
+      "symbol_name": "红利ETF",
+      "strategy": "趋势跟踪(无止盈)",
+      "total_trades": 92,
+      "win_rate_pct": 35.9,
+      "buyhold_return_pct": 28.98,
+      "buyhold_mdd_pct": -22.15
+    },
+    {
+      "total_return_pct": 20.86,
+      "annual_return_pct": 3.84,
+      "max_drawdown_pct": -13.26,
+      "sharpe": 0.48,
+      "symbol": "sh518880",
+      "symbol_name": "黄金ETF",
+      "strategy": "趋势跟踪(无止盈)",
+      "total_trades": 82,
+      "win_rate_pct": 45.1,
+      "buyhold_return_pct": 137.62,
+      "buyhold_mdd_pct": -30.49
+    },
+    {
+      "total_return_pct": 25.95,
+      "annual_return_pct": 4.7,
+      "max_drawdown_pct": -16.03,
+      "sharpe": 0.58,
+      "symbol": "sh513100",
+      "symbol_name": "纳指ETF",
+      "strategy": "趋势跟踪(无止盈)",
+      "total_trades": 79,
+      "win_rate_pct": 45.6,
+      "buyhold_return_pct": 122.21,
+      "buyhold_mdd_pct": -27.52
+    }
+  ]
+}

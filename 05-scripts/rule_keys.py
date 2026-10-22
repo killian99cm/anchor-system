@@ -69,6 +69,14 @@ SCALAR_KEYS = {
         anchor_required=False, manual="§3 交易纪律（止损 -8%）",
         desc="单只止损线（%）"),
 
+    # v3.22 · 2026-10-22 用户裁决：卫星仓「-5% 预警减半」档（B6）
+    # 回测依据：7 笔亏损仓平均清仓 -15.29%，「-5%减半+-8%清剩余」仅 -6.5%（-57%）
+    "stop_loss_warn_pct": dict(
+        internal=None, builtin=-5.0, lo=-100, hi=-0.1, conv="const:-5.0",
+        patterns=[(r"浮亏达到\s*[-－]\s*5\s*%", False)],
+        anchor_required=False, manual="§2.2 B6 预警减半档（v3.22）",
+        desc="卫星仓预警减半线（%），-5% 触发减半仓"),
+
     "watch_break_line_pct": dict(
         internal=None, builtin=-15.0, lo=-100, hi=-0.1, conv="const:-15.0",
         patterns=[(r"浮亏\s*[≤≤<=]?\s*[-－]\s*15\s*%", False),

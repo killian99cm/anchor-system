@@ -70,15 +70,52 @@ def load_data():
     with open(DATA_PATH, encoding="utf-8") as f:
         return json.load(f)
 
-def latest_report(kind, keyword=""):
-    """找 04-reviews/<kind>/ 下最新含 keyword 的报告文件（相对 ANCHOR 的 Path）"""
+def latest_report(kind, keyword="", exclude=()):
+    """找 04-reviews/<kind>/ 下最新的报告文件（相对 ANCHOR 的 Path）。
+
+    排序依据 = 文件名里的日期，而非 mtime（mtime 会因文件拷贝/迁移而失真）。
+    支持三种日期格式：
+      ① YYYY-MM-DD / YYYYMMDD（daily/research/special 常规命名）
+      ② YYYYMM_Wn（weekly_report_202609_W3）
+      ③ YYYY年M月（月度归因_2026年9月）
+    支持 .md 与 .html 双格式；exclude 剔除干扰文件（快照/回填候选/draft 等）。
+    """
+    import re as _re
     d = ANCHOR / "04-reviews" / kind
     if not d.is_dir():
         return None
-    files = [p for p in d.glob("*.md") if (keyword in p.name or not keyword)]
-    if not files:
+    cands = []
+    for p in d.iterdir():
+        if p.suffix.lower() not in (".md", ".html"):
+            continue
+        if exclude and any(ex in p.name for ex in exclude):
+            continue
+        if keyword and keyword not in p.name:
+            continue
+        name = p.name
+        m = _re.search(r"(20\d{2})[-_]?(\d{2})[-_]?(\d{2})", name)  # ① 标准日期
+        if m:
+            sort_key = f"{m.group(1)}{m.group(2)}{m.group(3)}"
+        else:
+            mw = _re.search(r"(20\d{2})(\d{2})_W(\d)", name)  # ② 周报
+            if mw:
+                sort_key = f"{mw.group(1)}{mw.group(2)}{int(mw.group(3)):02d}"
+            else:
+                mm = _re.search(r"(20\d{2})年(\d{1,2})月", name)  # ③ 月报
+                if mm:
+                    sort_key = f"{mm.group(1)}{int(mm.group(2)):02d}"
+                else:
+                    sort_key = "0"
+        cands.append((sort_key, p))
+    if not cands:
         return None
-    return max(files, key=lambda p: p.stat().st_mtime)
+    cands.sort(key=lambda x: x[0], reverse=True)
+    return cands[0][1]
+
+
+def _report_type(path):
+    """报告文件类型标签：.html → HTML，其余 → MD"""
+    return "HTML" if path and path.suffix.lower() == ".html" else "MD"
 
 # ============ 数据片段构建 ============
 def _ratio_sub(rep):
@@ -151,67 +188,55 @@ def build_strips(processed):
     return "".join(rows)
 
 def build_signals(processed, data, rep):
-    """今日信号区（红绿灯）"""
-    slw = (data.get("stop_loss_watch") or {}).get("华夏半导体芯片ETF联接C", {})
+    """今日信号区（红绿灯）——数据驱动，已清仓标的输出灰卡而非虚假告警"""
     cards = []
 
-    def card(status, title, desc, link, link_txt, tone):
-        icon = {"🟢": "safe", "🟡": "watch", "🔴": "action", "⚪": "neutral"}.get(status, "watch")
-        cls = {"safe": "safe", "watch": "watch", "action": "action", "neutral": "neutral"}[icon]
+    def card(status, title, desc, link, link_txt, cls):
         return (f'<div class="signal {cls} reveal"><div class="signal-top"><span class="signal-status">{status}</span>'
                 f'<span class="signal-title">{esc(title)}</span><span class="spacer"></span><span class="signal-tag">{cls}</span></div>'
                 f'<div class="signal-desc">{esc(desc)}</div>'
                 f'<a class="signal-link" href="{link}">→ {esc(link_txt)}</a></div>')
 
-    # 半导体（09-01 修复：删除 8/25 陈旧"超大单+9.73亿"文案，改数据驱动）
-    if slw:
-        cur = slw.get("cur_pct", 0)
-        # 观察仓市值从持仓明细取（避免把 cur_pct 百分比误当金额）
-        semi_mv = next((h.get("mv") for h in data.get("holdings_summary", []) if "半导体" in (h.get("name") or "")), None)
-        mv_txt = f"¥{money(semi_mv, 0)}" if semi_mv is not None else "--"
-        semi_desc = (f"止损执行闭环完成；剩余观察仓约 {mv_txt}（浮亏 {pct_str(cur)}）。"
-                     f"DDX 连正≥2日前不动；跌破 B5 线（浮亏-15% 或破 MA20）→ 1 交易日内强制清仓")
-        cards.append(card("🟡", "半导体观察仓", semi_desc, "portfolio_analysis.html", "打开主看板", "watch"))
+    def holding_mv(name_kw):
+        return next((h.get("mv", 0) or 0 for h in data.get("holdings_summary", []) if name_kw in (h.get("name") or "")), 0)
+
+    # 1. 卫星进攻：机器人 ETF 买入监测（#C1-32 资金出口已批）
+    cards.append(card("🟡", "机器人ETF 买入监测",
+        "卫星进攻层 0%（有空间）· 资金出口 #C1-32 已批 ≤¥3,000。触发：人形机器人指数收盘 ≤1569 第一档 / ≤1502 第二档；当日涨幅 >3% 不买",
+        "portfolio_analysis.html", "打开主看板", "watch"))
+
+    # 2. 红利 515180 补仓（压舱石，收盘价数据驱动）
+    st = next((s for s in data.get("stock_holdings", []) if "515180" in (s.get("name") or "")), {})
+    st_px = st.get("price")
+    if st_px is not None:
+        trigger = 1.333
+        gap = float(st_px) - trigger
+        if gap <= 0:
+            cards.append(card("🟢", "红利 515180 补仓", f"收盘 {st_px} 已触发补仓线 {trigger}，次日 14:30 复核", "portfolio_analysis.html", "打开主看板", "safe"))
+        else:
+            cards.append(card("🟡", "红利 515180 补仓", f"收盘 {st_px}，距补仓线 {trigger} 还差 {gap:.3f}（约 {gap/trigger*100:.1f}%），未触发", "portfolio_analysis.html", "打开主看板", "watch"))
     else:
-        cards.append(card("🟢", "半导体", "无在途止损项", "portfolio_analysis.html", "打开主看板", "safe"))
+        cards.append(card("⚪", "红利 515180 补仓", "无行情数据", "portfolio_analysis.html", "打开主看板", "neutral"))
 
-    # 创新药（2026-09-23 inbox/143-B 完整落地：删除三处硬编码——
-    #   ① 无条件「🔴 新低」（值说反：cumul 改善时仍打「新低」）
-    #   ②「HSSCID 破位延续」（不由 portfolio_data.json 任何字段支撑）
-    #   ③「港股通纳入…事件窗口」（写死日期，早已过期）
-    #   ⛔ R3：严禁加仓的**理由必须与当日真实拦截项一致**；无数据支撑时明写「见当日报告」，
-    #      ⛔ 不编造理由（编造理由比没有理由更糟——本仓判例反复）。
-    #   📌 同一文件 09-01 已修过「硬编码→数据驱动」（半导体/时机A/月操作），本卡是补完。）
-    inno_h = next((h for h in data.get("holdings_summary", []) if "创新药" in (h.get("name") or "")), {})
-    inno_cumul = inno_h.get("cumul")
-    inno_extra = f" · 整仓累计 {signed(inno_cumul)}" if inno_cumul is not None else ""
-    _inno_ops = processed.get("ops_state", {}) or {}
-    _inno_why = (f"{_inno_ops.get('label', '本月')}额度已满"
-                 if _inno_ops.get("is_at_limit") else "原因见当日报告")
-    inno = (f"严禁加仓{inno_extra}（{_inno_why}）；"
-            f"时间止损 30 天窗口已开，明后日不收复 MA5 → 评估减半")
-    cards.append(card("🔴", "创新药 严禁加仓", inno, "portfolio_analysis.html", "打开主看板", "action"))
-
-    # 时机A（09-01 修复：文案数据驱动，删除"连2天"硬编码）
-    sh_close = ((processed.get("mkt", {}) or {}).get("sh", {}) or {}).get("close")
-    if sh_close is not None and float(sh_close) >= 3900:
-        cards.append(card("🟢", "时机A", f"上证 {sh_close} 站稳 3900 → 进攻层新子弹可用", "portfolio_analysis.html", "打开主看板", "safe"))
+    # 3. 黄金压舱石（浮亏但永不卖）
+    gold = next((h for h in data.get("holdings_summary", []) if "黄金" in (h.get("name") or "")), {})
+    gold_rate = gold.get("hold_rate")
+    if gold_rate is not None:
+        cards.append(card("🟡", "黄金压舱石", f"持有 {gold_rate}%（浮亏），压舱石「永不卖」，¥15/天定投摊薄成本", "portfolio_analysis.html", "打开主看板", "watch"))
     else:
-        cards.append(card("⚪", "时机A 待确认", f"上证需站上 3900 才触发；当前 {sh_close or '--'}", "portfolio_analysis.html", "打开主看板", "neutral"))
+        cards.append(card("⚪", "黄金压舱石", "无持仓数据", "portfolio_analysis.html", "打开主看板", "neutral"))
 
-    # 月操作 / 冻结（09-01 修复：月标签数据驱动，删除硬编码"8月"）
+    # 4. 月操作额度（数据驱动）
     ops = processed.get("ops_state", {}) or {}
     ops_txt = f"{ops.get('label', '本月')}操作 {ops.get('count', '--')}/{ops.get('max', '--')} 笔" + (" · 额度已满 · 禁止新买入" if ops.get("is_at_limit") else " · 可操作")
     cards.append(card("🟡", "月操作额度", ops_txt, "portfolio_analysis.html", "打开主看板", "watch"))
 
-    # 回撤
+    # 5. 回撤安全
     dd = processed.get("drawdown_state", {}) or {}
     dd_txt = f"回撤 {pct_str(dd.get('dd_pct'))}（安全区）· 距 -5% 线还余 ¥{money(dd.get('safe_cushion'))}"
     cards.append(card("🟢", "回撤安全", dd_txt, "portfolio_analysis.html", "打开主看板", "safe"))
 
-    # 决策日志（09-01 修复：删除硬编码"#22/#23（8/27）"，待复盘数动态）
-    # v4.4.16：pnl_ratio 为 None 不再是"暂无数据"，而是"该指标当前算不出"——
-    #          必须把原因（realized 样本不足）印出来，否则读者会把 "--" 当成待补数据。
+    # 6. 决策日志
     ratio = rep.get("pnl_ratio")
     ratio_ok = ratio is not None and float(ratio) >= 1.5
     if ratio is not None:
@@ -227,6 +252,7 @@ def build_signals(processed, data, rep):
     cards.append(card(status_icon, "决策日志", dec_txt, "decision_dashboard.html", "打开决策胜率仪表盘", "safe" if ratio_ok else "watch"))
 
     return "".join(cards)
+
 
 def build_dashes(rep):
     """实时仪表盘直达（4 张大卡）——09-01 修复：决策数从 rep 动态取，原硬编码"26 条"与 55 矛盾"""
@@ -249,6 +275,8 @@ def build_dashes(rep):
 # 09-23（inbox/143 收口）：9/1–9/15 条目均已过期（按 gen 过滤规则不再渲染），照 09-01 先例清除；
 #   ⛔ 新事件登记时**只写真实日期**（本列表即日期驱动，勿在卡片文案里另写死日期）。
 EVENTS = [
+    {"d": "2026-10-29", "t": "美联储 FOMC 利率决议（02:00）", "e": "维持 3.75-4.00% 概率 88-95%，12 月加息概率 80%+。主席沃什（非鲍威尔），无点阵图。偏鹰→压制科技+黄金；偏鸽→修复延续", "files": []},
+    {"d": "2026-10-29", "t": "美国 Q3 GDP + 9月 PCE（20:30）", "e": "第二定价窗口，比决议本身更影响 12 月加息路径", "files": []},
 ]
 
 def build_events():
@@ -272,12 +300,12 @@ def build_events():
     return "".join(out)
 
 def build_report_links():
-    """报告中心：今日报告 + 周期报告（自动找最新文件）"""
-    daily = latest_report("daily", "深度复盘")
-    research = latest_report("research")
-    gold = latest_report("special", "黄金走势深度分析")
+    """报告中心：今日报告 + 周期报告（自动找最新文件，日期前缀排序 + 双格式）"""
+    daily = latest_report("daily", "深度复盘", exclude=("daily_snapshot", "数据回填候选"))
+    research = latest_report("research", "盘中研究报告")
+    special = latest_report("special", exclude=("_draft",))
     weekly = latest_report("weekly")
-    monthly = latest_report("monthly", "8月")
+    monthly = latest_report("monthly", exclude=("_draft",))
 
     def link(label, path, typ):
         if not path:
@@ -288,15 +316,15 @@ def build_report_links():
 
     today_section = (
         '<div class="file-group"><h3>今日报告</h3>'
-        + link("深度复盘（今日）", daily, "MD")
-        + link("盘中研究报告（最新）", research, "MD")
-        + link("黄金走势专题", gold, "MD")
+        + link("深度复盘（最新）", daily, _report_type(daily))
+        + link("盘中研究报告（最新）", research, _report_type(research))
+        + link("专题研究（最新）", special, _report_type(special))
         + "</div>"
     )
     cycle_section = (
         '<div class="file-group"><h3>周期报告</h3>'
-        + link("周报（最新）", weekly, "MD")
-        + link("月度归因（8月）", monthly, "MD")
+        + link("周报（最新）", weekly, _report_type(weekly))
+        + link("月度归因（最新）", monthly, _report_type(monthly))
         + "</div>"
     )
     return today_section + cycle_section
@@ -330,7 +358,8 @@ def build_tools():
     tools = [
         ("会话检查点", "00-system/会话检查点.md", "每次对话开始先读", "MD"),
         ("数据更新协议", "00-system/数据更新协议.md", "所有更新频率与步骤", "MD"),
-        ("股票交易规则 v1.0", "01-rules/股票交易规则_v1.0.md", "股票 515180 专属规则", "MD"),
+        ("规则生效期登记表", "01-rules/规则生效期登记表.md", "规则生命周期 + 裁决跟踪", "MD"),
+        ("宏观事件应对预案", "01-rules/宏观事件应对预案_v1.0.md", "宏观事件处置预案", "MD"),
         ("月度归因八步清单", "00-system/月度归因八步清单.md", "8/31 归因流程", "MD"),
         ("噪声审计框架", "00-system/噪声审计框架.md", "信号质量审计", "MD"),
         ("公开页", "08-website/anchor-pro.html", "体系介绍 / 展示页", "HTML"),
@@ -351,7 +380,7 @@ def build_commands():
         ("出报告", "14:30→操作建议 / 21:30→收盘复盘", "📝"),
         ("复盘报告", "21:30 收盘复盘（含噪声审计快照）", "📊"),
         ("仓位点检", "四层占比检查 + 红灯扫描", "🔍"),
-        ("止损倒计时", "半导体硬Deadline 剩余天数", "⏱️"),
+        ("买入监测", "机器人ETF / 红利补仓 触发线监测", "⏱️"),
         ("月度归因", "完整月度收益拆解", "📈"),
     ]
     return "".join(

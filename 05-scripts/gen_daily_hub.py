@@ -200,10 +200,11 @@ def build_signals(processed, data, rep):
     def holding_mv(name_kw):
         return next((h.get("mv", 0) or 0 for h in data.get("holdings_summary", []) if name_kw in (h.get("name") or "")), 0)
 
-    # 1. 卫星进攻：机器人 ETF 买入监测（#C1-32 资金出口已批）
-    cards.append(card("🟡", "机器人ETF 买入监测",
-        "卫星进攻层 0%（有空间）· 资金出口 #C1-32 已批 ≤¥3,000。触发：人形机器人指数收盘 ≤1569 第一档 / ≤1502 第二档；当日涨幅 >3% 不买",
-        "portfolio_analysis.html", "打开主看板", "watch"))
+    # 1. 卫星进攻：机器人双档线已撤销（#C1-33 · F6），11 月重设前不输出触发信号
+    cards.append(card("⚪", "机器人ETF 触发线已撤销",
+        "1569/1502 双档线 10-30 按 F6 撤销（评分卡估值锚长期不可达＋334第二笔与A2互斥）。卫星层 0%，"
+        "资金出口 #C1-32 ≤¥3,000 仍有效但已无生效触发线 ⇒ 暂停执行，新线 11 月重设（提案 #33/#34 待裁决）",
+        "portfolio_analysis.html", "打开主看板", "neutral"))
 
     # 2. 红利 515180 补仓（压舱石，收盘价数据驱动）
     st = next((s for s in data.get("stock_holdings", []) if "515180" in (s.get("name") or "")), {})
@@ -380,7 +381,7 @@ def build_commands():
         ("出报告", "14:30→操作建议 / 21:30→收盘复盘", "📝"),
         ("复盘报告", "21:30 收盘复盘（含噪声审计快照）", "📊"),
         ("仓位点检", "四层占比检查 + 红灯扫描", "🔍"),
-        ("买入监测", "机器人ETF / 红利补仓 触发线监测", "⏱️"),
+        ("买入监测", "红利补仓 1.333 触发线（机器人线已撤销，11 月重设）", "⏱️"),
         ("月度归因", "完整月度收益拆解", "📈"),
     ]
     return "".join(

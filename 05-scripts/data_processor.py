@@ -166,6 +166,21 @@ def net_outflow_total(data):
     return safe_float(data.get('_meta', {}).get('net_outflow_total', 0), 0)
 
 
+def drawdown_unreconciled(data):
+    """Return the unreconciled drawdown ledger dict, or None.
+
+    v4.5.55（2026-10-30）：本金流水存在未登记者时，net_outflow_total 本身不可信，
+    回撤只能给区间、不能给单值。此函数探测 _meta 下任一 drawdown_ledger_*
+    是否带 status='UNRECONCILED'。命中时调用方须把回撤降级为「口径未闭合」，
+    ⛔ 不得据此触发 §4.1 减仓（F5：禁止用估算值触发操作）。
+    """
+    meta = data.get('_meta', {}) or {}
+    for k, v in meta.items():
+        if k.startswith('drawdown_ledger_') and isinstance(v, dict) and v.get('status') == 'UNRECONCILED':
+            return v
+    return None
+
+
 def drawdown_status(total, peak):
     """Return explicit drawdown status with signed precedence."""
     if peak <= 0:
@@ -205,7 +220,15 @@ def compute_drawdown_state(data, totals):
     liabilities = liabilities_in_cash(data)
     outflow = net_outflow_total(data)
     net_assets = total_assets - liabilities + outflow
+    # 🔧 2026-10-30：悬空账下回撤不可作单值判据，先取账本状态再算
+    _unrec = drawdown_unreconciled(data)
     status = drawdown_status(net_assets, peak)
+    if _unrec and status['level'] in ('amber', 'red'):
+        # 降级：数值照算照展示，但动作改为「待核销」，且不得据此减仓
+        status = dict(status)
+        status['raw_action'] = status['action']
+        status['action'] = '口径未闭合，暂不执行减仓（F5）'
+        status['level'] = 'amber'
     triggered_line = status['line']
     if status['level'] == 'safe' and status['dd_pct'] >= 0:
         triggered_line = None
@@ -222,6 +245,8 @@ def compute_drawdown_state(data, totals):
         'lines': status['lines'],
         'triggered_line': triggered_line,
         'action': status['action'],
+        'unreconciled': bool(_unrec),
+        'unreconciled_detail': _unrec,
     }
 
 
@@ -1249,7 +1274,19 @@ def generate_rules(sat_holdings, data, mkt, totals, drawdown_state=None, ops_sta
     dd_pct = drawdown_state['dd_pct']
     safe_cushion = drawdown_state['safe_cushion']
 
-    if dd_pct <= -15:
+    if drawdown_state.get('unreconciled'):
+        # 🔧 2026-10-30：账本悬空 ⇒ 回撤只报区间，不报动作（F5 ＋ 10/08、10/22 先例）
+        _led = drawdown_state.get('unreconciled_detail') or {}
+        _sc = _led.get('scenarios') or []
+        _rng = " ／ ".join("%s %.2f%%" % (s.get('scenario', ''), s.get('drawdown_pct', 0)) for s in _sc)
+        _gap = (_led.get('correction_record') or {}).get('note', '')
+        rules.append({"lv": "rr", "t": (
+            f"🔴 回撤口径未闭合，判定不可用：已登记口径 {dd_pct:.1f}%（悲观上界）"
+            + ("｜" + _rng if _rng else "")
+            + "。账面悬空未核销前 ⛔ 不得据此触发 §4.1 减仓（F5）。"
+            + " 须先核销余额宝未登记本金流出。"
+        )})
+    elif dd_pct <= -15:
         rules.append({"lv": "rr", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -15% 线！核心增长减 1/3"})
     elif dd_pct <= -10:
         rules.append({"lv": "rr", "t": f"总资产回撤 {dd_pct:.1f}% 触发 -10% 线！卫星全部清仓"})

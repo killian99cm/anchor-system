@@ -1235,8 +1235,13 @@ def generate_rules(sat_holdings, data, mkt, totals, drawdown_state=None, ops_sta
     rules.append({"lv": premium_lv, "t": premium_t})
 
     # 创新药时间止损（截止日从数据解析，剩余天数钳制为 0）
-    remaining = time_stop_remaining(data)
-    rules.append({"lv": "ra", "t": f"创新药时间止损倒计时：按数据日剩{remaining}天（截止日见规则手册）"})
+    # 🔧 2026-10-30 修复：原为无条件追加，导致 10/16 已清仓后仍每日报「倒计时剩 0 天」的僵尸告警。
+    #    现改为仅在创新药持仓市值 > 0 时才提示。
+    _cx = next((h for h in data.get('holdings_summary', [])
+                if '创新药' in str(h.get('name', ''))), None)
+    if _cx and float(_cx.get('mv') or 0) > 0:
+        remaining = time_stop_remaining(data)
+        rules.append({"lv": "ra", "t": f"创新药时间止损倒计时：按数据日剩{remaining}天（截止日见规则手册）"})
 
     # 回撤
     if drawdown_state is None:

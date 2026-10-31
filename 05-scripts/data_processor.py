@@ -148,8 +148,58 @@ def liabilities_in_cash(data):
     净值口径：自有净值 = total_assets - liabilities.in_cash。
     贷款到账后未转出部分混在余额宝，会虚增回撤基准对照的总资产。
     v3.5.5：回撤/安全垫按净值计算，避免贷款残留虚高安全垫。
+
+    ⛔ 本函数**只用于 L2/L3**（从 total_assets 里剔除虚增的借款）。
+    L1 总财富必须用 liabilities_total()，见其 docstring。
     """
     return safe_float(data.get('_meta', {}).get('liabilities', {}).get('in_cash', 0), 0)
+
+
+def liabilities_total(data):
+    """Return the **outstanding** loan balance (未偿还余额 = 本金 − 已还)。
+
+    🔴 2026-10-31 修正（#C1-52）：L1 原来用 liabilities_in_cash 扣减，是错的。
+      - in_cash 只表示「借款中**仍留在账户内**的部分」（7,023.77），
+        它用于从 total_assets 里剔除虚增，服务于 L2/L3；
+      - 但**已经转出账户的借款仍然要还**。L1 回答「我实际有多少钱」，
+        必须扣**未偿还余额**，否则等于把「借来又花掉的钱」当成自己的净资产。
+
+    字段语义（2026-10-31 14:42 定案）：
+      liabilities.principal  = 30,000   贷款本金
+      liabilities.repaid     = 10,000   已还
+      liabilities.total      = 20,000   **未偿还余额** ← 本函数读这个
+      liabilities.in_cash    = 7,023.77 借款中仍在余额宝的部分
+
+    修正前 L1 = total_assets − in_cash + card = 43,032.37（漏扣已花掉的借款）
+    修正后 L1 = total_assets − total + card + offbook = 63,896.95（含账外）
+    """
+    lb = (data.get('_meta', {}) or {}).get('liabilities', {}) or {}
+    total = safe_float(lb.get('total'), 0)
+    if total <= 0:
+        principal = safe_float(lb.get('principal'), 0)
+        repaid = safe_float(lb.get('repaid'), 0)
+        total = max(principal - repaid, 0) or liabilities_in_cash(data)
+    return total
+
+
+def offbook_assets_total(data):
+    """Return 账外资产合计（货币基金/券商现金理财等不在 App 内的自有资产）。
+
+    ⛔ 只进 L1，⛔ 不进 L2/L3/回撤分母（手册 §8.10 · #C1-49）。
+    并入回撤分母会让收益率被人为稀释、回撤被人为改善 —— F8① 禁止情形。
+    """
+    meta = data.get('_meta', {}) or {}
+    for key in meta:
+        if isinstance(key, str) and key.startswith('offbook_assets'):
+            v = meta[key]
+            if not isinstance(v, dict):
+                continue
+            tot = v.get('total')
+            if tot is not None:
+                return safe_float(tot, 0)
+            items = v.get('items') or []
+            return sum(safe_float(i.get('value_used'), 0) for i in items if isinstance(i, dict))
+    return 0.0
 
 
 def net_outflow_total(data):
@@ -234,21 +284,29 @@ def capital_anchor(data):
 def compute_capital_calibers(data, totals):
     """v3.25 §8.1 三口径 ＋ §8.2 亏损与流出分列（#C1-38 / #C1-39 / F10）。
 
-    L1 总财富   = total_assets − in_cash + bank_card   （我有什么）
-    L2 投资本金 = total_assets − in_cash               （我投了多少）
-    L3 投资净值 = L2 + net_outflow_total               （我做得怎么样 / 回撤分母）
+    L1 总财富   = total_assets − liabilities.total + 卡内 + 账外   （我有什么）
+    L2 投资本金 = total_assets − liabilities.in_cash                 （我投了多少）
+    L3 投资净值 = L2 + net_outflow_total                             （我做得怎么样 / 回撤分母）
 
     ⛔ 三者不得混算。2026-10-30 的「+3.755% 净值创新高」就是把 L3 的旧基数
        与 L1 的新增项串算，虚增净值 8,278.99，方向都反了 ⇒ F10 由此立。
+
+    🔴 2026-10-31 修正（#C1-52）：L1 原先写成 L2 + card，即只扣 in_cash，
+       把「借来又转出花掉的钱」当成了自己的净资产 ⇒ 虚高 15,976.23。
+       L1 必须扣 liabilities.total（全部未还），L2/L3 仍用 in_cash（只剔虚增）。
+       账外资产只进 L1，不进 L2/L3（§8.10 · #C1-49）。
     """
     total_assets = safe_float(totals.get('total'), 0)
-    liabilities = liabilities_in_cash(data)
+    liab_cash = liabilities_in_cash(data)
+    liab_total = liabilities_total(data)
+    offbook = offbook_assets_total(data)
     outflow = net_outflow_total(data)
     card, card_key = bank_card_balance(data)
 
-    L2 = total_assets - liabilities
+    L2 = total_assets - liab_cash
     L3 = L2 + outflow
-    L1 = L2 + card
+    L1 = total_assets - liab_total + card + offbook
+    debt_off_acct = round(liab_total - liab_cash, 2) if liab_total > liab_cash else 0.0
 
     anchor_key, anchor_nw = capital_anchor(data)
     split = None
@@ -276,7 +334,10 @@ def compute_capital_calibers(data, totals):
         'L3_invest_net_worth': round(L3, 2),
         'bank_card_reserve': round(card, 2),
         'bank_card_key': card_key,
-        'liabilities_in_cash': round(liabilities, 2),
+        'offbook_assets': round(offbook, 2),
+        'liabilities_in_cash': round(liab_cash, 2),
+        'liabilities_total': round(liab_total, 2),
+        'debt_off_account': debt_off_acct,
         'net_outflow_total': round(outflow, 2),
         'total_assets': round(total_assets, 2),
         'pnl_split': split,

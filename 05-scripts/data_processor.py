@@ -203,6 +203,138 @@ def drawdown_status(total, peak):
     return {"level": "safe", "line": None, "dd_pct": dd_pct, "action": None, "cushion": cushion, "lines": lines}
 
 
+def bank_card_balance(data):
+    """Return (amount, meta_key) of the latest bank-card reserve (v3.25 #C1-44).
+
+    卡内备用金属 App 外资产：恒定属于 L1 总财富，恒定不属于 L2/L3。
+    ⛔ 不得计入 total_assets，也不得计入投资本金池（手册 §8.7）。
+    """
+    meta = data.get('_meta', {}) or {}
+    best_key, best_val = '', 0.0
+    for k, v in meta.items():
+        if k.startswith('bank_card_') and isinstance(v, dict):
+            if k > best_key:
+                best_key = k
+                best_val = safe_float(v.get('balance'), 0)
+    return best_val, best_key
+
+
+def capital_anchor(data):
+    """Return (date_key, net_worth) of the latest app_truth_* monthly anchor."""
+    meta = data.get('_meta', {}) or {}
+    best_key, best_val = '', None
+    for k, v in meta.items():
+        if k.startswith('app_truth_') and isinstance(v, dict):
+            nw = v.get('net_worth')
+            if nw is not None and k > best_key:
+                best_key, best_val = k, safe_float(nw, 0)
+    return best_key, best_val
+
+
+def compute_capital_calibers(data, totals):
+    """v3.25 §8.1 三口径 ＋ §8.2 亏损与流出分列（#C1-38 / #C1-39 / F10）。
+
+    L1 总财富   = total_assets − in_cash + bank_card   （我有什么）
+    L2 投资本金 = total_assets − in_cash               （我投了多少）
+    L3 投资净值 = L2 + net_outflow_total               （我做得怎么样 / 回撤分母）
+
+    ⛔ 三者不得混算。2026-10-30 的「+3.755% 净值创新高」就是把 L3 的旧基数
+       与 L1 的新增项串算，虚增净值 8,278.99，方向都反了 ⇒ F10 由此立。
+    """
+    total_assets = safe_float(totals.get('total'), 0)
+    liabilities = liabilities_in_cash(data)
+    outflow = net_outflow_total(data)
+    card, card_key = bank_card_balance(data)
+
+    L2 = total_assets - liabilities
+    L3 = L2 + outflow
+    L1 = L2 + card
+
+    anchor_key, anchor_nw = capital_anchor(data)
+    split = None
+    if anchor_nw is not None:
+        total_delta = total_assets - safe_float(
+            (data.get('_meta', {}) or {}).get(anchor_key, {}).get('total_assets'), 0)
+        invest_pnl = L3 - anchor_nw
+        net_flow = total_delta - invest_pnl
+        check = abs(total_delta - (invest_pnl + net_flow))
+        split = {
+            'anchor': anchor_key,
+            'anchor_net_worth': round(anchor_nw, 2),
+            'total_assets_delta': round(total_delta, 2),
+            'invest_pnl': round(invest_pnl, 2),
+            'net_capital_flow': round(net_flow, 2),
+            'check_residual': round(check, 2),
+            'check_ok': check <= 1.0,
+            'formula': '总资产变化 = 投资损益 + 净本金流出',
+            'note': ('✅ 校验通过' if check <= 1.0 else '⚠️ 校验残差 %.2f > ¥1，先查账再出结论' % check),
+        }
+
+    return {
+        'L1_total_wealth': round(L1, 2),
+        'L2_invest_principal': round(L2, 2),
+        'L3_invest_net_worth': round(L3, 2),
+        'bank_card_reserve': round(card, 2),
+        'bank_card_key': card_key,
+        'liabilities_in_cash': round(liabilities, 2),
+        'net_outflow_total': round(outflow, 2),
+        'total_assets': round(total_assets, 2),
+        'pnl_split': split,
+        'caliber_map': {
+            '我有多少钱': 'L1_total_wealth',
+            '我投了多少': 'L2_invest_principal',
+            '回撤 / 投资能力': 'L3_invest_net_worth',
+            '仓位占比分母': 'L2_invest_principal',
+        },
+        'rule_ref': '#C1-38 §8.1 / #C1-39 §8.2 / F10',
+        'warning': (
+            '⛔ L3 是反事实值（假设转出与消费从未发生）。L3 高于 L2 的差额即已离开账户的钱，'
+            '⛔ 不得用「回撤小」证明「账户没问题」——分母缩水会让收益率虚高。'
+        ),
+    }
+
+
+def layer_risk_substitute(drawdown_state, totals, total):
+    """v3.25 §8.6 · #C1-43：§4.1 梯子作用层为空时的替代动作。
+
+    原梯子 −5%「卫星减半」、−10%「卫星全清」全作用于卫星层；
+    2026-10-30 实测卫星 0% ⇒ 两级同时空转，回撤 0→−15% 全程无任何减持。
+    改为四重禁止。✅ 只加严不放宽（F8①），⛔ 不改任何 X 级数字。
+    """
+    sat_mv = safe_float(totals.get('sat_mv'), 0)
+    sat_pct = (sat_mv / total * 100) if total else 0.0
+    level = drawdown_state.get('dd_level')
+    line = drawdown_state.get('triggered_line')
+
+    active = sat_pct < 0.05 and level in ('amber', 'red')
+    actions = [
+        '① 禁止新开仓（含卫星层首次建仓）',
+        '② 现金层不得动用（余额宝自有部分冻结，仅保留 E3 定投白名单）',
+        '③ 卫星层不得重建（即使触发线达成也不执行）',
+        '④ 该状态在回撤修复前持续有效，不因单日反弹解除',
+    ] if active else []
+
+    if active:
+        note = ('卫星层 %.2f%% 为空 ⇒ §4.1「%s」级原动作无对象，已切换为四重禁止'
+                % (sat_pct, line or '回撤'))
+    elif sat_pct < 0.05:
+        note = ('卫星层为 %.2f%% 空仓，但回撤未触线（%s）⇒ 梯子尚未空转；'
+                '一旦触线将自动切换为四重禁止（#C1-43）' % (sat_pct, level))
+    else:
+        note = ('卫星层非空（%.2f%%）⇒ §4.1 原梯子正常生效（当前回撤 %s）'
+                % (sat_pct, level))
+
+    return {
+        'active': active,
+        'sat_pct': round(sat_pct, 2),
+        'dd_level': level,
+        'triggered_line': line,
+        'substitute_actions': actions,
+        'rule_ref': '#C1-43 / 手册 §8.6',
+        'note': note,
+    }
+
+
 def compute_drawdown_state(data, totals):
     """Return normalized drawdown state using portfolio data.
 
@@ -239,6 +371,10 @@ def compute_drawdown_state(data, totals):
         'net_assets': round(net_assets, 2),
         'liabilities_in_cash': round(liabilities, 2),
         'net_outflow_total': round(outflow, 2),
+        # v3.25 §8.1 三口径别名：回撤分母恒为 L3；L2 供仓位占比使用
+        'L3_invest_net_worth': round(net_assets, 2),
+        'L2_invest_principal': round(total_assets - liabilities, 2),
+        'caliber': 'L3_invest_net_worth（#C1-38 §8.1）',
         'dd_pct': round(status['dd_pct'], 1),
         'dd_level': status['level'],
         'safe_cushion': round(status['cushion'], 2),
@@ -1666,6 +1802,18 @@ def process_all(data):
     opportunity_scores = compute_opportunity_scores(data, ops_state, risk_state, freeze_state, totals)
     clock_state = compute_clock_state(data)
     factor_clusters = compute_factor_clusters(data, totals)
+    # v3.25：三口径（#C1-38/#C1-39）+ §4.1 空转替代（#C1-43）
+    capital_calibers = compute_capital_calibers(data, totals)
+    risk_substitute = layer_risk_substitute(drawdown_state, totals, totals['total'])
+    if risk_substitute['active']:
+        rules.append({"lv": "rr", "t": (
+            "🔴 §4.1「%s」级原动作无对象（卫星 0%%）⇒ 已切换四重禁止（#C1-43）："
+            "禁新开仓／现金层不得动用／卫星不得重建／修复前持续。"
+        ) % (risk_substitute['triggered_line'] or '回撤')})
+    if capital_calibers.get('pnl_split') and not capital_calibers['pnl_split']['check_ok']:
+        rules.append({"lv": "ra", "t": (
+            "⚠️ 亏损/流出分列校验残差 ¥%s > ¥1 ⇒ 账未对平，收益结论暂不可用（#C1-39）。"
+        ) % capital_calibers['pnl_split']['check_residual']})
     portfolio_state = derive_portfolio_state(
         totals['total'], totals['cash_mv'], drawdown_state['dd_pct'], mkt_note,
         ops_state['count'], ops_state['max'], ops_state['violations']
@@ -1719,6 +1867,8 @@ def process_all(data):
         "ds": ds_out,
         "chart": chart_out,
         "drawdown_state": drawdown_state,
+        "capital_calibers": capital_calibers,
+        "risk_substitute": risk_substitute,
         "ops_state": ops_state,
         "risk_state": risk_state,
         "freeze_state": freeze_state,

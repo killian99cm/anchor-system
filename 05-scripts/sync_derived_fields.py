@@ -97,13 +97,25 @@ def run(check_only: bool = False, path=None) -> int:
         return 0
 
     if before != after:
+        # 🔴 必须走 safe_write 门禁（#C1-57 / A9.4）：本模块的「正常写入」若绕过门禁，
+        #    每天同步一次就会把 A9.2 推红一次，最后一定演变成关掉断言。
+        from safe_write import commit, AuditRejected
+
+        def _apply(d):
+            compute(d)          # 原地重算；⛔ 不要 return compute 的 dict，那会整个替换数据
+            return None
+
+        # 生产路径必须全量审计；非生产路径（测试 fixture）只跑门禁组 ——
+        # 合成的迷你数据跑三口径/台账断言毫无意义，硬跑只会逼人加「跳过审计」的开关。
+        is_prod = os.path.abspath(str(p)) == os.path.abspath(str(paths.DATA_PATH))
         try:
-            tmp = str(p) + ".tmp-derived"
-            with open(tmp, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-            json.load(open(tmp, encoding="utf-8"))  # 写后回读：解析不了就不换（防截断写）
-            os.replace(tmp, p)
-            print(f"  💾 已写回 {p}")
+            commit(_apply, tag="sync_derived", verbose=False, data_path=p,
+                   audit_scope="full" if is_prod else "gate",
+                   reason="sync_derived_fields 派生字段归一（total_hold_pnl_est 按定义式重算）")
+            print(f"  💾 已写回 {p}（经 safe_write 门禁）")
+        except AuditRejected as e:
+            print(f"🔴 [{now_str()}] 门禁拒绝写入（原文件未改）：\n{e}")
+            return 1
         except Exception as e:
             print(f"🔴 [{now_str()}] 写回失败（原文件未改）: {e}")
             return 1

@@ -48,7 +48,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import paths
-from ledger_audit import run_audit
+from ledger_audit import run_audit, content_hash, Audit
 
 DATA_PATH = paths.DATA_PATH
 
@@ -69,18 +69,30 @@ def _backup(path, tag):
     return dst
 
 
-def commit(mutate, reason="", allow_fail=False, tag="safewrite", verbose=True, data_path=None):
+def commit(mutate, reason="", allow_fail=False, tag="safewrite", verbose=True,
+           data_path=None, audit_scope="full"):
     """对 portfolio_data.json 做一次受审计的修改。
 
     mutate: callable(data) -> None（原地修改）；也可返回新 dict
     reason: 变更原因，会写进 _meta.write_log，必填（空则拒绝）
     allow_fail: 已知本次修改会先造成 FAIL（如修的就是审计报错字段）时置 True
     data_path: 仅测试时指定，生产一律走全局 DATA_PATH
+    audit_scope: "full"（默认，全量）｜"gate"（只跑 G9 门禁组）｜"none"
+        ⚠️ 只有**非生产路径**才允许降级。生产文件必须全量 —— 否则「加个参数就能
+           跳过审计」，等于把门禁又变回一条建议。下面会显式拒绝这种调用。
     """
     if not reason or not str(reason).strip():
         raise ValueError("commit() 必须给出 reason —— 无理由的写入不允许发生")
+    if audit_scope not in ("full", "gate", "none"):
+        raise ValueError(f"未知 audit_scope={audit_scope!r}，只允许 full / gate / none")
 
     target = Path(data_path or DATA_PATH)
+    if audit_scope != "full" and Path(target).resolve() == Path(DATA_PATH).resolve():
+        raise ValueError(
+            "生产文件的写入必须走全量审计 —— audit_scope 只允许用于非生产路径。"
+            "（允许降级 = 允许关掉审计 = 门禁重新变成一条建议）"
+        )
+
     with open(target, encoding="utf-8") as f:
         original = json.load(f)
 
@@ -91,11 +103,19 @@ def commit(mutate, reason="", allow_fail=False, tag="safewrite", verbose=True, d
 
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log = data.setdefault("_meta", {}).setdefault("write_log", [])
-    log.append({"at": ts, "reason": str(reason), "via": tag,
-                "allow_fail": bool(allow_fail)})
+    rec = {"at": ts, "reason": str(reason), "via": tag,
+           "allow_fail": bool(allow_fail)}
+    log.append(rec)
     data["_meta"]["write_log"] = log[-200:]          # 只留最近 200 条
+    # 内容指纹：写入后立即记下，供 ledger_audit A9.2 判断「后续有没有人绕过门禁改数据」
+    rec["data_sha256"] = content_hash(data)
 
-    aud = run_audit(data)
+    if audit_scope == "full":
+        aud = run_audit(data)
+    elif audit_scope == "gate":
+        aud = run_audit(data, groups={"G9"})
+    else:
+        aud = Audit()
     fails = aud.failed
     if fails and not allow_fail:
         raise AuditRejected(fails)

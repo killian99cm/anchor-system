@@ -290,11 +290,8 @@ def render_month(month, files, as_json=False, write_meta=False):
             print("      ⛔ 这类文件会被「找到」并骗过检索，比没有文件更危险，须清理或重生成")
 
     if write_meta:
-        p = paths.DATA_PATH
-        with open(p, encoding="utf-8") as f:
-            data = json.load(f)
         key = f"evidence_index_{month.replace('-', '')}"
-        data.setdefault("_meta", {})[key] = {
+        payload = {
             "generated_at": date.today().isoformat(),
             "month": month,
             "scanned_files": len(files),
@@ -310,9 +307,21 @@ def render_month(month, files, as_json=False, write_meta=False):
             "time_reversed_count": sum(1 for _d, h in shells if h.get("time_reversed")),
             "method": "多模式全扫（文件名 ISO/紧凑/短月日 + 内容前 6000 字），非单一命名模式（#C1-55）",
         }
-        with open(p, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"\n  ✅ 已写入 _meta.{key}")
+        # 🔴 必须走 safe_write 门禁（#C1-57 / A9.4）：直接 json.dump 会让 A9.2 在每次
+        #    正常同步后都变红，而「断言常在红」的下一步永远是关掉断言。
+        from safe_write import commit, AuditRejected
+
+        def _apply(d, payload=payload, key=key):
+            d.setdefault("_meta", {})[key] = payload
+
+        try:
+            commit(_apply, tag="evidence_index", verbose=False,
+                   reason=f"evidence_index --write-meta 刷新 _meta.{key}"
+                          f"（扫描 {len(files)} 文件，{month} 覆盖 {cov_pct}%）")
+            print(f"\n  ✅ 已写入 _meta.{key}（经 safe_write 门禁）")
+        except AuditRejected as e:
+            print(f"\n  🔴 写入被门禁拒绝 —— 先修账面，再写证据索引：\n     {e}")
+            return 1
 
     return 1 if (shells or lying) else 0
 

@@ -30,7 +30,7 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import paths
-from ledger_audit import run_audit
+from ledger_audit import run_audit, scan_direct_writers
 
 
 def load_base():
@@ -56,7 +56,7 @@ class TestBaseline(unittest.TestCase):
     def test_all_groups_present(self):
         aud = run_audit(BASE)
         groups = {c.gid for c in aud.checks}
-        self.assertEqual(groups, {"G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8"})
+        self.assertEqual(groups, {"G0", "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8", "G9"})
 
 
 class FaultInjection(unittest.TestCase):
@@ -214,6 +214,101 @@ class SafeWriteGate(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             commit(lambda x: None, reason="   ", data_path=self.target, verbose=False)
+
+
+class GateBypass(unittest.TestCase):
+    """门禁真正的软肋不是「拒绝坏数据」，而是「可以被完全绕过」。
+    这一组证明：绕过之后是**可检测**的 —— 哪怕只改了 1 元。
+    没有这一组，safe_write 就只是「一条建议」。"""
+
+    def setUp(self):
+        self.tmpdir = Path(tempfile.mkdtemp(prefix="anchor_bypass_"))
+        self.target = self.tmpdir / "portfolio_data.json"
+        shutil.copy2(paths.DATA_PATH, self.target)
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def test_direct_json_dump_is_detected(self):
+        from safe_write import commit
+        commit(lambda d: None, reason="建立基线", data_path=self.target, verbose=False)
+
+        with open(self.target, encoding="utf-8") as f:
+            d = json.load(f)
+        d["total_assets"] = float(d["total_assets"]) + 1     # 只改 1 元
+        with open(self.target, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False, indent=2)
+
+        with open(self.target, encoding="utf-8") as f:
+            aud = run_audit(json.load(f))
+        ids = {c.cid for c in aud.failed}
+        self.assertIn("A9.2", ids, "绕过门禁的写入必须被内容指纹检出，否则门禁形同虚设")
+
+    def test_gated_write_keeps_fingerprint_valid(self):
+        from safe_write import commit
+        commit(lambda d: d["_meta"].__setitem__("probe_a", 1),
+               reason="第一次变更", data_path=self.target, verbose=False)
+        commit(lambda d: d["_meta"].__setitem__("probe_b", 2),
+               reason="第二次变更", data_path=self.target, verbose=False)
+        with open(self.target, encoding="utf-8") as f:
+            aud = run_audit(json.load(f))
+        self.assertEqual([c.cid for c in aud.failed], [],
+                         "连续两次走门禁的写入之后，指纹应仍然有效")
+
+
+class GateIsTheOnlyDoor(unittest.TestCase):
+    """A9.2 只能事后说「有人绕过了」，说不了「还有几条旁路在」。
+
+    只要还有脚本自己 json.dump，每天正常同步一次就把 A9.2 推红一次；
+    常在红的断言必然被关掉 —— 门禁就是在这一步死掉的。
+    A9.4 把「旁路存在」本身变成 FAIL。
+    """
+
+    def setUp(self):
+        self.tmpdir = Path(tempfile.mkdtemp(prefix="anchor_sidechannel_"))
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
+
+    def _write(self, name, body):
+        (self.tmpdir / name).write_text(body, encoding="utf-8")
+
+    def test_direct_open_write_is_flagged(self):
+        self._write("bad_direct.py",
+                    "import json\n"
+                    "from paths import DATA_PATH\n"
+                    "with open(DATA_PATH, 'w', encoding='utf-8') as f:\n"
+                    "    json.dump({}, f)\n")
+        self.assertEqual(scan_direct_writers(self.tmpdir), ["bad_direct.py"],
+                         "open(DATA_PATH,'w') 这种最直白的旁路必须被抓到")
+
+    def test_alias_and_atomic_replace_are_flagged(self):
+        # 真实案例：sync_derived_fields 当年是「写 tmp + os.replace(tmp, p)」，没有 open(p,'w')
+        self._write("bad_alias.py",
+                    "import json, os\n"
+                    "import paths\n"
+                    "p = paths.DATA_PATH\n"
+                    "tmp = str(p) + '.tmp'\n"
+                    "with open(tmp, 'w', encoding='utf-8') as f:\n"
+                    "    json.dump({}, f)\n"
+                    "os.replace(tmp, p)\n")
+        self.assertEqual(scan_direct_writers(self.tmpdir), ["bad_alias.py"],
+                         "别名 + os.replace 的原子写法不能被漏掉（这正是当初漏的那种）")
+
+    def test_reading_and_side_files_are_not_flagged(self):
+        self._write("good_reader.py",
+                    "import json\n"
+                    "import paths\n"
+                    "with open(paths.DATA_PATH, encoding='utf-8') as f:\n"
+                    "    d = json.load(f)\n"
+                    "with open('candidates.json', 'w', encoding='utf-8') as f:\n"
+                    "    json.dump(d, f)\n")
+        self.assertEqual(scan_direct_writers(self.tmpdir), [],
+                         "只读 + 写别的文件，不算旁路；否则这条断言会因为误报被关掉")
+
+    def test_production_scripts_have_no_side_channel(self):
+        self.assertEqual(scan_direct_writers(), [],
+                         "05-scripts 下除 safe_write.py 外不得有脚本直接写 portfolio_data.json")
 
 
 if __name__ == "__main__":

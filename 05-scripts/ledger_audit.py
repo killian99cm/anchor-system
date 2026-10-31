@@ -31,7 +31,9 @@ ledger_audit.py — 账本不变量审计器（Anchor v4.5）
 
 变更管理：新增口径条款时必须同步在此登记断言，否则该条款视为未生效。
 """
+import hashlib
 import json
+import os
 import re
 import sys
 from dataclasses import dataclass, field
@@ -94,11 +96,71 @@ def approx(a, b, tol=TOL_AMT):
     return abs(float(a) - float(b)) <= tol
 
 
+def content_hash(data):
+    """内容指纹：剔除 write_log 后对全量数据做规范序列化再 sha256。
+
+    剔除 write_log 是因为它本身要被追加 —— 否则写入后指纹立刻失效，永远对不上。
+    这个指纹是 safe_write 与 ledger_audit 之间的握手凭据：
+      写入时记下指纹 → 审计时重算指纹 → 不一致就说明「有人绕过门禁改了数据」。
+    """
+    clone = json.loads(json.dumps(data, ensure_ascii=False))
+    if isinstance(clone.get("_meta"), dict):
+        clone["_meta"].pop("write_log", None)
+    payload = json.dumps(clone, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def f2(x):
     try:
         return f"{float(x):,.2f}"
     except (TypeError, ValueError):
         return str(x)
+
+
+# ============================================================
+# G9 的源码侧：门禁是否真的唯一
+# ============================================================
+SCRIPTS_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# 允许直接写 portfolio_data.json 的模块 —— 有且只有 safe_write.py 一个
+ALLOWED_DIRECT_WRITERS = {"safe_write.py"}
+
+
+def scan_direct_writers(scripts_dir=None):
+    """静态扫描仍「直接写 portfolio_data.json」的脚本，返回文件名列表。
+
+    为什么需要它：A9.2 只能告诉你「有人绕过了门禁」，说不出「还有多少条旁路存在」。
+    只要还有脚本自己 json.dump，每天正常跑一次同步就会把 A9.2 推红一次；
+    连续红两次之后，所有人的处理方式都是关掉这条断言 —— 那才是门禁真正死掉的时刻。
+    所以必须在源码层面把旁路清干净，并让「新出现一条旁路」本身成为 FAIL。
+
+    这是启发式扫描，不追求完备，只追求「新增旁路不会静默存在」：
+      认出 `x = ...paths.DATA_PATH` 这类别名，再看有没有 `open(x|DATA_PATH, "w")`。
+    """
+    d = scripts_dir or SCRIPTS_DIR
+    if not os.path.isdir(d):
+        return []
+    alias_re = re.compile(r"^\s*(\w+)\s*=\s*[^\n=]*?DATA_PATH\b", re.M)
+    leaks = []
+    for name in sorted(os.listdir(d)):
+        if not name.endswith(".py") or name in ALLOWED_DIRECT_WRITERS:
+            continue
+        if name.startswith("test_") or ".bak" in name or name.startswith("_"):
+            continue
+        try:
+            with open(os.path.join(d, name), encoding="utf-8", errors="replace") as f:
+                src = f.read()
+        except OSError:
+            continue
+        if "json.dump" not in src:
+            continue
+        for alias in set(alias_re.findall(src)) | {"DATA_PATH"}:
+            # 两种落地写法都要认：直接 open(别名,"w")，以及「写 tmp + os.replace(tmp, 别名)」
+            if (re.search(r"open\s*\(\s*" + re.escape(alias) + r"\s*,\s*[\"']w", src)
+                    or re.search(r"os\.replace\s*\(\s*[\w.]+\s*,\s*" + re.escape(alias) + r"\s*\)", src)):
+                leaks.append(name)
+                break
+    return leaks
 
 
 # ============================================================
@@ -870,12 +932,68 @@ def build_g8(aud: Audit, L: Ledger):
 
 
 # ============================================================
+# G9 · 门禁完整性（#C1-57 的自我验证）
+# ============================================================
+def build_g9(aud: Audit, L: Ledger):
+    """检查「数据是不是真的走了门禁」。
+
+    没有这一组，safe_write 就只是「一条建议」：任何人都可以直接 json.dump 绕过它，
+    而且事后无从分辨。有了内容指纹，绕过就变成**可检测**的事实。
+    """
+    wl = L.m.get("write_log")
+
+    def _exists():
+        if not wl:
+            return False, "write_log 不存在或为空 —— 没有任何一次写入留下凭据", \
+                "所有写入必须走 safe_write.commit()；先执行一次盖章写入建立基线"
+        return True, f"{len(wl)} 条写入记录，最近一条 {wl[-1].get('at')}", ""
+    aud.guard("G9", "A9.1", "写入需留痕（write_log 非空）", _exists, "#C1-57")
+
+    def _fingerprint():
+        if not wl:
+            return False, "无写入记录，无法比对指纹", "先建立基线"
+        recorded = wl[-1].get("data_sha256")
+        if not recorded:
+            return False, "最近一条写入未记录内容指纹（旧版写入）", \
+                "用 safe_write 重新盖章一次，之后的写入才可被追溯"
+        current = content_hash(L.d)
+        if current != recorded:
+            return (False,
+                    f"内容指纹不符：记录 {recorded[:12]}… vs 实际 {current[:12]}… "
+                    f"⇒ **存在绕过门禁的写入**（共 {len(wl)} 条记录，均未覆盖当前内容）",
+                    "有人（或某个脚本）直接 json.dump 改了数据。⛔ 这不是格式问题，"
+                    "是「校验被绕过」——本次改动未经任何断言检查即已生效")
+        return True, f"指纹一致（{current[:12]}…）⇒ 当前内容确实来自门禁写入", ""
+    aud.guard("G9", "A9.2", "当前内容与门禁记录指纹一致（防绕过）", _fingerprint, "#C1-57")
+
+    def _reason_present():
+        if not wl:
+            return True, "无记录", ""
+        bad = [e for e in wl if not str(e.get("reason", "")).strip()]
+        if bad:
+            return False, f"{len(bad)} 条写入无 reason", "无理由的写入不允许发生"
+        return True, f"{len(wl)} 条写入均附带原因", ""
+    aud.guard("G9", "A9.3", "每次写入都有原因", _reason_present, "#C1-57")
+
+    def _single_entry():
+        leaks = scan_direct_writers()
+        if leaks:
+            return (False,
+                    f"{len(leaks)} 个脚本仍直接写 portfolio_data.json：{'、'.join(leaks)} "
+                    f"⇒ 门禁并非唯一入口，A9.2 会被它们的正常写入反复推红",
+                    "把这几个脚本改为 `from safe_write import commit` 包一层 mutate；"
+                    "否则「断言常在红」的下一步必然是关掉断言 —— 门禁就是这样失效的")
+        return True, "05-scripts 下除 safe_write.py 外，无脚本直接写 portfolio_data.json", ""
+    aud.guard("G9", "A9.4", "门禁是唯一写入口（源码扫描）", _single_entry, "#C1-57")
+
+
+# ============================================================
 # 输出
 # ============================================================
 GROUP_NAMES = {
     "G0": "结构自洽", "G1": "三口径", "G2": "回撤基准",
     "G3": "台账可复算", "G4": "日程连续性", "G5": "流水核销",
-    "G6": "金额一致性", "G7": "时效与悬空项", "G8": "证据链完整性",
+    "G6": "金额一致性", "G7": "时效与悬空项", "G8": "证据链完整性", "G9": "门禁完整性",
 }
 ICON = {"PASS": "✅", "FAIL": "❌", "WARN": "⚠️ ", "SKIP": "—"}
 
@@ -916,12 +1034,23 @@ def render(aud: Audit, quiet=False, hints=False):
     print("-" * 78)
 
 
-def run_audit(data):
-    """可编程入口：给一段数据，返回 Audit 对象（供 safe_write 与 CI 复用）。"""
+def run_audit(data, groups=None):
+    """可编程入口：给一段数据，返回 Audit 对象（供 safe_write 与 CI 复用）。
+
+    groups: 只跑指定组（如 {"G9"}）。默认 None = 全量。
+    ⚠️ 生产文件必须全量；分组只为「非生产路径/合成 fixture」放行，
+       因为结构类断言（三口径、台账）在合成数据上没有意义，硬跑会把正常调用打成异常。
+    """
+    builders = (
+        ("G0", build), ("G1", build_g1), ("G2", build_g2), ("G3", build_g3),
+        ("G4", build_g4), ("G5", build_g5), ("G6", build_g6), ("G7", build_g7),
+        ("G8", build_g8), ("G9", build_g9),
+    )
     L = Ledger(data)
     aud = Audit()
-    for fn in (build, build_g1, build_g2, build_g3, build_g4, build_g5, build_g6, build_g7, build_g8):
-        fn(aud, L)
+    for gid, fn in builders:
+        if groups is None or gid in groups:
+            fn(aud, L)
     return aud
 
 

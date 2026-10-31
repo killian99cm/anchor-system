@@ -613,24 +613,31 @@ def main() -> int:
         return 0
 
     # ---- 写回：只改 watchlist[].today / .today_meta，其余一字不动 ----
-    for item, e in zip(data.get("watchlist", []) or [], status["entries"]):
-        item["today"] = f"{e['data_time'][5:]} {e['verdict']} —— {e['reason']}"
-        item["today_meta"] = {
-            "computed_at": e["data_time"], "code": e["code"],
-            "close": e["close"], "ma": e["ma"], "ma_alt": e.get("ma_alt"),
-            "ma_period": e["ma_period"],
-            "a2_hit": e["a2_hit"], "a2_ok": e["a2_ok"],
-            "a2_determined": e["a2_determined"], "a2_detail": e["a2_detail"],
-            "d5_ok": e["d5_ok"], "close_confirmed": e["close_confirmed"],
-            "verdict": e["verdict"], "missing": e["missing"], "a2_gap": e["a2_gap"],
-            "caveats": e["caveats"], "sources": e["sources"],
-        }
-    backups = DATA_PATH.with_suffix(DATA_PATH.suffix + ".bak-watchlist")
+    # 🔴 必须走 safe_write 门禁（#C1-57 / A9.4）。本脚本原来自己备份 + json.dump，
+    #    结果是「每天正常跑一次，A9.2 就被推红一次」——而常在红的断言一定会被关掉。
+    def _apply(d):
+        for item, e in zip(d.get("watchlist", []) or [], status["entries"]):
+            item["today"] = f"{e['data_time'][5:]} {e['verdict']} —— {e['reason']}"
+            item["today_meta"] = {
+                "computed_at": e["data_time"], "code": e["code"],
+                "close": e["close"], "ma": e["ma"], "ma_alt": e.get("ma_alt"),
+                "ma_period": e["ma_period"],
+                "a2_hit": e["a2_hit"], "a2_ok": e["a2_ok"],
+                "a2_determined": e["a2_determined"], "a2_detail": e["a2_detail"],
+                "d5_ok": e["d5_ok"], "close_confirmed": e["close_confirmed"],
+                "verdict": e["verdict"], "missing": e["missing"], "a2_gap": e["a2_gap"],
+                "caveats": e["caveats"], "sources": e["sources"],
+            }
+        return None
+
+    from safe_write import commit, AuditRejected
     try:
-        backups.write_bytes(DATA_PATH.read_bytes())
-        with io.open(DATA_PATH, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        print(f"[OK] 已写回 {DATA_PATH}（备份 {backups.name}）")
+        commit(_apply, tag="watchlist", verbose=False,
+               reason=f"gen_watchlist_status 刷新 watchlist[].today（{len(status['entries'])} 个板块）")
+        print(f"[OK] 已写回 {DATA_PATH}（经 safe_write 门禁，含自动备份）")
+    except AuditRejected as exc:
+        print(f"[ERR] 门禁拒绝写入（原文件未改）：{exc}")
+        return 1
     except Exception as exc:  # noqa: BLE001
         print(f"[ERR] 写回失败：{exc}")
         return 1
